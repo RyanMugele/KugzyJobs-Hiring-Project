@@ -1,0 +1,978 @@
+{% extends "creator/base.html" %}
+
+{% block title %}Creator Dashboard - KugzyJobs{% endblock title %}
+
+{% block creator_content %}
+<!-- Welcome Section -->
+<div class="dashboard-welcome">
+    <div class="welcome-content">
+        <h1>Welcome back, {{ current_user.fullName.split()[0] }}! 👋</h1>
+        <p>Here's what's happening with your projects and collaborations.</p>
+    </div>
+    <div class="welcome-actions">
+        <a href="{{ url_for('creator.new_job') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Post New Job
+        </a>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon success">
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <div class="metric-content">
+            <h3>{{ data.total_jobs }}</h3>
+            <p>Total Jobs Posted</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon primary">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="metric-content">
+            <h3>{{ data.active_jobs }}</h3>
+            <p>Active Projects</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon warning">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="metric-content">
+            <h3>{{ data.pending_applications }}</h3>
+            <p>Pending Applications</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon info">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="metric-content">
+            <h3>{{ data.completed_jobs }}</h3>
+            <p>Completed Jobs</p>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Content Grid -->
+<div class="dashboard-grid">
+    <!-- Recent Jobs -->
+    <div class="dashboard-card recent-jobs">
+        <div class="card-header">
+            <h2>Recent Jobs</h2>
+            <a href="{{ url_for('creator.jobs') }}" class="card-action">View All</a>
+        </div>
+        <div class="card-content">
+            {% if data.recent_jobs %}
+                {% for job in data.recent_jobs %}
+                <div class="job-item">
+                    <div class="job-info">
+                        <h3>{{ job.title }}</h3>
+                        <p class="job-meta">
+                            <span class="job-date">{{ moment(job.dateCreated).format('MMM DD, YYYY') }}</span>
+                            <span class="job-status status-{{ job.status }}">{{ job.status.title() }}</span>
+                        </p>
+                        {% if job.getBudgetRange() %}
+                        <p class="job-budget">{{ job.getBudgetRange() }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="job-actions">
+                        <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-sm btn-outline">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-briefcase"></i>
+                    <h3>No jobs yet</h3>
+                    <p>Create your first job posting to start collaborating with editors.</p>
+                    <a href="{{ url_for('creator.new_job') }}" class="btn btn-primary">Post Your First Job</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="dashboard-card quick-actions">
+        <div class="card-header">
+            <h2>Quick Actions</h2>
+        </div>
+        <div class="card-content">
+            <div class="action-grid">
+                <a href="{{ url_for('creator.new_job') }}" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Post New Job</h3>
+                        <p>Create a new project and find the perfect editor</p>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('creator.editors') }}" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Browse Editors</h3>
+                        <p>Discover talented video editors for your projects</p>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('creator.messages') }}" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Messages</h3>
+                        <p>Communicate with your editor collaborators</p>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('creator.analytics') }}" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>View Analytics</h3>
+                        <p>Track your project performance and insights</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Messages -->
+    <div class="dashboard-card recent-messages">
+        <div class="card-header">
+            <h2>Recent Messages</h2>
+            <a href="{{ url_for('creator.messages') }}" class="card-action">View All</a>
+        </div>
+        <div class="card-content">
+            {% if data.recent_messages %}
+                {% for message in data.recent_messages %}
+                <div class="message-item">
+                    <div class="message-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="message-content">
+                        <h4>{{ message.sender.fullName if message.sender else 'Unknown' }}</h4>
+                        <p class="message-preview">{{ message.subject or 'No Subject' }}</p>
+                        <span class="message-time">{{ moment(message.dateCreated).fromNow() }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-envelope"></i>
+                    <h4>No messages yet</h4>
+                    <p>Your conversations with editors will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment Overview -->
+    <div class="dashboard-card payment-overview">
+        <div class="card-header">
+            <h2>Payment Overview</h2>
+            <a href="{{ url_for('creator.payments') }}" class="card-action">Manage Payments</a>
+        </div>
+        <div class="card-content">
+            <div class="payment-stats">
+                <div class="payment-stat">
+                    <span class="stat-value">{{ data.pending_payments }}</span>
+                    <span class="stat-label">Pending Payments</span>
+                </div>
+                <div class="payment-stat">
+                    <span class="stat-value">{{ data.completed_payments }}</span>
+                    <span class="stat-label">Completed Payments</span>
+                </div>
+            </div>
+            
+            {% if data.pending_payments > 0 %}
+            <div class="payment-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Action Required</strong>
+                    <p>You have {{ data.pending_payments }} pending payment{{ 's' if data.pending_payments != 1 }}.</p>
+                </div>
+                <a href="{{ url_for('creator.payments') }}" class="btn btn-sm btn-warning">
+                    Review Payments
+                </a>
+            </div>
+            {% else %}
+            <div class="payment-success">
+                <i class="fas fa-check-circle"></i>
+                <p>All payments are up to date!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="dashboard-card activity-feed">
+    <div class="card-header">
+        <h2>Recent Activity</h2>
+    </div>
+    <div class="card-content">
+        <div class="activity-list">
+            {% if data.recent_jobs %}
+                {% for job in data.recent_jobs[:3] %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        {% if job.status == 'completed' %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% elif job.status == 'in_progress' %}
+                        <i class="fas fa-clock text-warning"></i>
+                        {% else %}
+                        <i class="fas fa-plus-circle text-primary"></i>
+                        {% endif %}
+                    </div>
+                    <div class="activity-content">
+                        <p>
+                            <strong>
+                                {% if job.status == 'completed' %}
+                                Completed project
+                                {% elif job.status == 'in_progress' %}
+                                Started working on
+                                {% else %}
+                                Posted new job
+                                {% endif %}
+                            </strong>
+                            "{{ job.title }}"
+                        </p>
+                        <span class="activity-time">{{ moment(job.lastUpdated).fromNow() }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-activity"></i>
+                    <h4>No recent activity</h4>
+                    <p>Your recent actions and updates will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dashboard Welcome */
+    .dashboard-welcome {
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+        color: var(--white);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dashboard-welcome h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-welcome p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .welcome-actions .btn {
+        background: var(--white);
+        color: var(--accent-blue);
+        font-weight: 600;
+    }
+
+    .welcome-actions .btn:hover {
+        background: var(--light-gray);
+        transform: translateY(-1px);
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: var(--white);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        border: 1px solid var(--border-gray);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .metric-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--white);
+    }
+
+    .metric-icon.success { background: var(--success-green); }
+    .metric-icon.primary { background: var(--accent-blue); }
+    .metric-icon.warning { background: #f59e0b; }
+    .metric-icon.info { background: #8b5cf6; }
+
+    .metric-content h3 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-content p {
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-gray);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+    }
+
+    .card-action {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: color 0.2s ease;
+    }
+
+    .card-action:hover {
+        color: var(--primary-black);
+    }
+
+    .card-content {
+        padding: 1.5rem;
+    }
+
+    /* Job Items */
+    .job-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .job-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .job-item:first-child {
+        padding-top: 0;
+    }
+
+    .job-info h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .job-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .job-date {
+        color: var(--soft-gray);
+    }
+
+    .job-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .status-posted { background: #dbeafe; color: #1d4ed8; }
+    .status-in_progress { background: #fef3c7; color: #d97706; }
+    .status-completed { background: #d1fae5; color: #059669; }
+
+    .job-budget {
+        color: var(--soft-gray);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+    }
+
+    .btn-outline:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    /* Quick Actions */
+    .action-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--primary-black);
+        transition: all 0.3s ease;
+    }
+
+    .action-item:hover {
+        background: var(--light-gray);
+        border-color: var(--accent-blue);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .action-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--light-gray);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-blue);
+        font-size: 1.25rem;
+    }
+
+    .action-content h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--primary-black);
+    }
+
+    .action-content p {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        line-height: 1.4;
+    }
+
+    /* Message Items */
+    .message-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .message-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .message-item:first-child {
+        padding-top: 0;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        background: var(--light-gray);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--soft-gray);
+    }
+
+    .message-content h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .message-preview {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        margin-bottom: 0.25rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: var(--soft-gray);
+    }
+
+    /* Payment Overview */
+    .payment-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-stat {
+        text-align: center;
+        padding: 1rem;
+        background: var(--light-gray);
+        border-radius: var(--radius-md);
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+    }
+
+    .payment-alert {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: var(--radius-md);
+        color: #d97706;
+    }
+
+    .payment-alert i {
+        font-size: 1.25rem;
+    }
+
+    .payment-alert strong {
+        color: #92400e;
+    }
+
+    .payment-alert p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .btn-warning {
+        background: #f59e0b;
+        color: var(--white);
+        border: none;
+    }
+
+    .btn-warning:hover {
+        background: #d97706;
+    }
+
+    .payment-success {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #d1fae5;
+        border: 1px solid var(--success-green);
+        border-radius: var(--radius-md);
+        color: #059669;
+    }
+
+    .payment-success i {
+        font-size: 1.25rem;
+    }
+
+    .payment-success p {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+        grid-column: 1 / -1;
+    }
+
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--light-gray);
+        border-radius: var(--radius-md);
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .text-success { color: var(--success-green); }
+    .text-warning { color: #f59e0b; }
+    .text-primary { color: var(--accent-blue); }
+
+    .activity-content p {
+        margin: 0 0 0.25rem 0;
+        color: var(--primary-black);
+    }
+
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--soft-gray);
+    }
+
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--soft-gray);
+    }
+
+    .empty-state.small {
+        padding: 2rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state.small i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary-black);
+    }
+
+    .empty-state h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary-black);
+    }
+
+    .empty-state p {
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    .empty-state.small p {
+        margin-bottom: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-welcome {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .dashboard-welcome h1 {
+            font-size: 1.75rem;
+        }
+
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .metric-card {
+            padding: 1rem;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.25rem;
+        }
+
+        .metric-content h3 {
+            font-size: 1.5rem;
+        }
+
+        .payment-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .job-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .job-actions {
+            width: 100%;
+        }
+
+        .job-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-welcome {
+            padding: 2rem 1.5rem;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .card-header {
+            padding: 1rem 1rem 0.5rem;
+        }
+    }
+
+    /* Loading States */
+    .loading-skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Enhanced focus states */
+    .action-item:focus,
+    .card-action:focus {
+        outline: 2px solid var(--accent-blue);
+        outline-offset: 2px;
+    }
+
+    /* Print styles */
+    @media print {
+        .dashboard-welcome,
+        .quick-actions,
+        .welcome-actions {
+            display: none;
+        }
+        
+        .dashboard-card {
+            break-inside: avoid;
+        }
+    }
+</style>
+
+<script>
+    // Dashboard functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh dashboard data every 5 minutes
+        let refreshInterval;
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                // Only refresh if page is visible
+                if (!document.hidden) {
+                    refreshDashboardData();
+                }
+            }, 300000); // 5 minutes
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Refresh dashboard data via AJAX
+        function refreshDashboardData() {
+            // This would make an AJAX call to get updated dashboard data
+            // For now, we'll just show a subtle notification
+            showToast('Dashboard data refreshed', 'info');
+        }
+
+        // Handle visibility change
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+
+        // Start auto-refresh
+        startAutoRefresh();
+
+        // Enhanced tooltip functionality for metrics
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-2px) scale(1)';
+            });
+        });
+
+        // Quick action analytics
+        document.querySelectorAll('.action-item').forEach(action => {
+            action.addEventListener('click', function() {
+                const actionName = this.querySelector('h3').textContent;
+                // Track action click (would integrate with analytics)
+                console.log('Quick action clicked:', actionName);
+            });
+        });
+
+        // Progressive enhancement for payment alerts
+        const paymentAlert = document.querySelector('.payment-alert');
+        if (paymentAlert) {
+            // Add dismiss functionality
+            const dismissBtn = document.createElement('button');
+            dismissBtn.className = 'btn btn-sm btn-outline';
+            dismissBtn.innerHTML = '<i class="fas fa-times"></i>';
+            dismissBtn.title = 'Dismiss';
+            dismissBtn.onclick = function() {
+                paymentAlert.style.animation = 'slideUp 0.3s ease forwards';
+                setTimeout(() => paymentAlert.remove(), 300);
+            };
+            paymentAlert.appendChild(dismissBtn);
+        }
+    });
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<div class="toast-body">${message}</div>`;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.className = 'toast-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(container);
+        return container;
+    }
+
+    // Add slide-up animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideUp {
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+                max-height: 0;
+                padding: 0;
+                margin: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock creator_content %}

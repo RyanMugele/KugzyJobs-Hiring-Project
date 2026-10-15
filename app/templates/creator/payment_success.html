@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Successful - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="success-container">
+    <div class="success-wrapper">
+        <!-- Success Header -->
+        <div class="success-header">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1>Payment Successful!</h1>
+            <p>Your payment has been processed successfully</p>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="payment-details">
+            <div class="details-card">
+                <h2><i class="fas fa-receipt"></i> Payment Summary</h2>
+                
+                <div class="details-grid">
+                    <div class="detail-row">
+                        <span class="label">Project:</span>
+                        <span class="value">{{ payment.job.title }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="label">Editor:</span>
+                        <span class="value">
+                            {% if payment.job.selectedEditor %}
+                                {{ payment.job.selectedEditor.user.fullName }}
+                            {% else %}
+                                Not specified
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="label">Amount Paid:</span>
+                        <span class="value amount">${{ "%.2f"|format(payment.agreedAmount) }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="label">Payment Date:</span>
+                        <span class="value">{{ moment(payment.lastUpdated).format('MMMM Do, YYYY [at] h:mm A') }}</span>
+                    </div>
+                    
+                    {% if payment.paymentMethod %}
+                    <div class="detail-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">{{ payment.paymentMethod }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.mpesaReference %}
+                    <div class="detail-row">
+                        <span class="label">Reference Number:</span>
+                        <span class="value reference">{{ payment.mpesaReference }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.invoiceNumber %}
+                    <div class="detail-row">
+                        <span class="label">Invoice Number:</span>
+                        <span class="value">{{ payment.invoiceNumber }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="next-steps">
+            <div class="steps-card">
+                <h3><i class="fas fa-list-check"></i> What Happens Next?</h3>
+                
+                <div class="steps-list">
+                    <div class="step-item">
+                        <div class="step-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Confirmation Email</h4>
+                            <p>You'll receive a payment confirmation email shortly</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="step-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Editor Notification</h4>
+                            <p>The editor will be notified of the completed payment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="step-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Leave a Rating</h4>
+                            <p>Consider rating your experience with the editor</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="success-actions">
+            {% if payment.invoiceNumber %}
+            <a href="{{ url_for('creator.payment_invoice', payment_id=payment.paymentId) }}" class="btn btn-primary">
+                <i class="fas fa-download"></i>
+                Download Invoice
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('creator.job_detail', job_id=payment.job.jobId) }}" class="btn btn-outline">
+                <i class="fas fa-briefcase"></i>
+                View Project
+            </a>
+            
+            {% if payment.job.selectedEditor %}
+            <a href="{{ url_for('creator.submit_rating') }}?job_id={{ payment.job.jobId }}&editor_id={{ payment.job.selectedEditor.editorId }}" 
+               class="btn btn-secondary">
+                <i class="fas fa-star"></i>
+                Rate Editor
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('creator.payments') }}" class="btn btn-outline">
+                <i class="fas fa-credit-card"></i>
+                All Payments
+            </a>
+        </div>
+
+        <!-- Support -->
+        <div class="support-section">
+            <div class="support-content">
+                <h4><i class="fas fa-headset"></i> Need Help?</h4>
+                <p>If you have any questions about your payment or need assistance, our support team is here to help.</p>
+                
+                <div class="support-links">
+                    <a href="mailto:support@kugzyjobs.com" class="support-link">
+                        <i class="fas fa-envelope"></i>
+                        Contact Support
+                    </a>
+                    <a href="#payment-help" class="support-link">
+                        <i class="fas fa-question-circle"></i>
+                        Payment FAQ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .success-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        padding: 2rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .success-wrapper {
+        max-width: 700px;
+        width: 100%;
+        padding: 0 2rem;
+    }
+
+    .success-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .success-icon {
+        width: 120px;
+        height: 120px;
+        background: var(--success-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 4rem;
+        margin: 0 auto 2rem;
+        box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+        animation: successPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes successPulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .success-header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .success-header p {
+        font-size: 1.25rem;
+        color: var(--soft-gray);
+        margin: 0;
+    }
+
+    .payment-details, .next-steps, .support-section {
+        margin-bottom: 2rem;
+    }
+
+    .details-card, .steps-card, .support-content {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-gray);
+        padding: 2.5rem;
+    }
+
+    .details-card h2, .steps-card h3, .support-content h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .support-content h4 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .details-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+    }
+
+    .detail-row .label {
+        font-weight: 600;
+        color: var(--soft-gray);
+        font-size: 0.95rem;
+    }
+
+    .detail-row .value {
+        font-weight: 600;
+        color: var(--primary-black);
+        text-align: right;
+    }
+
+    .detail-row .amount {
+        font-size: 1.5rem;
+        color: var(--success-green);
+        font-weight: 800;
+    }
+
+    .detail-row .reference {
+        font-family: monospace;
+        background: #e0f2fe;
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-sm);
+        color: var(--accent-blue);
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: var(--radius-md);
+    }
+
+    .step-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--success-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .step-content h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+        color: var(--soft-gray);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .success-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 3rem;
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--success-green);
+        color: var(--white);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-secondary:hover {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-outline:hover {
+        background: var(--light-gray);
+        transform: translateY(-1px);
+    }
+
+    .support-content p {
+        color: var(--soft-gray);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .support-links {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .support-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--accent-blue);
+        border-radius: var(--radius-sm);
+        transition: all 0.2s ease;
+    }
+
+    .support-link:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+        transform: translateY(-1px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .success-wrapper {
+            padding: 0 1rem;
+        }
+
+        .success-header h1 {
+            font-size: 2.5rem;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            font-size: 3rem;
+        }
+
+        .details-card, .steps-card, .support-content {
+            padding: 2rem;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .detail-row .value {
+            text-align: center;
+        }
+
+        .step-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .success-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .support-links {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .support-link {
+            width: 100%;
+            max-width: 200px;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .success-container {
+            padding: 1rem 0;
+        }
+
+        .success-header h1 {
+            font-size: 2rem;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            font-size: 2.5rem;
+        }
+
+        .details-card, .steps-card, .support-content {
+            padding: 1.5rem;
+        }
+
+        .step-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy reference number functionality
+        const referenceElement = document.querySelector('.reference');
+        if (referenceElement) {
+            referenceElement.title = 'Click to copy reference number';
+            
+            referenceElement.addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent).then(function() {
+                    // Show temporary feedback
+                    const originalText = referenceElement.textContent;
+                    const originalBg = referenceElement.style.background;
+                    
+                    referenceElement.textContent = 'Copied!';
+                    referenceElement.style.background = '#dcfce7';
+                    referenceElement.style.color = '#166534';
+                    
+                    setTimeout(function() {
+                        referenceElement.textContent = originalText;
+                        referenceElement.style.background = originalBg;
+                        referenceElement.style.color = 'var(--accent-blue)';
+                    }, 2000);
+                });
+            });
+        }
+
+        // Confetti effect (simple)
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: 10px;
+                    height: 10px;
+                    background: ${['#10b981', '#3b82f6', '#f59e0b', '#ef4444'][Math.floor(Math.random() * 4)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -10px;
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 9999;
+                    animation: confettiFall ${3 + Math.random() * 2}s linear forwards;
+                `;
+                
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+
+        // Add confetti animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes confettiFall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Trigger confetti on page load
+        setTimeout(createConfetti, 500);
+
+        // Auto-redirect to dashboard after 30 seconds
+        setTimeout(() => {
+            if (confirm('Would you like to return to your dashboard?')) {
+                window.location.href = '{{ url_for("creator.dashboard") }}';
+            }
+        }, 30000);
+    });
+</script>
+{% endblock page_content %}

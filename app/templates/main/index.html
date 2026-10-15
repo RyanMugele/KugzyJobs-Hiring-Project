@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock title %}
+
+{% block seo %}
+<meta name="description" content="KugzyJobs - Where Content Creators Meet Video Editors. Connect, collaborate, and create amazing content together.">
+<meta name="keywords" content="video editing, content creation, freelance, collaboration, video editors, content creators, Kenya">
+<meta property="og:title" content="KugzyJobs - Where Content Creators Meet Video Editors">
+<meta property="og:description" content="Connect, collaborate, and create amazing content together. The premier platform for content creators and video editors.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.url }}">
+{% endblock seo %}
+
+{% block page_content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="fade-in-up">
+            Where <span class="highlight">Content Creators</span><br>
+            Meet <span class="highlight">Video Editors</span>
+        </h1>
+        <p class="fade-in-up">
+            Connect, collaborate, and create amazing content together. KugzyJobs is the premier platform for content creators and video editors to find their perfect creative partner.
+        </p>
+        
+        <div class="hero-buttons fade-in-up">
+            <a href="{{ url_for('authentication.creator_registration') }}" class="btn btn-hero-primary btn-large">
+                <i class="fas fa-video"></i> I'm a Creator
+            </a>
+            <a href="{{ url_for('authentication.editor_registration') }}" class="btn btn-hero-secondary btn-large">
+                <i class="fas fa-cut"></i> I'm an Editor
+            </a>
+        </div>
+
+        <div class="stats fade-in-up">
+            <div class="stat-item">
+                <span class="stat-number">2,500+</span>
+                <div class="stat-label">Active Creators</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">1,800+</span>
+                <div class="stat-label">Professional Editors</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">15,000+</span>
+                <div class="stat-label">Projects Completed</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">99.2%</span>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="section features">
+    <div class="container">
+        <div class="section-title">
+            <h2>Why Choose KugzyJobs?</h2>
+            <p>Discover the features that make us the leading platform for content collaboration and creative partnerships</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-check"></i>
+                </div>
+                <h3>Verified Professionals</h3>
+                <p>Every editor undergoes rigorous verification including portfolio reviews, skill assessments, and quality checks to ensure you work with top-tier talent.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>AI-Powered Matching</h3>
+                <p>Our intelligent algorithm matches you with the perfect collaborator based on style, skills, experience, budget, and creative preferences.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>Secure Collaboration</h3>
+                <p>Enterprise-grade security with encrypted file sharing, milestone tracking, escrow payments, and comprehensive project management tools.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-award"></i>
+                </div>
+                <h3>Quality Guarantee</h3>
+                <p>Comprehensive rating system, detailed reviews, revision management, and quality assurance to ensure exceptional results every time.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h3>Lightning Fast Delivery</h3>
+                <p>Real-time progress tracking, deadline management, and communication tools ensure your projects are delivered on time, every time.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3>Premium Support</h3>
+                <p>Dedicated 24/7 support team, dispute resolution, project mediation, and comprehensive onboarding to ensuresmooth collaboration.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="section how-it-works">
+    <div class="container">
+        <div class="section-title">
+            <h2>How KugzyJobs Works</h2>
+            <p>From connection to completion - your journey to amazing content in four simple steps</p>
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Create Your Profile</h3>
+                <p>Build a comprehensive profile showcasing your skills, experience, portfolio samples, and creative style to attract the perfect collaborators.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Find Your Perfect Match</h3>
+                <p>Browse verified professionals, review portfolios, check ratings and reviews, and connect with collaborators who align with your vision.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Collaborate Seamlessly</h3>
+                <p>Use our integrated workspace to discuss projects, set milestones, share files, track progress, and communicate effectively throughout the process.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Deliver Excellence</h3>
+                <p>Review final deliverables, request revisions if needed, complete secure payments, and build lasting professional relationships through ratings.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section cta">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Create Something Amazing?</h2>
+            <p>Join thousands of content creators and video editors who are already collaborating and creating outstanding content on KugzyJobs. Start your journey today.</p>
+            
+            <div class="hero-buttons">
+                <a href="{{ url_for('authentication.creator_registration') }}" class="btn btn-hero-primary btn-large">
+                    <i class="fas fa-video"></i> Join as Creator
+                </a>
+                <a href="{{ url_for('authentication.editor_registration') }}" class="btn btn-hero-secondary btn-large">
+                    <i class="fas fa-cut"></i> Join as Editor
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Additional CSS for homepage specific styles -->
+<style>
+    /* Hero Section */
+    .hero {
+        padding: 8rem 6% 10rem;
+        text-align: center;
+        background: linear-gradient(180deg, var(--white) 0%, var(--light-gray) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.5" fill="%23e5e7eb"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+        opacity: 0.5;
+    }
+
+    .hero-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero h1 {
+        font-size: clamp(3rem, 6vw, 5rem);
+        font-weight: 900;
+        margin-bottom: 2rem;
+        line-height: 1.1;
+        color: var(--primary-black);
+        letter-spacing: -2px;
+    }
+
+    .hero .highlight {
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero p {
+        font-size: 1.375rem;
+        margin-bottom: 3.5rem;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+        color: var(--soft-gray);
+        font-weight: 400;
+        line-height: 1.7;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1.25rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 5rem;
+    }
+
+    .btn-large {
+        padding: 1.25rem 2.5rem;
+        font-size: 1.125rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+    }
+
+    .btn-hero-primary {
+        background: var(--primary-black);
+        color: var(--white);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-hero-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .btn-hero-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-hero-secondary:hover {
+        background: var(--light-gray);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 2rem 1.5rem;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stat-number {
+        font-size: 2.75rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        display: block;
+        letter-spacing: -1px;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+
+    /* Enhanced Sections */
+    .section {
+        padding: 8rem 6%;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .section-title {
+        text-align: center;
+        margin-bottom: 5rem;
+    }
+
+    .section-title h2 {
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        color: var(--primary-black);
+        letter-spacing: -1px;
+    }
+
+    .section-title p {
+        font-size: 1.25rem;
+        color: var(--soft-gray);
+        max-width: 650px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Features Section */
+    .features {
+        background: var(--white);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 2.5rem;
+    }
+
+    .feature-card {
+        background: var(--white);
+        padding: 3rem 2.5rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-gray);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-blue), var(--success-green));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+        border-color: transparent;
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--primary-black);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        color: var(--white);
+        font-size: 1.375rem;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        transform: scale(1.1);
+    }
+
+    .feature-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        color: var(--primary-black);
+        line-height: 1.3;
+    }
+
+    .feature-card p {
+        color: var(--soft-gray);
+        line-height: 1.7;
+        font-size: 1.05rem;
+    }
+
+    /* How It Works */
+    .how-it-works {
+        background: var(--light-gray);
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 3rem;
+        margin-top: 4rem;
+    }
+
+    .step {
+        text-align: center;
+        position: relative;
+        background: var(--white);
+        padding: 3rem 2rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+    }
+
+    .step:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .step-number {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        color: var(--white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin: 0 auto 2rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .step h3 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        color: var(--primary-black);
+    }
+
+    .step p {
+        color: var(--soft-gray);
+        line-height: 1.7;
+        font-size: 1.05rem;
+    }
+
+    /* CTA Section */
+    .cta {
+        background: var(--primary-black);
+        color: var(--white);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cta::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23ffffff" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    }
+
+    .cta-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .cta h2 {
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        letter-spacing: -1px;
+    }
+
+    .cta p {
+        font-size: 1.25rem;
+        margin-bottom: 3rem;
+        max-width: 650px;
+        margin-left: auto;
+        margin-right: auto;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+    }
+
+    .cta .btn-hero-primary {
+        background: var(--white);
+        color: var(--primary-black);
+    }
+
+    .cta .btn-hero-primary:hover {
+        background: var(--light-gray);
+    }
+
+    .cta .btn-hero-secondary {
+        background: transparent;
+        color: var(--white);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .cta .btn-hero-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--white);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* Enhanced Responsive Design */
+    @media (max-width: 768px) {
+        .hero {
+            padding: 6rem 4% 8rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-large {
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .section {
+            padding: 6rem 4%;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .steps {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .stats {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            padding: 1.5rem 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero {
+            padding: 5rem 2% 6rem;
+        }
+
+        .section {
+            padding: 5rem 2%;
+        }
+    }
+
+    /* Performance optimizations */
+    .feature-card,
+    .step,
+    .stat-item {
+        will-change: transform;
+    }
+</style>
+
+<script>
+    // Add intersection observer for animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animation
+        document.querySelectorAll('.feature-card, .step, .stat-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Enhanced button interactions
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

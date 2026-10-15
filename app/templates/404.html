@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found{% endblock title %}
+
+{% block seo %}
+<meta name="description" content="Page not found - The page you're looking for doesn't exist on KugzyJobs.">
+<meta name="robots" content="noindex, nofollow">
+{% endblock seo %}
+
+{% block page_content %}
+<section class="error-page">
+    <div class="error-container">
+        <div class="error-content">
+            <!-- Error Number -->
+            <div class="error-number">
+                <span class="number-text">404</span>
+                <div class="number-decoration"></div>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message">
+                <h1>Page Not Found</h1>
+                <p>Oops! The page you're looking for seems to have wandered off into the digital wilderness. Don't worry, even the best content creators sometimes lose their way.</p>
+            </div>
+            
+            <!-- Error Actions -->
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+                <button onclick="history.back()" class="btn btn-secondary btn-large">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </button>
+            </div>
+            
+            <!-- Helpful Links -->
+            <div class="helpful-links">
+                <h3>Maybe you were looking for:</h3>
+                <div class="links-grid">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.userType == 'creator' %}
+                        <a href="{{ url_for('creator.dashboard') }}" class="help-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Creator Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('creator.editors') }}" class="help-link">
+                            <i class="fas fa-search"></i>
+                            <span>Find Editors</span>
+                        </a>
+                        <a href="{{ url_for('creator.jobs') }}" class="help-link">
+                            <i class="fas fa-briefcase"></i>
+                            <span>My Jobs</span>
+                        </a>
+                        {% elif current_user.userType == 'editor' %}
+                        <a href="{{ url_for('editor.dashboard') }}" class="help-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Editor Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('editor.jobs') }}" class="help-link">
+                            <i class="fas fa-search"></i>
+                            <span>Browse Jobs</span>
+                        </a>
+                        <a href="{{ url_for('editor.portfolio') }}" class="help-link">
+                            <i class="fas fa-folder"></i>
+                            <span>My Portfolio</span>
+                        </a>
+                        {% elif current_user.userType == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="help-link">
+                            <i class="fas fa-cog"></i>
+                            <span>Admin Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('admin.users') }}" class="help-link">
+                            <i class="fas fa-users"></i>
+                            <span>Manage Users</span>
+                        </a>
+                        <a href="{{ url_for('admin.portfolios') }}" class="help-link">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Verify Portfolios</span>
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <a href="{{ url_for('authentication.choose_registration') }}" class="help-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Sign Up</span>
+                    </a>
+                    <a href="{{ url_for('authentication.login') }}" class="help-link">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{{ url_for('main.index') }}#features" class="help-link">
+                        <i class="fas fa-star"></i>
+                        <span>Features</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="error-decoration">
+            <div class="floating-icon icon-1">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="floating-icon icon-2">
+                <i class="fas fa-cut"></i>
+            </div>
+            <div class="floating-icon icon-3">
+                <i class="fas fa-film"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .error-page {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 6%;
+        background: linear-gradient(180deg, var(--white) 0%, var(--light-gray) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.5" fill="%23e5e7eb"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .error-container {
+        max-width: 800px;
+        width: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+    .error-content {
+        text-align: center;
+        background: var(--white);
+        padding: 4rem 3rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-gray);
+        position: relative;
+    }
+
+    .error-number {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .number-text {
+        font-size: clamp(6rem, 15vw, 12rem);
+        font-weight: 900;
+        color: var(--primary-black);
+        line-height: 1;
+        display: block;
+        letter-spacing: -4px;
+        position: relative;
+    }
+
+    .number-decoration {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 8px;
+        background: linear-gradient(90deg, var(--accent-blue), var(--success-green));
+        border-radius: 4px;
+        opacity: 0.8;
+    }
+
+    .error-message h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .error-message p {
+        font-size: 1.25rem;
+        color: var(--soft-gray);
+        line-height: 1.6;
+        margin-bottom: 3rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 3rem;
+    }
+
+    .helpful-links {
+        border-top: 1px solid var(--border-gray);
+        padding-top: 2rem;
+    }
+
+    .helpful-links h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+    }
+
+    .links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .help-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--primary-black);
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .help-link:hover {
+        background: var(--white);
+        border-color: var(--accent-blue);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .help-link i {
+        font-size: 1.25rem;
+        color: var(--accent-blue);
+    }
+
+    .error-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .floating-icon {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-blue);
+        font-size: 1.5rem;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .icon-1 {
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+    }
+
+    .icon-2 {
+        top: 60%;
+        right: 15%;
+        animation-delay: 2s;
+    }
+
+    .icon-3 {
+        bottom: 20%;
+        left: 20%;
+        animation-delay: 4s;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+            transform: translateY(-20px) rotate(180deg);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .error-page {
+            padding: 2rem 4%;
+            min-height: 70vh;
+        }
+
+        .error-content {
+            padding: 3rem 2rem;
+        }
+
+        .error-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-large {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .links-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .floating-icon {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .error-page {
+            padding: 2rem;
+        }
+
+        .error-content {
+            padding: 2rem 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    // Add some interactive behavior
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate the error number on load
+        const numberText = document.querySelector('.number-text');
+        if (numberText) {
+            numberText.style.opacity = '0';
+            numberText.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                numberText.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                numberText.style.opacity = '1';
+                numberText.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // Add hover effects to help links
+        document.querySelectorAll('.help-link').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px) scale(1.02)';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

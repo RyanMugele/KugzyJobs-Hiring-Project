@@ -1,0 +1,1423 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Projects - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="projects-container">
+    <!-- Page Header -->
+    <div class="projects-header">
+        <div class="header-content">
+            <h1>My Projects</h1>
+            <p>Manage your current and completed video editing projects</p>
+        </div>
+        
+        <div class="header-stats">
+            <div class="stat-card current">
+                <div class="stat-icon">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ data.total_current }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+            </div>
+            
+            <div class="stat-card completed">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ data.total_completed }}</div>
+                    <div class="stat-label">Completed Projects</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Tabs -->
+    <div class="project-tabs">
+        <div class="tabs-nav">
+            <button class="tab-link active" onclick="showTab('current')">
+                <span>Active Projects</span>
+                <span class="tab-count">{{ data.total_current }}</span>
+            </button>
+            <button class="tab-link" onclick="showTab('completed')">
+                <span>Completed Projects</span>
+                <span class="tab-count">{{ data.total_completed }}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Projects Content -->
+    <div class="projects-content">
+        <!-- Current Projects Tab -->
+        <div id="current-tab" class="tab-content active">
+            <div class="tab-header">
+                <h3>Active Projects</h3>
+            </div>
+
+            {% if data.current_jobs %}
+            <div class="projects-grid">
+                {% for job in data.current_jobs %}
+                <div class="project-card current-project">
+                    <div class="project-header">
+                        <div class="project-info">
+                            <h4>{{ job.title }}</h4>
+                            <div class="project-status">
+                                <span class="status-badge status-{{ job.status }}">
+                                    <i class="fas fa-{% if job.status == 'in_progress' %}play{% else %}clock{% endif %}"></i>
+                                    {{ job.status.replace('_', ' ').title() }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="project-priority">
+                            {% if job.deadline %}
+                            {% set days_left = (job.deadline - moment().date()).days %}
+                            <span class="deadline {% if days_left <= 2 %}urgent{% elif days_left <= 5 %}soon{% endif %}">
+                                <i class="fas fa-calendar-alt"></i>
+                                {% if days_left < 0 %}
+                                Overdue by {{ -days_left }} day{{ "s" if -days_left != 1 else "" }}
+                                {% elif days_left == 0 %}
+                                Due today
+                                {% elif days_left == 1 %}
+                                Due tomorrow
+                                {% else %}
+                                {{ days_left }} days left
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="project-details">
+                        <div class="client-info">
+                            <div class="client-avatar">
+                                {% if job.creator.user.profilePicture %}
+                                <img src="{{ job.creator.user.profilePicture }}" alt="{{ job.creator.user.fullName }}" class="avatar-img">
+                                {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="client-details">
+                                <div class="client-name">{{ job.creator.user.fullName }}</div>
+                                <div class="client-type">Content Creator</div>
+                            </div>
+                        </div>
+
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Started {{ moment(job.dateCreated).fromNow() }}</span>
+                            </div>
+                            {% if job.budgetMin or job.budgetMax %}
+                            <div class="meta-item">
+                                <i class="fas fa-dollar-sign"></i>
+                                <span>{{ job.getBudgetRange() }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if job.description %}
+                        <div class="project-description">
+                            <p>{{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if job.requiredSkills %}
+                        <div class="project-skills">
+                            {% for skill in job.getRequiredSkillsList()[:3] %}
+                            <span class="skill-tag">{{ skill }}</span>
+                            {% endfor %}
+                            {% if job.getRequiredSkillsList()|length > 3 %}
+                            <span class="skill-more">+{{ job.getRequiredSkillsList()|length - 3 }} more</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="project-progress">
+                        {% if job.deliverableUrl %}
+                        <div class="progress-status completed">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Deliverable uploaded - awaiting client review</span>
+                        </div>
+                        {% else %}
+                        <div class="progress-status in-progress">
+                            <i class="fas fa-clock"></i>
+                            <span>Work in progress</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="project-actions">
+                        <a href="{{ url_for('editor.project_detail', job_id=job.jobId) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% if job.status == 'in_progress' and not job.deliverableUrl %}
+                        <a href="{{ url_for('editor.upload_deliverable', job_id=job.jobId) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-upload"></i>
+                            Upload Final
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('editor.send_message', receiver_id=job.creator.user.userId, job_id=job.jobId) }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-envelope"></i>
+                            Message Client
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-content">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>No Active Projects</h3>
+                    <p>You don't have any active projects at the moment. Apply for jobs to start working on exciting video editing projects!</p>
+                    <a href="{{ url_for('editor.jobs') }}" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Browse Available Jobs
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Completed Projects Tab -->
+        <div id="completed-tab" class="tab-content">
+            <div class="tab-header">
+                <h3>Completed Projects</h3>
+            </div>
+
+            {% if data.completed_jobs %}
+            <div class="projects-grid">
+                {% for job in data.completed_jobs %}
+                <div class="project-card completed-project">
+                    <div class="project-header">
+                        <div class="project-info">
+                            <h4>{{ job.title }}</h4>
+                            <div class="completion-info">
+                                <span class="completion-badge">
+                                    <i class="fas fa-check-circle"></i>
+                                    Completed {{ moment(job.completedDate).fromNow() }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% set job_rating = given_ratings|selectattr('jobId', 'equalto', job.jobId)|first %}
+                        {% if job_rating %}
+                        <div class="project-rating">
+                            <div class="rating-stars">
+                                {% for i in range(1, 6) %}
+                                <i class="fas fa-star {% if i <= job_rating.ratingValue %}active{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="rating-text">Your Rating</span>
+                        </div>
+                        {% else %}
+                        <div class="rating-pending">
+                            <i class="fas fa-star-half-alt"></i>
+                            <span>Rate Project</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="project-details">
+                        <div class="client-info">
+                            <div class="client-avatar">
+                                {% if job.creator.user.profilePicture %}
+                                <img src="{{ job.creator.user.profilePicture }}" alt="{{ job.creator.user.fullName }}" class="avatar-img">
+                                {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="client-details">
+                                <div class="client-name">{{ job.creator.user.fullName }}</div>
+                                <div class="project-duration">
+                                    {% set duration = (job.completedDate - job.dateCreated).days %}
+                                    Duration: {{ duration }} day{{ "s" if duration != 1 else "" }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if job.description %}
+                        <div class="project-description">
+                            <p>{{ job.description[:120] }}{% if job.description|length > 120 %}...{% endif %}</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="project-summary">
+                            <div class="summary-item">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Completed on {{ moment(job.completedDate).format('MMM D, YYYY') }}</span>
+                            </div>
+                            {% if job.budgetMin or job.budgetMax %}
+                            <div class="summary-item">
+                                <i class="fas fa-dollar-sign"></i>
+                                <span>{{ job.getBudgetRange() }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="project-actions">
+                        <a href="{{ url_for('editor.project_detail', job_id=job.jobId) }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% if not job_rating %}
+                        <a href="{{ url_for('editor.submit_rating', job_id=job.jobId, creator_id=job.creator.user.userId) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-star"></i>
+                            Rate Experience
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-content">
+                    <i class="fas fa-trophy"></i>
+                    <h3>No Completed Projects Yet</h3>
+                    <p>Your completed projects will appear here. Start working on active projects to build your portfolio!</p>
+                    <a href="{{ url_for('editor.applications') }}" class="btn btn-secondary">
+                        <i class="fas fa-file-alt"></i>
+                        View Applications
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Project Statistics -->
+    {% if data.total_current > 0 or data.total_completed > 0 %}
+    <div class="project-statistics">
+        <div class="stats-header">
+            <h3>Project Statistics</h3>
+            <p>Overview of your project performance</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon projects">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ data.total_current + data.total_completed }}</div>
+                    <div class="stat-label">Total Projects</div>
+                </div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-icon completion">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">
+                        {% if data.total_current + data.total_completed > 0 %}
+                        {{ ((data.total_completed / (data.total_current + data.total_completed)) * 100)|round }}%
+                        {% else %}
+                        0%
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-icon time">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">
+                        {% if data.completed_jobs %}
+                        {% set total_duration = 0 %}
+                        {% for job in data.completed_jobs %}
+                            {% set duration = (job.completedDate - job.dateCreated).days %}
+                            {% set total_duration = total_duration + duration %}
+                        {% endfor %}
+                        {{ (total_duration / data.completed_jobs|length)|round }} days
+                        {% else %}
+                        -- days
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">Avg. Duration</div>
+                </div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-icon rating">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">
+                        {% if current_user.averageRating %}
+                        {{ "%.1f"|format(current_user.averageRating) }}
+                        {% else %}
+                        --
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">Avg. Rating</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Projects Page Styles */
+.projects-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.projects-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-stats {
+    display: flex;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    min-width: 160px;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--white);
+    flex-shrink: 0;
+}
+
+.stat-card.current .stat-icon {
+    background: var(--accent-blue);
+}
+
+.stat-card.completed .stat-icon {
+    background: var(--success-green);
+}
+
+.stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+/* Project Tabs */
+.project-tabs {
+    margin-bottom: 2rem;
+}
+
+.tabs-nav {
+    display: flex;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.tab-link {
+    flex: 1;
+    padding: 1rem 2rem;
+    background: transparent;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.tab-link:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.tab-link.active {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 2rem;
+}
+
+.tab-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+/* Projects Grid */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 2rem;
+}
+
+.project-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.project-card.current-project {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.project-card.completed-project {
+    border-left: 4px solid var(--success-green);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.project-info h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-in_progress {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-posted {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.completion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: #dcfce7;
+    color: #15803d;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.deadline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    background: var(--light-gray);
+    color: var(--soft-gray);
+}
+
+.deadline.urgent {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.deadline.soon {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.project-rating {
+    text-align: right;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+    margin-bottom: 0.25rem;
+}
+
+.rating-stars i {
+    font-size: 1rem;
+    color: var(--border-gray);
+}
+
+.rating-stars i.active {
+    color: #fbbf24;
+}
+
+.rating-text {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.rating-pending {
+    text-align: right;
+    color: var(--soft-gray);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Project Details */
+.project-details {
+    margin-bottom: 1.5rem;
+}
+
+.client-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.client-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--soft-gray);
+    font-size: 1rem;
+}
+
+.client-name {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.client-type,
+.project-duration {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.project-meta,
+.project-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.meta-item,
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+}
+
+.meta-item i,
+.summary-item i {
+    width: 14px;
+    color: var(--soft-gray);
+}
+
+.project-description {
+    margin-bottom: 1rem;
+}
+
+.project-description p {
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.project-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.skill-tag {
+    background: var(--light-gray);
+    color: var(--primary-black);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.skill-more {
+    color: var(--soft-gray);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Project Progress */
+.project-progress {
+    margin-bottom: 1.5rem;
+}
+
+.progress-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.progress-status.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.progress-status.in-progress {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.progress-status i {
+    font-size: 1.1rem;
+}
+
+/* Project Actions */
+.project-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+}
+
+.empty-content i {
+    font-size: 4rem;
+    color: var(--border-gray);
+    margin-bottom: 2rem;
+}
+
+.empty-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.empty-content p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Project Statistics */
+.project-statistics {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-top: 2rem;
+}
+
+.stats-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.stats-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.stats-header p {
+    color: var(--soft-gray);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-item .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--white);
+    flex-shrink: 0;
+}
+
+.stat-item .stat-icon.projects {
+    background: var(--accent-blue);
+}
+
+.stat-item .stat-icon.completion {
+    background: var(--success-green);
+}
+
+.stat-item .stat-icon.time {
+    background: #f59e0b;
+}
+
+.stat-item .stat-icon.rating {
+    background: #8b5cf6;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-success {
+    background: var(--success-green);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .projects-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .header-stats {
+        width: 100%;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .project-card {
+        padding: 1.5rem;
+    }
+
+    .project-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .project-priority {
+        width: 100%;
+    }
+
+    .project-rating {
+        text-align: left;
+        width: 100%;
+    }
+
+    .rating-stars {
+        justify-content: flex-start;
+    }
+
+    .rating-pending {
+        justify-content: flex-start;
+    }
+
+    .project-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .project-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .tabs-nav {
+        flex-direction: column;
+    }
+
+    .tab-link {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .project-info h4 {
+        font-size: 1.1rem;
+    }
+
+    .client-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .project-meta,
+    .project-summary {
+        align-items: flex-start;
+    }
+
+    .project-skills {
+        justify-content: center;
+    }
+
+    .progress-status {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+}
+
+/* Animation Styles */
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+// Basic tab functionality (only client-side switching)
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Remove active class from all tab links
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    // Show selected tab content
+    const selectedTab = document.getElementById(tabName + '-tab');
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+
+    // Add active class to clicked tab link
+    event.target.closest('.tab-link').classList.add('active');
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth animations to project cards
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+
+    // Add hover effects to stat items
+    const statItems = document.querySelectorAll('.stat-item');
+    statItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = 'var(--shadow-md)';
+        });
+
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+
+    // Add deadline color coding based on urgency
+    const deadlines = document.querySelectorAll('.deadline');
+    deadlines.forEach(deadline => {
+        const text = deadline.textContent.toLowerCase();
+        if (text.includes('overdue')) {
+            deadline.classList.add('urgent');
+        } else if (text.includes('today') || text.includes('tomorrow')) {
+            deadline.classList.add('urgent');
+        } else if (text.includes('days left')) {
+            const daysMatch = text.match(/(\d+) days/);
+            if (daysMatch && parseInt(daysMatch[1]) <= 3) {
+                deadline.classList.add('soon');
+            }
+        }
+    });
+
+    // Add keyboard navigation for tabs
+    document.addEventListener('keydown', function(event) {
+        // Arrow keys for tab navigation when tab is focused
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            const activeTab = document.querySelector('.tab-link.active');
+            if (activeTab && document.activeElement.classList.contains('tab-link')) {
+                const tabLinks = Array.from(document.querySelectorAll('.tab-link'));
+                const currentIndex = tabLinks.indexOf(activeTab);
+                let newIndex;
+
+                if (event.key === 'ArrowLeft') {
+                    newIndex = currentIndex > 0 ? currentIndex - 1 : tabLinks.length - 1;
+                } else {
+                    newIndex = currentIndex < tabLinks.length - 1 ? currentIndex + 1 : 0;
+                }
+
+                tabLinks[newIndex].click();
+                tabLinks[newIndex].focus();
+                event.preventDefault();
+            }
+        }
+    });
+
+    // Add loading states to action buttons (visual feedback only)
+    const actionButtons = document.querySelectorAll('.project-actions .btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            if (this.href && !this.href.includes('#')) {
+                // Add visual loading state
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+
+                const icon = this.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'fas fa-spinner fa-spin';
+
+                // Reset after 2 seconds (just for visual feedback)
+                setTimeout(() => {
+                    this.style.opacity = '1';
+                    this.style.pointerEvents = 'auto';
+                    icon.className = originalClass;
+                }, 2000);
+            }
+        });
+    });
+
+    // Add click-to-expand functionality for truncated descriptions
+    const descriptions = document.querySelectorAll('.project-description p');
+    descriptions.forEach(desc => {
+        if (desc.textContent.includes('...')) {
+            desc.style.cursor = 'pointer';
+            desc.title = 'Click to expand description';
+
+            // Store the full text (in a real app, this would come from the backend)
+            const truncatedText = desc.textContent;
+
+            desc.addEventListener('click', function() {
+                if (this.textContent === truncatedText) {
+                    // In a real application, you would fetch the full description
+                    // For now, just show a visual indication
+                    this.style.backgroundColor = 'var(--light-gray)';
+                    this.style.padding = '0.5rem';
+                    this.style.borderRadius = 'var(--radius-sm)';
+
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                        this.style.padding = '';
+                        this.style.borderRadius = '';
+                    }, 1000);
+                }
+            });
+        }
+    });
+
+    // Add focus management for accessibility
+    const tabLinks = document.querySelectorAll('.tab-link');
+    tabLinks.forEach(tab => {
+        tab.addEventListener('focus', function() {
+            this.style.outline = '2px solid var(--accent-blue)';
+            this.style.outlineOffset = '2px';
+        });
+
+        tab.addEventListener('blur', function() {
+            this.style.outline = '';
+            this.style.outlineOffset = '';
+        });
+    });
+});
+
+// Simple client-side filtering for basic status visibility
+function filterByStatus(status) {
+    const projectCards = document.querySelectorAll('.project-card');
+
+    projectCards.forEach(card => {
+        const cardStatus = card.querySelector('.status-badge, .completion-badge');
+        if (!cardStatus) return;
+
+        const cardStatusText = cardStatus.textContent.toLowerCase();
+
+        if (status === 'all' || cardStatusText.includes(status.toLowerCase())) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Helper function to show/hide empty states based on visible cards
+function updateEmptyStates() {
+    const tabs = ['current', 'completed'];
+
+    tabs.forEach(tabName => {
+        const tabContent = document.getElementById(tabName + '-tab');
+        const projectCards = tabContent.querySelectorAll('.project-card:not([style*="display: none"])');
+        const emptyState = tabContent.querySelector('.empty-state');
+        const projectsGrid = tabContent.querySelector('.projects-grid');
+
+        if (projectCards.length === 0 && projectsGrid) {
+            if (emptyState) {
+                emptyState.style.display = 'block';
+            }
+            projectsGrid.style.display = 'none';
+        } else {
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            if (projectsGrid) {
+                projectsGrid.style.display = 'grid';
+            }
+        }
+    });
+}
+
+// Simple tooltip functionality for skill tags
+function initializeTooltips() {
+    const skillTags = document.querySelectorAll('.skill-tag');
+
+    skillTags.forEach(tag => {
+        tag.addEventListener('mouseenter', function(event) {
+            // Create simple tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'skill-tooltip';
+            tooltip.textContent = `Skill: ${this.textContent}`;
+            tooltip.style.cssText = `
+                position: absolute;
+                background: var(--primary-black);
+                color: var(--white);
+                padding: 0.5rem;
+                border-radius: var(--radius-sm);
+                font-size: 0.8rem;
+                z-index: 1000;
+                white-space: nowrap;
+                pointer-events: none;
+            `;
+
+            document.body.appendChild(tooltip);
+
+            const rect = this.getBoundingClientRect();
+            tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
+
+            this.tooltip = tooltip;
+        });
+
+        tag.addEventListener('mouseleave', function() {
+            if (this.tooltip) {
+                this.tooltip.remove();
+                this.tooltip = null;
+            }
+        });
+    });
+}
+
+// Initialize tooltips when page loads
+document.addEventListener('DOMContentLoaded', initializeTooltips);
+
+// Progress bar animation for statistics
+function animateProgressBars() {
+    const progressElements = document.querySelectorAll('.stat-value');
+
+    progressElements.forEach(element => {
+        const finalValue = element.textContent;
+        const isPercentage = finalValue.includes('%');
+        const isNumber = !isNaN(parseFloat(finalValue));
+
+        if (isNumber) {
+            const targetValue = parseFloat(finalValue);
+            let currentValue = 0;
+            const increment = targetValue / 30; // Animate over 30 frames
+
+            const animate = () => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    element.textContent = finalValue; // Restore original formatting
+                    return;
+                }
+
+                if (isPercentage) {
+                    element.textContent = Math.floor(currentValue) + '%';
+                } else {
+                    element.textContent = Math.floor(currentValue);
+                }
+
+                requestAnimationFrame(animate);
+            };
+
+            // Start animation after a short delay
+            setTimeout(animate, 500);
+        }
+    });
+}
+
+// Trigger progress bar animation when statistics section comes into view
+function initializeProgressAnimation() {
+    const statsSection = document.querySelector('.project-statistics');
+    if (!statsSection) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateProgressBars();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    observer.observe(statsSection);
+}
+
+// Initialize progress animation
+document.addEventListener('DOMContentLoaded', initializeProgressAnimation);
+</script>
+{% endblock editor_content %}

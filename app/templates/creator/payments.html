@@ -1,0 +1,1493 @@
+{% extends "creator/base.html" %}
+
+{% block title %}Payments - KugzyJobs{% endblock title %}
+
+{% block creator_content %}
+<!-- Payments Header -->
+<div class="payments-header">
+    <div class="header-content">
+        <h1>Payment Management</h1>
+        <p>Track your project payments and financial transactions</p>
+    </div>
+    <div class="header-stats">
+        <div class="stat-item">
+            <span class="stat-number">${{ "%.0f"|format(all_payments|map(attribute='agreedAmount')|sum if all_payments else 0) }}</span>
+            <span class="stat-label">Total Value</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ all_payments|length }}</span>
+            <span class="stat-label">Total Payments</span>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Status Overview -->
+<div class="payment-overview">
+    <div class="overview-card pending">
+        <div class="card-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="card-content">
+            <h3>{{ pending_payments|length }}</h3>
+            <p>Pending Payments</p>
+            <span class="card-amount">${{ "%.0f"|format(pending_payments|map(attribute='agreedAmount')|sum if pending_payments else 0) }}</span>
+        </div>
+        <div class="card-action">
+            {% if pending_payments %}
+            <a href="#pending-section" class="btn btn-sm btn-warning">Review</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="overview-card completed">
+        <div class="card-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="card-content">
+            <h3>{{ completed_payments|length }}</h3>
+            <p>Completed Payments</p>
+            <span class="card-amount">${{ "%.0f"|format(completed_payments|map(attribute='agreedAmount')|sum if completed_payments else 0) }}</span>
+        </div>
+        <div class="card-action">
+            {% if completed_payments %}
+            <a href="#completed-section" class="btn btn-sm btn-success">View</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="overview-card processing">
+        <div class="card-icon">
+            <i class="fas fa-credit-card"></i>
+        </div>
+        <div class="card-content">
+            <h3>{{ all_payments|selectattr("status", "equalto", "paid")|list|length }}</h3>
+            <p>Processing</p>
+            <span class="card-amount">${{ "%.0f"|format(all_payments|selectattr("status", "equalto", "paid")|map(attribute='agreedAmount')|sum if all_payments else 0) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Filters -->
+<div class="payment-filters">
+    <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">
+            All Payments ({{ all_payments|length }})
+        </button>
+        <button class="filter-tab" data-filter="pending">
+            Pending ({{ pending_payments|length }})
+        </button>
+        <button class="filter-tab" data-filter="paid">
+            Paid ({{ all_payments|selectattr("status", "equalto", "paid")|list|length }})
+        </button>
+        <button class="filter-tab" data-filter="completed">
+            Completed ({{ completed_payments|length }})
+        </button>
+    </div>
+    
+    <div class="filter-actions">
+        <select class="sort-select" id="payment-sort">
+            <option value="date-desc">Date (Newest)</option>
+            <option value="date-asc">Date (Oldest)</option>
+            <option value="amount-desc">Amount (Highest)</option>
+            <option value="amount-asc">Amount (Lowest)</option>
+        </select>
+    </div>
+</div>
+
+<!-- Payments List -->
+<div class="payments-container">
+    {% if all_payments %}
+        <!-- Pending Payments Section -->
+        {% if pending_payments %}
+        <div class="payment-section" id="pending-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Action Required - Pending Payments
+                </h2>
+                <p>These payments need your attention to complete the transaction</p>
+            </div>
+            
+            <div class="payments-grid">
+                {% for payment in pending_payments %}
+                <div class="payment-card pending-payment" data-status="{{ payment.status }}" data-amount="{{ payment.agreedAmount }}" data-date="{{ payment.dateCreated.isoformat() }}">
+                    <div class="payment-header">
+                        <div class="payment-status">
+                            <span class="status-badge status-{{ payment.status }}">
+                                <i class="fas fa-clock"></i>
+                                {{ payment.status.title() }}
+                            </span>
+                        </div>
+                        <div class="payment-amount">
+                            <span class="amount">${{ payment.agreedAmount }}</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-details">
+                        <h3>{{ payment.job.title }}</h3>
+                        <div class="payment-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                Created {{ moment(payment.dateCreated).fromNow() }}
+                            </span>
+                            {% if payment.job.selectedEditor %}
+                            <span class="meta-item">
+                                <i class="fas fa-user"></i>
+                                {{ payment.job.selectedEditor.user.fullName }}
+                            </span>
+                            {% endif %}
+                            {% if payment.invoiceNumber %}
+                            <span class="meta-item">
+                                <i class="fas fa-file-invoice"></i>
+                                {{ payment.invoiceNumber }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="payment-actions">
+                        <a href="{{ url_for('creator.process_payment', payment_id=payment.paymentId) }}" class="btn btn-primary">
+                            <i class="fas fa-credit-card"></i> Pay Now
+                        </a>
+                        <a href="{{ url_for('creator.payment_status', payment_id=payment.paymentId) }}" class="btn btn-outline">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-ghost dropdown-toggle">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{{ url_for('creator.job_detail', job_id=payment.job.jobId) }}" class="dropdown-item">
+                                    <i class="fas fa-eye"></i> View Job
+                                </a>
+                                {% if payment.invoiceNumber %}
+                                <a href="{{ url_for('creator.payment_invoice', payment_id=payment.paymentId) }}" class="dropdown-item">
+                                    <i class="fas fa-download"></i> Download Invoice
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- All Payments Section -->
+        <div class="payment-section" id="all-payments-section">
+            <div class="section-header">
+                <h2>Payment History</h2>
+                <p>Complete record of all your project payments</p>
+            </div>
+            
+            <div class="payments-grid" id="payments-list">
+                {% for payment in all_payments %}
+                <div class="payment-card" data-status="{{ payment.status }}" data-amount="{{ payment.agreedAmount }}" data-date="{{ payment.dateCreated.isoformat() }}">
+                    <div class="payment-header">
+                        <div class="payment-status">
+                            <span class="status-badge status-{{ payment.status }}">
+                                {% if payment.status == 'agreed' %}
+                                <i class="fas fa-handshake"></i>
+                                {% elif payment.status == 'paid' %}
+                                <i class="fas fa-credit-card"></i>
+                                {% elif payment.status == 'completed' %}
+                                <i class="fas fa-check-circle"></i>
+                                {% endif %}
+                                {{ payment.status.title() }}
+                            </span>
+                        </div>
+                        <div class="payment-amount">
+                            <span class="amount">${{ payment.agreedAmount }}</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-details">
+                        <h3>{{ payment.job.title }}</h3>
+                        <div class="payment-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                {{ moment(payment.dateCreated).format('MMM DD, YYYY') }}
+                            </span>
+                            {% if payment.job.selectedEditor %}
+                            <span class="meta-item">
+                                <i class="fas fa-user"></i>
+                                {{ payment.job.selectedEditor.user.fullName }}
+                            </span>
+                            {% endif %}
+                            {% if payment.paymentMethod %}
+                            <span class="meta-item">
+                                <i class="fas fa-credit-card"></i>
+                                {{ payment.paymentMethod }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if payment.mpesaReference %}
+                        <div class="payment-reference">
+                            <i class="fas fa-receipt"></i>
+                            Reference: {{ payment.mpesaReference }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="payment-actions">
+                        {% if payment.status == 'agreed' %}
+                        <a href="{{ url_for('creator.process_payment', payment_id=payment.paymentId) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-credit-card"></i> Pay Now
+                        </a>
+                        {% elif payment.status == 'paid' %}
+                        <span class="status-text processing">
+                            <i class="fas fa-spinner fa-spin"></i> Processing
+                        </span>
+                        {% elif payment.status == 'completed' %}
+                        <span class="status-text completed">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </span>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('creator.payment_status', payment_id=payment.paymentId) }}" class="btn btn-outline btn-sm">
+                            <i class="fas fa-info-circle"></i> View
+                        </a>
+                        
+                        {% if payment.invoiceNumber %}
+                        <a href="{{ url_for('creator.payment_invoice', payment_id=payment.paymentId) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download"></i> Invoice
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <h3>No Payments Yet</h3>
+            <p>Complete some projects to start making payments to your editors.</p>
+            <a href="{{ url_for('creator.jobs') }}" class="btn btn-primary">
+                <i class="fas fa-briefcase"></i> View Your Jobs
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Payment Summary Card (Sticky) -->
+{% if all_payments %}
+<div class="payment-summary-sticky" id="payment-summary">
+    <div class="summary-content">
+        <div class="summary-stats">
+            <div class="summary-item">
+                <span class="summary-label">Total Paid</span>
+                <span class="summary-value">${{ "%.0f"|format(completed_payments|map(attribute='agreedAmount')|sum if completed_payments else 0) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Pending</span>
+                <span class="summary-value pending">${{ "%.0f"|format(pending_payments|map(attribute='agreedAmount')|sum if pending_payments else 0) }}</span>
+            </div>
+        </div>
+        <button class="summary-toggle" onclick="toggleSummary()">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    /* Payments Header */
+    .payments-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .header-content h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .header-content p {
+        color: var(--soft-gray);
+        margin: 0;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--accent-blue);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+    }
+
+    /* Payment Overview */
+    .payment-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .overview-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        border: 1px solid var(--border-gray);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .overview-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--border-gray);
+    }
+
+    .overview-card.pending::before { background: #f59e0b; }
+    .overview-card.completed::before { background: var(--success-green); }
+    .overview-card.processing::before { background: var(--accent-blue); }
+
+    .overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .card-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--white);
+    }
+
+    .overview-card.pending .card-icon { background: #f59e0b; }
+    .overview-card.completed .card-icon { background: var(--success-green); }
+    .overview-card.processing .card-icon { background: var(--accent-blue); }
+
+    .card-content {
+        flex: 1;
+    }
+
+    .card-content h3 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .card-content p {
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-amount {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--accent-blue);
+    }
+
+    .card-action {
+        margin-left: auto;
+    }
+
+    /* Payment Filters */
+    .payment-filters {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-tab {
+        padding: 0.75rem 1.5rem;
+        border: 1px solid var(--border-gray);
+        background: var(--white);
+        color: var(--soft-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-tab:hover,
+    .filter-tab.active {
+        background: var(--accent-blue);
+        color: var(--white);
+        border-color: var(--accent-blue);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .sort-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        background: var(--white);
+        font-size: 0.875rem;
+        min-width: 160px;
+    }
+
+    .sort-select:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+    }
+
+    /* Payment Sections */
+    .payment-section {
+        margin-bottom: 3rem;
+    }
+
+    .section-header {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-gray);
+        text-align: center;
+    }
+
+    .section-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .section-header h2 i {
+        color: #f59e0b;
+    }
+
+    .section-header p {
+        color: var(--soft-gray);
+        margin: 0;
+    }
+
+    /* Payment Cards */
+    .payments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .payment-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-gray);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .payment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .payment-card.pending-payment {
+        border-left: 4px solid #f59e0b;
+        background: linear-gradient(135deg, #fffbeb 0%, var(--white) 100%);
+    }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.status-agreed {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-badge.status-paid {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .status-badge.status-completed {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .payment-amount .amount {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+    }
+
+    /* Payment Details */
+    .payment-details {
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-details h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        line-height: 1.3;
+    }
+
+    .payment-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+    }
+
+    .meta-item i {
+        color: var(--accent-blue);
+        width: 16px;
+        text-align: center;
+    }
+
+    .payment-reference {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: var(--light-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        color: var(--primary-black);
+        font-weight: 500;
+    }
+
+    .payment-reference i {
+        color: var(--success-green);
+    }
+
+    /* Payment Actions */
+    .payment-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        border-radius: var(--radius-sm);
+        font-weight: 500;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+    }
+
+    .btn-outline:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    .btn-ghost {
+        background: transparent;
+        color: var(--soft-gray);
+        border: none;
+        padding: 0.5rem;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+    }
+
+    .btn-ghost:hover {
+        background: var(--light-gray);
+        color: var(--primary-black);
+    }
+
+    .status-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .status-text.processing {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .status-text.completed {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    /* Dropdown */
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        min-width: 160px;
+        z-index: 100;
+        margin-top: 0.25rem;
+    }
+
+    .dropdown.active .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: var(--primary-black);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: background 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+        background: var(--light-gray);
+    }
+
+    .dropdown-item i {
+        width: 16px;
+        text-align: center;
+        color: var(--soft-gray);
+    }
+
+    /* Payment Summary Sticky */
+    .payment-summary-sticky {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .summary-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+    }
+
+    .summary-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .summary-label {
+        font-size: 0.8rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+    }
+
+    .summary-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--primary-black);
+    }
+
+    .summary-value.pending {
+        color: #f59e0b;
+    }
+
+    .summary-toggle {
+        background: none;
+        border: none;
+        color: var(--soft-gray);
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        transition: all 0.2s ease;
+    }
+
+    .summary-toggle:hover {
+        background: var(--light-gray);
+        color: var(--primary-black);
+    }
+
+    .payment-summary-sticky.collapsed {
+        transform: translateY(calc(100% - 50px));
+    }
+
+    .payment-summary-sticky.collapsed .summary-toggle i {
+        transform: rotate(180deg);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--soft-gray);
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-gray);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--primary-black);
+    }
+
+    .empty-state p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .payments-grid {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .payments-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-stats {
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .payment-overview {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-filters {
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .filter-tabs {
+            justify-content: center;
+        }
+
+        .filter-actions {
+            justify-content: center;
+        }
+
+        .payments-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-meta {
+            gap: 0.75rem;
+        }
+
+        .payment-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .payment-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .payment-summary-sticky {
+            position: relative;
+            bottom: auto;
+            right: auto;
+            margin: 2rem 0 0 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .payments-header,
+        .section-header,
+        .payment-filters {
+            padding: 1rem;
+        }
+
+        .payment-card {
+            padding: 1rem;
+        }
+
+        .header-content h1 {
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+        }
+    }
+
+    /* Loading States */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid var(--border-gray);
+        border-top-color: var(--accent-blue);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Hide elements when filtering */
+    .payment-card.hidden {
+        display: none;
+    }
+
+    /* Enhanced hover effects */
+    .payment-card {
+        will-change: transform;
+    }
+
+    .overview-card {
+        will-change: transform;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize payment filtering
+        setupPaymentFilters();
+
+        // Initialize sorting
+        setupPaymentSorting();
+
+        // Initialize dropdown functionality
+        setupDropdowns();
+
+        // Initialize sticky summary
+        setupStickySummary();
+
+        // Setup payment interactions
+        setupPaymentInteractions();
+    });
+
+    function setupPaymentFilters() {
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const paymentCards = document.querySelectorAll('.payment-card');
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                filterTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const filter = this.dataset.filter;
+                filterPayments(filter, paymentCards);
+            });
+        });
+    }
+
+    function filterPayments(filter, cards) {
+        cards.forEach(card => {
+            const status = card.dataset.status;
+            let shouldShow = false;
+
+            switch (filter) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'pending':
+                    shouldShow = status === 'agreed';
+                    break;
+                case 'paid':
+                    shouldShow = status === 'paid';
+                    break;
+                case 'completed':
+                    shouldShow = status === 'completed';
+                    break;
+            }
+
+            if (shouldShow) {
+                card.classList.remove('hidden');
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            } else {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    card.classList.add('hidden');
+                }, 300);
+            }
+        });
+
+        updateFilterCounts();
+    }
+
+    function updateFilterCounts() {
+        const visibleCards = document.querySelectorAll('.payment-card:not(.hidden)');
+        const filterInfo = document.createElement('div');
+        filterInfo.className = 'filter-info';
+        filterInfo.innerHTML = `Showing ${visibleCards.length} payment${visibleCards.length !== 1 ? 's' : ''}`;
+
+        // Remove existing filter info
+        const existingInfo = document.querySelector('.filter-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+
+        // Add new filter info
+        const filterActions = document.querySelector('.filter-actions');
+        filterActions.appendChild(filterInfo);
+
+        // Style the filter info
+        filterInfo.style.cssText = `
+            font-size: 0.8rem;
+            color: var(--soft-gray);
+            font-weight: 500;
+            padding: 0.5rem 0;
+        `;
+    }
+
+    function setupPaymentSorting() {
+        const sortSelect = document.getElementById('payment-sort');
+        if (!sortSelect) return;
+
+        sortSelect.addEventListener('change', function() {
+            const sortValue = this.value;
+            sortPayments(sortValue);
+        });
+    }
+
+    function sortPayments(sortType) {
+        const container = document.getElementById('payments-list');
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll('.payment-card'));
+
+        cards.sort((a, b) => {
+            const amountA = parseFloat(a.dataset.amount);
+            const amountB = parseFloat(b.dataset.amount);
+            const dateA = new Date(a.dataset.date);
+            const dateB = new Date(b.dataset.date);
+
+            switch (sortType) {
+                case 'date-desc':
+                    return dateB - dateA;
+                case 'date-asc':
+                    return dateA - dateB;
+                case 'amount-desc':
+                    return amountB - amountA;
+                case 'amount-asc':
+                    return amountA - amountB;
+                default:
+                    return 0;
+            }
+        });
+
+        // Re-append sorted cards with animation
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            container.appendChild(card);
+
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+                card.style.transition = 'all 0.3s ease';
+            }, index * 50);
+        });
+
+        showToast('Payments sorted successfully', 'success');
+    }
+
+    function setupDropdowns() {
+        // Dropdown toggle functionality
+        document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Close other dropdowns
+                document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+                    if (dropdown !== this.parentElement) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+
+                // Toggle current dropdown
+                this.parentElement.classList.toggle('active');
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
+
+        // Prevent dropdown menu clicks from closing
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    }
+
+    function setupStickySummary() {
+        const summary = document.getElementById('payment-summary');
+        if (!summary) return;
+
+        // Auto-hide/show based on scroll
+        let lastScrollY = window.scrollY;
+
+        window.addEventListener('scroll', function() {
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY > lastScrollY && currentScrollY > 200) {
+                // Scrolling down
+                summary.style.transform = 'translateY(100%)';
+            } else {
+                // Scrolling up
+                summary.style.transform = 'translateY(0)';
+            }
+
+            lastScrollY = currentScrollY;
+        });
+
+        // Manual toggle
+        window.toggleSummary = function() {
+            summary.classList.toggle('collapsed');
+            const icon = summary.querySelector('.summary-toggle i');
+            icon.style.transform = summary.classList.contains('collapsed')
+                ? 'rotate(180deg)'
+                : 'rotate(0deg)';
+        };
+    }
+
+    function setupPaymentInteractions() {
+        // Payment card hover effects
+        document.querySelectorAll('.payment-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+                this.style.boxShadow = 'var(--shadow-lg)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = 'var(--shadow-md)';
+            });
+
+            // Click to expand/collapse details
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('button, a')) {
+                    this.classList.toggle('expanded');
+
+                    // Add expansion animation
+                    if (this.classList.contains('expanded')) {
+                        this.style.zIndex = '10';
+                        this.style.transform = 'translateY(-4px) scale(1.02)';
+                    } else {
+                        this.style.zIndex = '';
+                        this.style.transform = 'translateY(-2px) scale(1)';
+                    }
+                }
+            });
+        });
+
+        // Payment action confirmations
+        document.querySelectorAll('a[href*="process_payment"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const amount = this.closest('.payment-card').querySelector('.amount').textContent;
+                if (!confirm(`Proceed with payment of ${amount}?`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Loading states for payment actions
+        document.querySelectorAll('.payment-actions a, .payment-actions button').forEach(action => {
+            action.addEventListener('click', function() {
+                if (this.href && (this.href.includes('process_payment') || this.href.includes('initiate_payment'))) {
+                    this.classList.add('loading');
+                    this.style.pointerEvents = 'none';
+
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                    // Remove loading state if still on page after 3 seconds
+                    setTimeout(() => {
+                        this.classList.remove('loading');
+                        this.style.pointerEvents = '';
+                        this.innerHTML = originalText;
+                    }, 3000);
+                }
+            });
+        });
+    }
+
+    // Payment statistics calculation
+    function calculatePaymentStats() {
+        const allCards = document.querySelectorAll('.payment-card');
+        let totalAmount = 0;
+        let pendingAmount = 0;
+        let completedAmount = 0;
+
+        allCards.forEach(card => {
+            const amount = parseFloat(card.dataset.amount);
+            const status = card.dataset.status;
+
+            totalAmount += amount;
+
+            if (status === 'agreed') {
+                pendingAmount += amount;
+            } else if (status === 'completed') {
+                completedAmount += amount;
+            }
+        });
+
+        return {
+            total: totalAmount,
+            pending: pendingAmount,
+            completed: completedAmount,
+            count: allCards.length
+        };
+    }
+
+    // Search functionality
+    function addSearchFeature() {
+        const filterActions = document.querySelector('.filter-actions');
+        if (!filterActions) return;
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search payments...';
+        searchInput.className = 'search-input';
+        searchInput.style.cssText = `
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            width: 200px;
+            transition: border-color 0.2s ease;
+        `;
+
+        filterActions.insertBefore(searchInput, filterActions.firstChild);
+
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchPayments(this.value.toLowerCase());
+            }, 300);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            this.style.borderColor = 'var(--accent-blue)';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+
+        searchInput.addEventListener('blur', function() {
+            this.style.borderColor = 'var(--border-gray)';
+            this.style.boxShadow = 'none';
+        });
+    }
+
+    function searchPayments(searchTerm) {
+        const cards = document.querySelectorAll('.payment-card');
+
+        cards.forEach(card => {
+            const jobTitle = card.querySelector('h3').textContent.toLowerCase();
+            const editorName = card.querySelector('.meta-item:nth-child(2)')?.textContent.toLowerCase() || '';
+            const amount = card.querySelector('.amount').textContent.toLowerCase();
+            const status = card.dataset.status.toLowerCase();
+
+            const matches = jobTitle.includes(searchTerm) ||
+                           editorName.includes(searchTerm) ||
+                           amount.includes(searchTerm) ||
+                           status.includes(searchTerm);
+
+            if (matches || searchTerm === '') {
+                card.style.display = 'block';
+                card.style.opacity = '1';
+            } else {
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        updateFilterCounts();
+    }
+
+    // Initialize search
+    addSearchFeature();
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + F for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+
+        // Number keys for filter tabs
+        if (e.key >= '1' && e.key <= '4' && !e.ctrlKey && !e.metaKey) {
+            if (!document.activeElement.matches('input, textarea')) {
+                e.preventDefault();
+                const tabIndex = parseInt(e.key) - 1;
+                const tabs = document.querySelectorAll('.filter-tab');
+                if (tabs[tabIndex]) {
+                    tabs[tabIndex].click();
+                }
+            }
+        }
+
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput && document.activeElement === searchInput) {
+                searchInput.value = '';
+                searchPayments('');
+            }
+        }
+    });
+
+    // Export functionality
+    function exportPaymentData() {
+        const stats = calculatePaymentStats();
+        const cards = document.querySelectorAll('.payment-card:not(.hidden)');
+
+        let csvContent = 'Date,Job Title,Editor,Amount,Status,Payment Method,Reference\n';
+
+        cards.forEach(card => {
+            const date = card.dataset.date;
+            const jobTitle = card.querySelector('h3').textContent.replace(/"/g, '""');
+            const editor = card.querySelector('.meta-item:nth-child(2)')?.textContent.replace('👤 ', '') || '';
+            const amount = card.querySelector('.amount').textContent;
+            const status = card.dataset.status;
+            const paymentMethod = card.querySelector('.meta-item:nth-child(3)')?.textContent.replace('💳 ', '') || '';
+            const reference = card.querySelector('.payment-reference')?.textContent.replace('Receipt: ', '') || '';
+
+            csvContent += `"${date}","${jobTitle}","${editor}","${amount}","${status}","${paymentMethod}","${reference}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payments_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        showToast('Payment data exported successfully', 'success');
+    }
+
+    // Add export button
+    function addExportButton() {
+        const filterActions = document.querySelector('.filter-actions');
+        if (!filterActions) return;
+
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'btn btn-outline btn-sm';
+        exportBtn.innerHTML = '<i class="fas fa-download"></i> Export';
+        exportBtn.onclick = exportPaymentData;
+
+        filterActions.appendChild(exportBtn);
+    }
+
+    addExportButton();
+
+    // Auto-refresh payment status
+    function startPaymentStatusRefresh() {
+        const pendingCards = document.querySelectorAll('.payment-card[data-status="paid"]');
+
+        if (pendingCards.length > 0) {
+            setInterval(function() {
+                if (!document.hidden) {
+                    // In a real implementation, this would check payment status via AJAX
+                    console.log('Checking payment status updates...');
+                }
+            }, 30000); // Check every 30 seconds
+        }
+    }
+
+    startPaymentStatusRefresh();
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<div class="toast-body">${message}</div>`;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.className = 'toast-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(container);
+        return container;
+    }
+
+    // Initialize all features
+    console.log('Payment management page initialized');
+
+    // Show initial stats
+    const stats = calculatePaymentStats();
+    console.log('Payment Statistics:', stats);
+</script>
+{% endblock creator_content %}

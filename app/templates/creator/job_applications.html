@@ -1,0 +1,1745 @@
+{% extends "base.html" %}
+
+{% block title %}Job Applications - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="applications-container">
+    <div class="applications-wrapper">
+        <!-- Header Section -->
+        <div class="applications-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.jobs') }}">My Jobs</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}">{{ job.title }}</a>
+                    <span>/</span>
+                    <span>Applications</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="job-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="header-info">
+                        <h1>Job Applications</h1>
+                        <p>Review and manage applications for: <strong>{{ job.title }}</strong></p>
+                    </div>
+                    <div class="header-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ applications|length }}</span>
+                            <span class="stat-label">Total Applications</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">{{ pending_applications|length }}</span>
+                            <span class="stat-label">Pending Review</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Overview -->
+        <div class="job-overview">
+            <div class="overview-content">
+                <div class="job-details">
+                    <div class="job-meta">
+                        <div class="meta-item">
+                            <span class="label">Status:</span>
+                            <span class="status-badge status-{{ job.status }}">
+                                {{ job.status.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">Posted:</span>
+                            <span class="value">{{ moment(job.dateCreated).format('MMMM Do, YYYY') }}</span>
+                        </div>
+                        {% if job.deadline %}
+                        <div class="meta-item">
+                            <span class="label">Deadline:</span>
+                            <span class="value">{{ moment(job.deadline).format('MMMM Do, YYYY') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if job.budgetMin or job.budgetMax %}
+                        <div class="meta-item">
+                            <span class="label">Budget:</span>
+                            <span class="value budget">{{ job.getBudgetRange() }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if accepted_application %}
+                    <div class="selected-editor">
+                        <div class="selection-header">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Selected Editor</strong>
+                        </div>
+                        <div class="editor-info">
+                            <div class="editor-name">{{ accepted_application.editor.user.fullName }}</div>
+                            {% if accepted_application.editor.user.averageRating > 0 %}
+                            <div class="editor-rating">
+                                <i class="fas fa-star"></i>
+                                <span>{{ "%.1f"|format(accepted_application.editor.user.averageRating) }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="overview-actions">
+                    <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Job
+                    </a>
+                    {% if job.status == 'posted' and pending_applications %}
+                    <button class="btn btn-primary" id="select-editor-btn" disabled>
+                        <i class="fas fa-user-check"></i>
+                        Select Editor
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Filter -->
+        {% if applications %}
+        <div class="applications-filter">
+            <div class="filter-content">
+                <div class="filter-options">
+                    <button class="filter-btn active" data-filter="all">
+                        All Applications ({{ applications|length }})
+                    </button>
+                    <button class="filter-btn" data-filter="pending">
+                        Pending ({{ pending_applications|length }})
+                    </button>
+                    {% if accepted_application %}
+                    <button class="filter-btn" data-filter="accepted">
+                        Accepted (1)
+                    </button>
+                    {% endif %}
+                    {% set declined_count = applications|length - pending_applications|length - (1 if accepted_application else 0) %}
+                    {% if declined_count > 0 %}
+                    <button class="filter-btn" data-filter="declined">
+                        Declined ({{ declined_count }})
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="filter-actions">
+                    <div class="sort-options">
+                        <label>Sort by:</label>
+                        <select id="sort-applications">
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="rate-desc">Highest Rate</option>
+                            <option value="rate-asc">Lowest Rate</option>
+                            <option value="rating-desc">Best Rated</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Applications List -->
+        <div class="applications-section">
+            {% if applications %}
+            <div class="applications-grid" id="applications-grid">
+                {% for application in applications %}
+                <div class="application-card" 
+                     data-status="{{ application.status }}" 
+                     data-rate="{{ application.proposedRate or 0 }}"
+                     data-rating="{{ application.editor.user.averageRating or 0 }}"
+                     data-date="{{ application.dateCreated.isoformat() }}">
+                    
+                    <div class="application-header">
+                        <div class="editor-avatar">
+                            {% if application.editor.user.profilePicture %}
+                                <img src="{{ application.editor.user.profilePicture }}" alt="Profile Picture">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="editor-details">
+                            <h3>{{ application.editor.user.fullName }}</h3>
+                            <div class="editor-meta">
+                                {% if application.editor.experienceLevel %}
+                                <span class="experience">{{ application.editor.experienceLevel.title() }}</span>
+                                {% endif %}
+                                {% if application.editor.user.averageRating > 0 %}
+                                <div class="rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>{{ "%.1f"|format(application.editor.user.averageRating) }}</span>
+                                    <span class="rating-count">({{ application.editor.user.totalRatings }})</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if application.editor.specializations %}
+                            <div class="specializations">
+                                {% for spec in application.editor.specializations.split(',')[:3] %}
+                                <span class="spec-tag">{{ spec.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="application-status">
+                            <span class="status-badge status-{{ application.status }}">
+                                {{ application.status.title() }}
+                            </span>
+                            <div class="application-date">
+                                {{ moment(application.dateCreated).fromNow() }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="application-body">
+                        <div class="proposal-details">
+                            <div class="proposal-row">
+                                <div class="proposal-item">
+                                    <span class="label">Proposed Rate:</span>
+                                    <span class="value rate">
+                                        {% if application.proposedRate %}
+                                            ${{ "%.2f"|format(application.proposedRate) }}/hour
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="proposal-item">
+                                    <span class="label">Timeline:</span>
+                                    <span class="value">
+                                        {% if application.proposedTimeline %}
+                                            {{ application.proposedTimeline }} days
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if application.customProposal %}
+                        <div class="custom-proposal">
+                            <h4>Cover Letter</h4>
+                            <p>{{ application.customProposal }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="editor-portfolio">
+                            <h4>Portfolio Highlights</h4>
+                            {% set portfolios = application.editor.getVerifiedPortfolios()[:2] %}
+                            {% if portfolios %}
+                            <div class="portfolio-items">
+                                {% for portfolio in portfolios %}
+                                <div class="portfolio-item">
+                                    <div class="portfolio-thumbnail">
+                                        {% if portfolio.videoUrl %}
+                                            <i class="fas fa-play-circle"></i>
+                                        {% else %}
+                                            <i class="fas fa-image"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="portfolio-info">
+                                        <span class="portfolio-title">{{ portfolio.title }}</span>
+                                        {% if portfolio.skillTags %}
+                                        <div class="portfolio-tags">
+                                            {% for tag in portfolio.skillTags.split(',')[:2] %}
+                                            <span class="tag">{{ tag.strip() }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="no-portfolio">No portfolio items available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="application-actions">
+                        {% if application.status == 'pending' and job.status == 'posted' %}
+                        <button class="btn btn-outline btn-sm view-profile-btn" 
+                                data-editor-id="{{ application.editor.editorId }}">
+                            <i class="fas fa-user"></i>
+                            View Profile
+                        </button>
+                        
+                        <button class="btn btn-primary btn-sm select-btn" 
+                                data-application-id="{{ application.applicationId }}"
+                                data-editor-id="{{ application.editor.editorId }}"
+                                data-editor-name="{{ application.editor.user.fullName }}">
+                            <i class="fas fa-check"></i>
+                            Select Editor
+                        </button>
+                        {% elif application.status == 'accepted' %}
+                        <div class="selected-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Selected Editor</span>
+                        </div>
+                        
+                        <a href="{{ url_for('creator.send_message') }}?receiver_id={{ application.editor.user.userId }}&job_id={{ job.jobId }}" 
+                           class="btn btn-outline btn-sm">
+                            <i class="fas fa-envelope"></i>
+                            Message
+                        </a>
+                        {% else %}
+                        <div class="declined-indicator">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Not Selected</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>No Applications Yet</h3>
+                <p>Your job posting hasn't received any applications yet. Here are some tips to attract more applicants:</p>
+                
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Make sure your job description is clear and detailed</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Consider offering a competitive budget range</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Set a reasonable deadline for the project</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-tags"></i>
+                        <span>Include relevant skills and requirements</span>
+                    </div>
+                </div>
+                
+                <div class="empty-actions">
+                    <a href="{{ url_for('creator.edit_job', job_id=job.jobId) }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i>
+                        Edit Job Posting
+                    </a>
+                    <a href="{{ url_for('creator.editors') }}" class="btn btn-outline">
+                        <i class="fas fa-search"></i>
+                        Browse Editors
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Selection Modal -->
+<div class="modal-overlay" id="selection-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-check"></i> Select Editor</h3>
+            <button class="modal-close" id="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="selection-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>You are about to select <strong id="selected-editor-name"></strong> for this project. This action will:</p>
+                <ul>
+                    <li>Move the job status to "In Progress"</li>
+                    <li>Decline all other pending applications</li>
+                    <li>Start the project timeline</li>
+                    <li>Cannot be undone</li>
+                </ul>
+            </div>
+            
+            <form method="POST" action="{{ url_for('creator.select_editor', job_id=job.jobId) }}" id="selection-form">
+                <input type="hidden" name="editorId" id="selected-editor-id">
+                
+                <div class="form-group">
+                    <label class="form-label">Selection Notes (Optional)</label>
+                    <textarea name="selectionNotes" class="form-textarea" 
+                              placeholder="Add any notes about your selection or project kickoff instructions..."></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-selection">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Confirm Selection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .applications-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .applications-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .applications-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: var(--primary-black);
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .job-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, var(--accent-blue), #3b82f6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-md);
+    }
+
+    .header-info {
+        flex: 1;
+    }
+
+    .header-info h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .header-info p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 2rem;
+        flex-shrink: 0;
+    }
+
+    .stat {
+        text-align: center;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        min-width: 120px;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+        margin-top: 0.25rem;
+    }
+
+    .job-overview {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .overview-content {
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .job-details {
+        flex: 1;
+    }
+
+    .job-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .meta-item .label {
+        font-weight: 600;
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+    }
+
+    .meta-item .value {
+        color: var(--primary-black);
+        font-weight: 500;
+    }
+
+    .meta-item .budget {
+        color: var(--success-green);
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 0.375rem 0.875rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-posted {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-in_progress {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-accepted {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-declined {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .selected-editor {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .selection-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--success-green);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .editor-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .editor-name {
+        font-weight: 600;
+        color: var(--primary-black);
+    }
+
+    .editor-rating {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #f59e0b;
+        font-size: 0.85rem;
+    }
+
+    .overview-actions {
+        display: flex;
+        gap: 1rem;
+        flex-shrink: 0;
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+    }
+
+    .btn-outline:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    .applications-filter {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .filter-content {
+        padding: 1.5rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .filter-options {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .filter-btn {
+        padding: 0.75rem 1.25rem;
+        background: transparent;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        color: var(--soft-gray);
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+        background: var(--accent-blue);
+        color: var(--white);
+        border-color: var(--accent-blue);
+    }
+
+    .filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .sort-options {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sort-options label {
+        font-weight: 500;
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+    }
+
+    .sort-options select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        background: var(--white);
+        color: var(--primary-black);
+        font-size: 0.9rem;
+    }
+
+    .applications-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .application-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .application-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .application-header {
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .editor-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid var(--white);
+        box-shadow: var(--shadow-sm);
+        flex-shrink: 0;
+    }
+
+    .editor-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+    }
+
+    .editor-details {
+        flex: 1;
+    }
+
+    .editor-details h3 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .editor-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .experience {
+        background: #f1f5f9;
+        color: var(--primary-black);
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .rating {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #f59e0b;
+        font-size: 0.9rem;
+    }
+
+    .rating-count {
+        color: var(--soft-gray);
+        font-size: 0.8rem;
+    }
+
+    .specializations {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .spec-tag {
+        padding: 0.25rem 0.625rem;
+        background: #f8fafc;
+        color: var(--soft-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid var(--border-gray);
+    }
+
+    .application-status {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .application-date {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .application-body {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .proposal-details {
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+    }
+
+    .proposal-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .proposal-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .proposal-item .label {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+    }
+
+    .proposal-item .value {
+        font-weight: 600;
+        color: var(--primary-black);
+    }
+
+    .proposal-item .rate {
+        color: var(--success-green);
+        font-size: 1.125rem;
+    }
+
+    .text-muted {
+        color: var(--soft-gray);
+        font-style: italic;
+    }
+
+    .custom-proposal {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+    }
+
+    .custom-proposal h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.75rem;
+    }
+
+    .custom-proposal p {
+        color: var(--soft-gray);
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .editor-portfolio h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.75rem;
+    }
+
+    .portfolio-items {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .portfolio-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        flex: 1;
+        transition: all 0.2s ease;
+    }
+
+    .portfolio-item:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .portfolio-thumbnail {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-black);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    .portfolio-info {
+        flex: 1;
+    }
+
+    .portfolio-title {
+        display: block;
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.9rem;
+        margin-bottom: 0.375rem;
+        line-height: 1.3;
+    }
+
+    .portfolio-tags {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .tag {
+        padding: 0.125rem 0.375rem;
+        background: var(--white);
+        color: var(--soft-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.7rem;
+        font-weight: 500;
+        border: 1px solid var(--border-gray);
+    }
+
+    .no-portfolio {
+        color: var(--soft-gray);
+        font-style: italic;
+        margin: 0;
+    }
+
+    .application-actions {
+        padding: 1.5rem 2rem;
+        background: #f8fafc;
+        border-top: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .selected-indicator,
+    .declined-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .selected-indicator {
+        color: var(--success-green);
+    }
+
+    .declined-indicator {
+        color: var(--soft-gray);
+    }
+
+    .empty-state {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 120px;
+        height: 120px;
+        background: var(--light-gray);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--soft-gray);
+        font-size: 3rem;
+        margin: 0 auto 2rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state > p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+
+    .tips-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-sm);
+    }
+
+    .tip-item i {
+        color: var(--accent-blue);
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .tip-item span {
+        color: var(--primary-black);
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    .empty-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 2rem 2rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-gray);
+        margin-bottom: 0;
+    }
+
+    .modal-header h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin: 0 0 2rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--soft-gray);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        transition: all 0.2s ease;
+        margin-bottom: 2rem;
+    }
+
+    .modal-close:hover {
+        background: var(--light-gray);
+        color: var(--primary-black);
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .selection-warning {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .selection-warning i {
+        color: #d97706;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+        font-size: 1.25rem;
+    }
+
+    .selection-warning p {
+        color: #92400e;
+        margin: 0 0 1rem 0;
+        line-height: 1.5;
+    }
+
+    .selection-warning ul {
+        color: #92400e;
+        margin: 0;
+        padding-left: 1.25rem;
+    }
+
+    .selection-warning li {
+        margin-bottom: 0.375rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.95rem;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 0.875rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: var(--white);
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .header-main {
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .header-stats {
+            order: -1;
+        }
+
+        .overview-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+
+        .filter-content {
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .filter-options {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .applications-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            padding: 2rem;
+        }
+
+        .header-info h1 {
+            font-size: 2rem;
+        }
+
+        .header-stats {
+            flex-direction: column;
+            width: 100%;
+            gap: 1rem;
+        }
+
+        .stat {
+            min-width: auto;
+        }
+
+        .job-meta {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .application-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .application-status {
+            text-align: center;
+        }
+
+        .application-body {
+            padding: 1.5rem;
+        }
+
+        .proposal-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .portfolio-items {
+            flex-direction: column;
+        }
+
+        .application-actions {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .empty-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .empty-actions .btn {
+            width: auto;
+            min-width: 200px;
+        }
+
+        .modal-content {
+            width: 95%;
+            margin: 1rem;
+        }
+
+        .modal-header,
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-actions {
+            flex-direction: column;
+        }
+
+        .modal-actions .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .applications-container {
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            padding: 1.5rem;
+        }
+
+        .header-info h1 {
+            font-size: 1.75rem;
+        }
+
+        .job-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .editor-avatar {
+            width: 60px;
+            height: 60px;
+        }
+
+        .editor-details h3 {
+            font-size: 1.125rem;
+        }
+
+        .filter-content {
+            padding: 1rem;
+        }
+
+        .filter-options {
+            gap: 0.25rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .application-body {
+            padding: 1rem;
+        }
+
+        .application-actions {
+            padding: 1rem;
+        }
+    }
+
+    /* Animation classes */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const sortSelect = document.getElementById('sort-applications');
+        const applicationsGrid = document.getElementById('applications-grid');
+        const applicationCards = document.querySelectorAll('.application-card');
+        const selectBtns = document.querySelectorAll('.select-btn');
+        const viewProfileBtns = document.querySelectorAll('.view-profile-btn');
+        const selectionModal = document.getElementById('selection-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelSelection = document.getElementById('cancel-selection');
+        const selectionForm = document.getElementById('selection-form');
+        const selectEditorBtn = document.getElementById('select-editor-btn');
+
+        // Filter functionality
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active button
+                filterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter applications
+                const filter = this.dataset.filter;
+                filterApplications(filter);
+            });
+        });
+
+        function filterApplications(filter) {
+            applicationCards.forEach(card => {
+                const status = card.dataset.status;
+                let show = false;
+
+                switch(filter) {
+                    case 'all':
+                        show = true;
+                        break;
+                    case 'pending':
+                        show = status === 'pending';
+                        break;
+                    case 'accepted':
+                        show = status === 'accepted';
+                        break;
+                    case 'declined':
+                        show = status === 'declined';
+                        break;
+                }
+
+                if (show) {
+                    card.style.display = 'block';
+                    card.classList.add('fade-in');
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('fade-in');
+                }
+            });
+
+            updateEmptyState();
+        }
+
+        // Sort functionality
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function() {
+                sortApplications(this.value);
+            });
+        }
+
+        function sortApplications(sortBy) {
+            const cards = Array.from(applicationCards);
+
+            cards.sort((a, b) => {
+                switch(sortBy) {
+                    case 'date-desc':
+                        return new Date(b.dataset.date) - new Date(a.dataset.date);
+                    case 'date-asc':
+                        return new Date(a.dataset.date) - new Date(b.dataset.date);
+                    case 'rate-desc':
+                        return parseFloat(b.dataset.rate) - parseFloat(a.dataset.rate);
+                    case 'rate-asc':
+                        return parseFloat(a.dataset.rate) - parseFloat(b.dataset.rate);
+                    case 'rating-desc':
+                        return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+                    default:
+                        return 0;
+                }
+            });
+
+            // Reorder DOM elements
+            cards.forEach(card => {
+                applicationsGrid.appendChild(card);
+            });
+
+            // Add animation
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.05}s`;
+                card.classList.add('slide-in');
+            });
+        }
+
+        // Selection functionality
+        selectBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const applicationId = this.dataset.applicationId;
+                const editorId = this.dataset.editorId;
+                const editorName = this.dataset.editorName;
+
+                // Update modal content
+                document.getElementById('selected-editor-name').textContent = editorName;
+                document.getElementById('selected-editor-id').value = editorId;
+
+                // Show modal
+                selectionModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        // Modal functionality
+        function closeSelectionModal() {
+            selectionModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+
+            // Reset form
+            selectionForm.reset();
+        }
+
+        closeModal.addEventListener('click', closeSelectionModal);
+        cancelSelection.addEventListener('click', closeSelectionModal);
+
+        // Close modal on backdrop click
+        selectionModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSelectionModal();
+            }
+        });
+
+        // Selection form submission
+        selectionForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('.btn-primary');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Selecting Editor...';
+            submitBtn.disabled = true;
+
+            // Prevent multiple submissions
+            this.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // View profile functionality
+        viewProfileBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const editorId = this.dataset.editorId;
+                // Open profile in new tab/window
+                window.open(`/creator/editors/${editorId}`, '_blank');
+            });
+        });
+
+        // Enable/disable select editor button
+        function updateSelectEditorButton() {
+            const selectedCards = document.querySelectorAll('.application-card .select-btn');
+            const hasSelection = document.querySelector('input[name="selected_application"]:checked');
+
+            if (selectEditorBtn) {
+                selectEditorBtn.disabled = !hasSelection;
+            }
+        }
+
+        // Bulk selection functionality (if implemented)
+        const bulkSelectCheckboxes = document.querySelectorAll('input[name="selected_application"]');
+        bulkSelectCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectEditorButton);
+        });
+
+        // Update empty state
+        function updateEmptyState() {
+            const visibleCards = Array.from(applicationCards).filter(card =>
+                card.style.display !== 'none'
+            );
+
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.style.display = visibleCards.length === 0 ? 'block' : 'none';
+            }
+        }
+
+        // Enhanced card interactions
+        applicationCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape to close modal
+            if (e.key === 'Escape' && selectionModal.style.display === 'flex') {
+                closeSelectionModal();
+            }
+
+            // Number keys for quick filtering
+            if (e.key >= '1' && e.key <= '4') {
+                const filterIndex = parseInt(e.key) - 1;
+                const filterBtn = filterBtns[filterIndex];
+                if (filterBtn) {
+                    filterBtn.click();
+                }
+            }
+        });
+
+        // Auto-refresh applications (optional)
+        let refreshInterval;
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                // Check for new applications
+                fetch(window.location.href, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse and update applications if changed
+                    // This would require server-side support for AJAX
+                    console.log('Auto-refresh not implemented in this demo');
+                })
+                .catch(error => {
+                    console.log('Auto-refresh error:', error);
+                });
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Start auto-refresh when page is visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+
+        // Initialize auto-refresh
+        startAutoRefresh();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+
+        // Initialize page
+        updateSelectEditorButton();
+        updateEmptyState();
+
+        // Add loading animation to existing cards
+        applicationCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock page_content %}

@@ -1,0 +1,837 @@
+{% extends "editor/base.html" %}
+
+{% block title %}{{ data.job.title }} - Job Details{% endblock title %}
+
+{% block editor_content %}
+<div class="job-detail-container">
+    <!-- Page Header -->
+    <div class="job-header">
+        <div class="header-content">
+            <h1>{{ data.job.title }}</h1>
+            <div class="job-meta">
+                <div class="meta-item">
+                    <i class="fas fa-user"></i>
+                    <span>{{ data.job.creator.user.fullName }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Posted {{ moment(data.job.dateCreated).fromNow() }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>{{ data.application_count }} application{{ "s" if data.application_count != 1 else "" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.jobs') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Jobs
+            </a>
+            {% if data.can_apply %}
+            <a href="{{ url_for('editor.apply_for_job', job_id=data.job.jobId) }}" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+                Apply Now
+            </a>
+            {% elif data.existing_application %}
+            <a href="{{ url_for('editor.application_detail', application_id=data.existing_application.jobApplicationId) }}" class="btn btn-secondary">
+                <i class="fas fa-file-alt"></i>
+                View Application
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Job Overview -->
+    <div class="job-overview">
+        <div class="overview-grid">
+            <!-- Job Details -->
+            <div class="job-details-card">
+                <div class="card-header">
+                    <h3>Job Details</h3>
+                </div>
+                <div class="card-content">
+                    <div class="detail-item">
+                        <div class="detail-label">Budget</div>
+                        <div class="detail-value">{{ data.budget_range }}</div>
+                    </div>
+                    {% if data.job.deadline %}
+                    <div class="detail-item">
+                        <div class="detail-label">Deadline</div>
+                        <div class="detail-value">{{ moment(data.job.deadline).format('MMM D, YYYY') }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="status-badge status-{{ data.job.status }}">{{ data.job.status.replace('_', ' ').title() }}</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Posted</div>
+                        <div class="detail-value">{{ data.days_posted }} day{{ "s" if data.days_posted != 1 else "" }} ago</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="quick-stats-card">
+                <div class="card-header">
+                    <h3>Quick Stats</h3>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ data.application_count }}</div>
+                                <div class="stat-label">Applications</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ data.days_posted }}</div>
+                                <div class="stat-label">Days Posted</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Description -->
+    <div class="job-description-card">
+        <div class="card-header">
+            <h3>Project Description</h3>
+        </div>
+        <div class="card-content">
+            <div class="description-text">
+                {{ data.job.description|nl2br }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Required Skills -->
+    {% if data.required_skills %}
+    <div class="required-skills-card">
+        <div class="card-header">
+            <h3>Required Skills</h3>
+        </div>
+        <div class="card-content">
+            <div class="skills-list">
+                {% for skill in data.required_skills %}
+                <span class="skill-tag">{{ skill }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Client Information -->
+    <div class="client-info-card">
+        <div class="card-header">
+            <h3>About the Client</h3>
+        </div>
+        <div class="card-content">
+            <div class="client-profile">
+                <div class="client-avatar">
+                    {% if data.job.creator.user.profilePicture %}
+                    <img src="{{ data.job.creator.user.profilePicture }}" alt="{{ data.job.creator.user.fullName }}" class="avatar-img">
+                    {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="client-details">
+                    <h4>{{ data.job.creator.user.fullName }}</h4>
+                    <p class="client-type">Content Creator</p>
+                    {% if data.job.creator.user.averageRating %}
+                    <div class="client-rating">
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                            <i class="fas fa-star {% if i <= data.job.creator.user.averageRating %}active{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <span class="rating-text">{{ "%.1f"|format(data.job.creator.user.averageRating) }} ({{ data.job.creator.user.totalRatings }} reviews)</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="client-actions">
+                <a href="{{ url_for('editor.send_message', receiver_id=data.job.creator.user.userId, job_id=data.job.jobId) }}" class="btn btn-outline">
+                    <i class="fas fa-envelope"></i>
+                    Message Client
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Status -->
+    {% if data.existing_application %}
+    <div class="application-status-card">
+        <div class="card-header">
+            <h3>Your Application</h3>
+        </div>
+        <div class="card-content">
+            <div class="application-summary">
+                <div class="status-indicator status-{{ data.existing_application.status }}">
+                    <i class="fas fa-{% if data.existing_application.status == 'pending' %}clock{% elif data.existing_application.status == 'accepted' %}check{% else %}times{% endif %}"></i>
+                    <span>{{ data.existing_application.status.title() }}</span>
+                </div>
+                
+                <div class="application-details">
+                    <div class="detail-row">
+                        <span class="label">Submitted:</span>
+                        <span class="value">{{ moment(data.existing_application.dateCreated).fromNow() }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Proposed Rate:</span>
+                        <span class="value">${{ data.existing_application.proposedRate }} per hour</span>
+                    </div>
+                    {% if data.existing_application.proposedTimeline %}
+                    <div class="detail-row">
+                        <span class="label">Timeline:</span>
+                        <span class="value">{{ data.existing_application.proposedTimeline }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="application-actions">
+                <a href="{{ url_for('editor.application_detail', application_id=data.existing_application.jobApplicationId) }}" class="btn btn-primary">
+                    <i class="fas fa-eye"></i>
+                    View Full Application
+                </a>
+                {% if data.existing_application.status == 'pending' %}
+                <a href="{{ url_for('editor.edit_application', application_id=data.existing_application.jobApplicationId) }}" class="btn btn-outline">
+                    <i class="fas fa-edit"></i>
+                    Edit Application
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Similar Jobs -->
+    <div class="similar-jobs-card">
+        <div class="card-header">
+            <h3>Similar Jobs</h3>
+        </div>
+        <div class="card-content">
+            <div class="similar-jobs-list">
+                <div class="similar-job-item">
+                    <div class="job-title">Video Editing for Social Media Content</div>
+                    <div class="job-budget">$25 - $40 per hour</div>
+                    <div class="job-posted">Posted 2 days ago</div>
+                </div>
+                
+                <div class="similar-job-item">
+                    <div class="job-title">YouTube Video Editor Needed</div>
+                    <div class="job-budget">$30 - $50 per hour</div>
+                    <div class="job-posted">Posted 1 week ago</div>
+                </div>
+                
+                <div class="similar-job-item">
+                    <div class="job-title">Promotional Video Editing</div>
+                    <div class="job-budget">$35 - $45 per hour</div>
+                    <div class="job-posted">Posted 3 days ago</div>
+                </div>
+            </div>
+            
+            <div class="similar-jobs-footer">
+                <a href="{{ url_for('editor.jobs') }}" class="btn btn-outline">
+                    <i class="fas fa-search"></i>
+                    Browse More Jobs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Job Detail Page Styles */
+.job-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.job-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.job-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.meta-item i {
+    color: var(--accent-blue);
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+/* Job Overview */
+.job-overview {
+    margin-bottom: 2rem;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+/* Card Base Styles */
+.job-details-card,
+.quick-stats-card,
+.job-description-card,
+.required-skills-card,
+.client-info-card,
+.application-status-card,
+.similar-jobs-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+/* Job Details */
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--soft-gray);
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-posted {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-in_progress {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.status-completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* Quick Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+/* Job Description */
+.description-text {
+    color: var(--primary-black);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Required Skills */
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.skill-tag {
+    background: var(--accent-blue);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Client Information */
+.client-profile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.client-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--soft-gray);
+    font-size: 1.5rem;
+}
+
+.client-details h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.client-type {
+    color: var(--soft-gray);
+    margin-bottom: 0.5rem;
+}
+
+.client-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.rating-stars i {
+    font-size: 0.9rem;
+    color: var(--border-gray);
+}
+
+.rating-stars i.active {
+    color: #fbbf24;
+}
+
+.rating-text {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.client-actions {
+    text-align: center;
+}
+
+/* Application Status */
+.application-summary {
+    margin-bottom: 1.5rem;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.status-indicator.status-pending {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.status-indicator.status-accepted {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-indicator.status-declined {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.application-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-row .label {
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+.detail-row .value {
+    color: var(--primary-black);
+    font-weight: 600;
+}
+
+.application-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Similar Jobs */
+.similar-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.similar-job-item {
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.similar-job-item:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.job-title {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.job-budget {
+    color: var(--accent-blue);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.job-posted {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.similar-jobs-footer {
+    text-align: center;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #2563eb;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .job-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .job-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .card-content {
+        padding: 1rem;
+    }
+    
+    .client-profile {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .application-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .application-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .skills-list {
+        justify-content: center;
+    }
+    
+    .skill-tag {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading states to action buttons
+    const actionButtons = document.querySelectorAll('.btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            if (this.href && !this.href.includes('#')) {
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    this.style.opacity = '1';
+                    this.style.pointerEvents = 'auto';
+                }, 2000);
+            }
+        });
+    });
+    
+    // Add click functionality to similar job items
+    const similarJobItems = document.querySelectorAll('.similar-job-item');
+    similarJobItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // In a real application, this would navigate to the job detail page
+            console.log('Navigate to similar job');
+        });
+    });
+    
+    // Add animations to cards
+    const cards = document.querySelectorAll('[class*="-card"]');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.style.animation = 'fadeInUp 0.6s ease-out forwards';
+    });
+});
+
+// Additional CSS for animations
+const additionalStyles = `
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.similar-job-item {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.similar-job-item:nth-child(1) { animation-delay: 0.1s; }
+.similar-job-item:nth-child(2) { animation-delay: 0.2s; }
+.similar-job-item:nth-child(3) { animation-delay: 0.3s; }
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock editor_content %}

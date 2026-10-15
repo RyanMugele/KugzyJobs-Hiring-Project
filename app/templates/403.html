@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Access Forbidden{% endblock title %}
+
+{% block seo %}
+<meta name="description" content="Access forbidden - You don't have permission to access this resource on KugzyJobs.">
+<meta name="robots" content="noindex, nofollow">
+{% endblock seo %}
+
+{% block page_content %}
+<section class="error-page">
+    <div class="error-container">
+        <div class="error-content">
+            <!-- Error Number -->
+            <div class="error-number">
+                <span class="number-text">403</span>
+                <div class="number-decoration"></div>
+            </div>
+            
+            <!-- Error Icon -->
+            <div class="error-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message">
+                <h1>Access Forbidden</h1>
+                <p>Hold up! You don't have permission to access this area. It's like trying to edit someone else's masterpiece without permission - some things are off-limits!</p>
+            </div>
+            
+            <!-- Error Actions -->
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.userType == 'creator' %}
+                    <a href="{{ url_for('creator.dashboard') }}" class="btn btn-secondary btn-large">
+                        <i class="fas fa-tachometer-alt"></i> My Dashboard
+                    </a>
+                    {% elif current_user.userType == 'editor' %}
+                    <a href="{{ url_for('editor.dashboard') }}" class="btn btn-secondary btn-large">
+                        <i class="fas fa-tachometer-alt"></i> My Dashboard
+                    </a>
+                    {% endif %}
+                {% else %}
+                <a href="{{ url_for('authentication.login') }}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Access Info -->
+            <div class="access-info">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>Why am I seeing this?</h3>
+                        <ul>
+                            {% if not current_user.is_authenticated %}
+                            <li>You need to be signed in to access this content</li>
+                            <li>This area might require special permissions</li>
+                            {% else %}
+                            <li>Your account type doesn't have access to this feature</li>
+                            <li>This might be an admin-only area</li>
+                            <li>Your account might need verification</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if not current_user.is_authenticated %}
+                <div class="auth-prompt">
+                    <h3>Need an account?</h3>
+                    <p>Join KugzyJobs to access all features and connect with amazing creators and editors.</p>
+                    <div class="auth-buttons">
+                        <a href="{{ url_for('authentication.creator_registration') }}" class="auth-link">
+                            <i class="fas fa-video"></i>
+                            <span>Join as Creator</span>
+                        </a>
+                        <a href="{{ url_for('authentication.editor_registration') }}" class="auth-link">
+                            <i class="fas fa-cut"></i>
+                            <span>Join as Editor</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="error-decoration">
+            <div class="security-badge badge-1">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="security-badge badge-2">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="security-badge badge-3">
+                <i class="fas fa-key"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .error-page {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 6%;
+        background: linear-gradient(180deg, var(--white) 0%, var(--light-gray) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="security-pattern" width="25" height="25" patternUnits="userSpaceOnUse"><circle cx="12.5" cy="12.5" r="1" fill="%23ef4444" opacity="0.1"/><rect x="8" y="8" width="9" height="9" fill="none" stroke="%23ef4444" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23security-pattern)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .error-container {
+        max-width: 900px;
+        width: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+    .error-content {
+        text-align: center;
+        background: var(--white);
+        padding: 4rem 3rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-gray);
+        position: relative;
+    }
+
+    .error-number {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .number-text {
+        font-size: clamp(5rem, 12vw, 8rem);
+        font-weight: 900;
+        color: #ef4444;
+        line-height: 1;
+        display: block;
+        letter-spacing: -4px;
+        position: relative;
+    }
+
+    .number-decoration {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 6px;
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        border-radius: 3px;
+        opacity: 0.8;
+    }
+
+    .error-icon {
+        margin-bottom: 2rem;
+    }
+
+    .error-icon i {
+        font-size: 4rem;
+        color: #ef4444;
+        opacity: 0.8;
+    }
+
+    .error-message h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .error-message p {
+        font-size: 1.25rem;
+        color: var(--soft-gray);
+        line-height: 1.6;
+        margin-bottom: 3rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 3rem;
+    }
+
+    .access-info {
+        border-top: 1px solid var(--border-gray);
+        padding-top: 3rem;
+        display: grid;
+        gap: 2rem;
+    }
+
+    .info-card {
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        display: flex;
+        gap: 1.5rem;
+        text-align: left;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .info-icon {
+        flex-shrink: 0;
+        width: 50px;
+        height: 50px;
+        background: var(--accent-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+
+    .info-content h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+    }
+
+    .info-content ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .info-content ul li {
+        color: var(--soft-gray);
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .info-content ul li::before {
+        content: '•';
+        color: var(--accent-blue);
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+    }
+
+    .auth-prompt {
+        background: var(--white);
+        border: 2px dashed var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .auth-prompt h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+    }
+
+    .auth-prompt p {
+        color: var(--soft-gray);
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .auth-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .auth-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        color: var(--primary-black);
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .auth-link:hover {
+        background: var(--white);
+        border-color: var(--accent-blue);
+        transform: translateY(-1px);
+    }
+
+    .auth-link i {
+        color: var(--accent-blue);
+    }
+
+    .error-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .security-badge {
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid rgba(239, 68, 68, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        font-size: 1.75rem;
+        animation: pulse 4s ease-in-out infinite;
+    }
+
+    .badge-1 {
+        top: 15%;
+        left: 8%;
+        animation-delay: 0s;
+    }
+
+    .badge-2 {
+        top: 50%;
+        right: 10%;
+        animation-delay: 1.5s;
+    }
+
+    .badge-3 {
+        bottom: 25%;
+        left: 15%;
+        animation-delay: 3s;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 0.7;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .error-page {
+            padding: 2rem 4%;
+            min-height: 70vh;
+        }
+
+        .error-content {
+            padding: 3rem 2rem;
+        }
+
+        .error-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-large {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .info-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .auth-buttons {
+            flex-direction: column;
+        }
+
+        .auth-link {
+            justify-content: center;
+        }
+
+        .security-badge {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .error-page {
+            padding: 2rem;
+        }
+
+        .error-content {
+            padding: 2rem 1.5rem;
+        }
+
+        .access-info {
+            padding-top: 2rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate the error elements on load
+        const numberText = document.querySelector('.number-text');
+        const errorIcon = document.querySelector('.error-icon i');
+        
+        if (numberText) {
+            numberText.style.opacity = '0';
+            numberText.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                numberText.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                numberText.style.opacity = '1';
+                numberText.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        if (errorIcon) {
+            errorIcon.style.opacity = '0';
+            errorIcon.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                errorIcon.style.transition = 'all 0.6s ease';
+                errorIcon.style.opacity = '0.8';
+                errorIcon.style.transform = 'scale(1)';
+            }, 600);
+        }
+
+        // Add interactive effects
+        document.querySelectorAll('.auth-link').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px) scale(1.02)';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

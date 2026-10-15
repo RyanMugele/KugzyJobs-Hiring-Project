@@ -1,0 +1,346 @@
+{% extends "creator/base.html" %}
+
+{% block creator_content %}
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                {{ editor.user.fullName }}
+            </h1>
+            <p style="color: var(--soft-gray); font-size: 1.125rem;">
+                {% if editor.experienceLevel %}{{ editor.experienceLevel.title() }} {% endif %}Video Editor
+                {% if editor.isVerified %}
+                    <span style="background: var(--success-green); color: var(--white); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">
+                        <i class="fas fa-check"></i> Verified
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('creator.editors') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Editors
+            </a>
+            <a href="{{ url_for('creator.send_message', receiver_id=editor.userId) }}" class="btn btn-primary">
+                <i class="fas fa-envelope"></i> Send Message
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Editor Stats -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-blue); margin-bottom: 0.5rem;">
+            {{ "%.1f"|format(editor.user.averageRating) }}
+        </div>
+        <div style="color: var(--soft-gray); font-weight: 600;">Rating ({{ editor.user.totalRatings }} reviews)</div>
+    </div>
+
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--success-green); margin-bottom: 0.5rem;">
+            {{ completed_jobs_count }}
+        </div>
+        <div style="color: var(--soft-gray); font-weight: 600;">Jobs Completed</div>
+    </div>
+
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+            {{ portfolios|length }}
+        </div>
+        <div style="color: var(--soft-gray); font-weight: 600;">Portfolio Items</div>
+    </div>
+
+    {% if editor.hourlyRate %}
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-bottom: 0.5rem;">
+            ${{ editor.hourlyRate }}
+        </div>
+        <div style="color: var(--soft-gray); font-weight: 600;">Hourly Rate</div>
+    </div>
+    {% endif %}
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+    <!-- Left Column -->
+    <div>
+        <!-- About Section -->
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin: 0;">
+                    About {{ editor.user.fullName }}
+                </h2>
+            </div>
+            <div style="padding: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <div>
+                        <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Experience Level
+                        </h3>
+                        <p style="color: var(--primary-black); font-weight: 600; margin: 0;">
+                            {{ editor.experienceLevel.title() if editor.experienceLevel else 'Not specified' }}
+                        </p>
+                    </div>
+                    
+                    {% if editor.hourlyRate %}
+                    <div>
+                        <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Hourly Rate
+                        </h3>
+                        <p style="color: var(--primary-black); font-weight: 600; margin: 0;">
+                            ${{ editor.hourlyRate }}/hour
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if editor.specializations %}
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--soft-gray); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Specializations
+                    </h3>
+                    <p style="color: var(--primary-black); line-height: 1.6; margin: 0;">
+                        {{ editor.specializations }}
+                    </p>
+                </div>
+                {% endif %}
+
+                <div>
+                    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--soft-gray); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Member Since
+                    </h3>
+                    <p style="color: var(--primary-black); font-weight: 600; margin: 0;">
+                        {{ editor.user.dateCreated.strftime('%B %Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Section -->
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin: 0;">
+                    Portfolio ({{ portfolios|length }} items)
+                </h2>
+            </div>
+            <div style="padding: 2rem;">
+                {% if portfolios %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        {% for portfolio in portfolios %}
+                        <div style="border: 1px solid var(--border-gray); border-radius: var(--radius-md); overflow: hidden; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            {% if portfolio.videoUrl %}
+                            <div style="background: var(--light-gray); padding: 2rem; text-align: center; border-bottom: 1px solid var(--border-gray);">
+                                <i class="fas fa-play-circle" style="font-size: 3rem; color: var(--accent-blue); margin-bottom: 1rem;"></i>
+                                <div>
+                                    <a href="{{ portfolio.videoUrl }}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-play"></i> Watch Video
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div style="padding: 1.5rem;">
+                                <h3 style="font-size: 1rem; font-weight: 600; color: var(--primary-black); margin-bottom: 0.75rem;">
+                                    {{ portfolio.title }}
+                                </h3>
+                                
+                                {% if portfolio.description %}
+                                <p style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1rem;">
+                                    {{ portfolio.description[:100] }}{% if portfolio.description|length > 100 %}...{% endif %}
+                                </p>
+                                {% endif %}
+
+                                {% if portfolio.skillTags %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                                    {% for skill in portfolio.getSkillTagsList()[:3] %}
+                                    <span style="background: var(--light-gray); color: var(--soft-gray); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 500;">
+                                        {{ skill }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if portfolio.getSkillTagsList()|length > 3 %}
+                                    <span style="background: var(--light-gray); color: var(--soft-gray); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 500;">
+                                        +{{ portfolio.getSkillTagsList()|length - 3 }} more
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                    Added {{ portfolio.dateCreated.strftime('%b %Y') }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 3rem 1rem; color: var(--soft-gray);">
+                        <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                            No Portfolio Items
+                        </h3>
+                        <p>This editor hasn't uploaded any portfolio items yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Reviews -->
+        {% if editor.user.receivedRatings %}
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin: 0;">
+                    Recent Reviews
+                </h2>
+            </div>
+            <div style="padding: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    {% for rating in editor.user.receivedRatings[:5] %}
+                    <div style="padding: 1.5rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); background: var(--light-gray);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">
+                                    {{ rating.rater.fullName if rating.rater else 'Anonymous' }}
+                                </div>
+                                {% if rating.job %}
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                                    {{ rating.job.title }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #f59e0b; font-size: 1.125rem;">
+                                    {% for i in range(5) %}
+                                        {% if i < rating.ratingValue %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span style="font-weight: 600; color: var(--primary-black);">{{ rating.ratingValue }}/5</span>
+                            </div>
+                        </div>
+                        
+                        {% if rating.reviewText %}
+                        <p style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1rem;">
+                            "{{ rating.reviewText }}"
+                        </p>
+                        {% endif %}
+                        
+                        <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                            {{ rating.dateCreated.strftime('%B %d, %Y') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Sidebar -->
+    <div>
+        <!-- Profile Picture -->
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--primary-black); margin: 0;">
+                    Profile
+                </h3>
+            </div>
+            <div style="padding: 2rem; text-align: center;">
+                {% if editor.user.profilePicture %}
+                <img src="{{ editor.user.profilePicture }}" alt="{{ editor.user.fullName }}"
+                     style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray); margin-bottom: 1rem;">
+                {% else %}
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 2.5rem; margin: 0 auto 1rem; border: 3px solid var(--border-gray);">
+                    {{ editor.user.fullName[:2].upper() }}
+                </div>
+                {% endif %}
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-weight: 600; color: var(--primary-black); margin-bottom: 0.25rem;">
+                        {{ editor.user.fullName }}
+                    </div>
+                    <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                        {{ editor.user.emailAddress }}
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <a href="{{ url_for('creator.send_message', receiver_id=editor.userId) }}" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-envelope"></i> Send Message
+                    </a>
+                    
+                    <button onclick="shareProfile()" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-share"></i> Share Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--primary-black); margin: 0;">
+                    Quick Stats
+                </h3>
+            </div>
+            <div style="padding: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600; color: var(--soft-gray);">Verification</span>
+                        <span style="background: {% if editor.isVerified %}var(--success-green){% else %}#f59e0b{% endif %}; color: var(--white); padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">
+                            {% if editor.isVerified %}Verified{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600; color: var(--soft-gray);">Response Rate</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">-</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600; color: var(--soft-gray);">Avg. Response Time</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-gray);">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--primary-black); margin: 0;">
+                    Get In Touch
+                </h3>
+            </div>
+            <div style="padding: 2rem;">
+                <p style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Ready to work with {{ editor.user.fullName.split()[0] }}? Send them a message to discuss your project needs.
+                </p>
+                
+                <div style="background: var(--light-gray); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">EMAIL</div>
+                    <div style="font-weight: 600; color: var(--primary-black);">{{ editor.user.emailAddress }}</div>
+                </div>
+
+                <a href="{{ url_for('creator.send_message', receiver_id=editor.userId) }}" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Start Conversation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareProfile() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ editor.user.fullName }} - Video Editor Profile',
+            text: 'Check out this video editor on KugzyJobs',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            alert('Profile link copied to clipboard!');
+        });
+    }
+}
+</script>
+{% endblock creator_content %}

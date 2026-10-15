@@ -1,0 +1,1585 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Send Message - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="send-message-container">
+    <!-- Page Header -->
+    <div class="send-message-header">
+        <div class="header-content">
+            <h1>Send Message</h1>
+            <p>Communicate with content creators about projects and opportunities</p>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.messages') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Messages
+            </a>
+        </div>
+    </div>
+
+    <!-- Message Form -->
+    <div class="message-form-container">
+        <form method="POST" class="message-form" id="messageForm">
+            {{ form.hidden_tag() }}
+            
+            <!-- Recipient Selection -->
+            <div class="form-group">
+                <label for="{{ form.receiverId.id }}" class="form-label">
+                    <i class="fas fa-user"></i>
+                    Recipient
+                </label>
+                {{ form.receiverId(class="form-select", id="receiverId") }}
+                {% if form.receiverId.errors %}
+                <div class="form-errors">
+                    {% for error in form.receiverId.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-help">
+                    Select the content creator you want to message
+                </div>
+            </div>
+
+            <!-- Project Context (Optional) -->
+            <div class="form-group">
+                <label for="{{ form.jobId.id }}" class="form-label">
+                    <i class="fas fa-briefcase"></i>
+                    Related Project (Optional)
+                </label>
+                {{ form.jobId(class="form-select", id="jobId") }}
+                {% if form.jobId.errors %}
+                <div class="form-errors">
+                    {% for error in form.jobId.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-help">
+                    Link this message to a specific project if applicable
+                </div>
+            </div>
+
+            <!-- Subject -->
+            <div class="form-group">
+                <label for="{{ form.subject.id }}" class="form-label">
+                    <i class="fas fa-tag"></i>
+                    Subject
+                </label>
+                {{ form.subject(class="form-input", placeholder="Enter message subject...", id="subject") }}
+                {% if form.subject.errors %}
+                <div class="form-errors">
+                    {% for error in form.subject.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-help">
+                    A clear subject helps organize conversations
+                </div>
+            </div>
+
+            <!-- Message Content -->
+            <div class="form-group">
+                <label for="{{ form.messageContent.id }}" class="form-label">
+                    <i class="fas fa-comment"></i>
+                    Message
+                </label>
+                {{ form.messageContent(class="form-textarea", rows="8", placeholder="Type your message here...", id="messageContent") }}
+                {% if form.messageContent.errors %}
+                <div class="form-errors">
+                    {% for error in form.messageContent.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-footer">
+                    <div class="character-count">
+                        <span id="charCount">0</span> characters
+                    </div>
+                    <div class="form-help">
+                        Be clear and professional in your communication
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Templates -->
+            <div class="message-templates">
+                <div class="templates-header">
+                    <h3>Quick Templates</h3>
+                    <p>Use these templates to get started faster</p>
+                </div>
+                
+                <div class="templates-grid">
+                    <div class="template-card" onclick="useTemplate('project_inquiry')">
+                        <div class="template-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Project Inquiry</h4>
+                            <p>Ask questions about a project</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('application_follow_up')">
+                        <div class="template-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Application Follow-up</h4>
+                            <p>Follow up on a job application</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('project_update')">
+                        <div class="template-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Project Update</h4>
+                            <p>Provide an update on work progress</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('clarification')">
+                        <div class="template-icon">
+                            <i class="fas fa-question"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Clarification Request</h4>
+                            <p>Ask for project clarification</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="saveDraft()">
+                    <i class="fas fa-save"></i>
+                    Save Draft
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="previewMessage()">
+                    <i class="fas fa-eye"></i>
+                    Preview
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Message
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Communication Tips -->
+    <div class="communication-tips">
+        <div class="tips-header">
+            <h3>Communication Best Practices</h3>
+            <p>Tips for effective professional communication</p>
+        </div>
+        
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Be Clear & Specific</h4>
+                    <p>Clearly state your purpose and include all necessary details. Ask specific questions to get helpful responses.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Respect Response Times</h4>
+                    <p>Allow 24-48 hours for responses. Content creators may be working on multiple projects.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Stay Professional</h4>
+                    <p>Maintain a courteous and professional tone. This builds trust and positive working relationships.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Organize Information</h4>
+                    <p>Use bullet points or numbered lists for multiple questions or requirements to improve clarity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Preview Modal -->
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Message Preview</h3>
+            <button class="modal-close" onclick="closePreview()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="preview-content">
+                <div class="preview-header">
+                    <div class="preview-field">
+                        <strong>To:</strong> <span id="previewRecipient">-</span>
+                    </div>
+                    <div class="preview-field">
+                        <strong>Project:</strong> <span id="previewProject">-</span>
+                    </div>
+                    <div class="preview-field">
+                        <strong>Subject:</strong> <span id="previewSubject">-</span>
+                    </div>
+                </div>
+                <div class="preview-message">
+                    <strong>Message:</strong>
+                    <div id="previewMessageContent" class="message-preview-text">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closePreview()">Edit Message</button>
+            <button class="btn btn-primary" onclick="sendFromPreview()">Send Message</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Send Message Page Styles */
+.send-message-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.send-message-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Message Form */
+.message-form-container {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.message-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    font-size: 1rem;
+}
+
+.form-label i {
+    width: 16px;
+    color: var(--soft-gray);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background: var(--white);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.6;
+}
+
+.form-select {
+    cursor: pointer;
+}
+
+.form-help {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    line-height: 1.4;
+}
+
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.character-count {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+.form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Message Templates */
+.message-templates {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.templates-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.templates-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.templates-header p {
+    color: var(--soft-gray);
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.template-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-blue);
+}
+
+.template-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.template-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.template-content p {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Communication Tips */
+.communication-tips {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.tips-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tips-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tips-header p {
+    color: var(--soft-gray);
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.tip-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.tip-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1rem 2rem 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+.preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.preview-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.preview-field {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.preview-field strong {
+    color: var(--primary-black);
+    min-width: 80px;
+}
+
+.preview-field span {
+    color: var(--soft-gray);
+    flex: 1;
+}
+
+.preview-message strong {
+    color: var(--primary-black);
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.message-preview-text {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-blue);
+    line-height: 1.6;
+    color: var(--primary-black);
+    white-space: pre-wrap;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #2563eb;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .send-message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .message-form-container {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .templates-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .template-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .tip-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .form-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .message-form {
+        gap: 1.5rem;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.75rem;
+    }
+    
+    .form-textarea {
+        min-height: 150px;
+    }
+    
+    .templates-header h3,
+    .tips-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .preview-header {
+        gap: 0.5rem;
+    }
+    
+    .preview-field {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .preview-field strong {
+        min-width: auto;
+    }
+}
+
+/* Animation Styles */
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+// Message templates
+const messageTemplates = {
+    project_inquiry: {
+        subject: "Question about your project",
+        content: `Hi [Creator Name],
+
+I'm interested in your project and would like to ask a few questions to better understand the requirements:
+
+1. What is the expected timeline for completion?
+2. Are there any specific style preferences or examples you can share?
+3. What format would you like the final deliverable in?
+
+I'd be happy to discuss this project further and provide samples of my previous work.
+
+Best regards,
+[Your Name]`
+    },
+    application_follow_up: {
+        subject: "Following up on my application",
+        content: `Hi [Creator Name],
+
+I hope this message finds you well. I wanted to follow up on my application for your project "[Project Title]" that I submitted [timeframe].
+
+I'm very interested in this opportunity and would be happy to answer any additional questions you might have about my experience or approach to the project.
+
+Thank you for your time and consideration.
+
+Best regards,
+[Your Name]`
+    },
+    project_update: {
+        subject: "Project Update - [Project Title]",
+        content: `Hi [Creator Name],
+
+I wanted to provide you with an update on the progress of your project "[Project Title]":
+
+✓ [Completed milestone 1]
+✓ [Completed milestone 2]
+🔄 Currently working on: [Current task]
+📅 Next milestone: [Upcoming deliverable] - Expected completion: [Date]
+
+Please let me know if you have any questions or feedback on the current direction.
+
+Best regards,
+[Your Name]`
+    },
+    clarification: {
+        subject: "Clarification needed for [Project Title]",
+        content: `Hi [Creator Name],
+
+I'm working on your project "[Project Title]" and need some clarification on a few points to ensure I deliver exactly what you're looking for:
+
+1. [Specific question 1]
+2. [Specific question 2]
+3. [Specific question 3]
+
+Your guidance on these points will help me deliver the best possible result for your project.
+
+Thank you for your time!
+
+Best regards,
+[Your Name]`
+    }
+};
+
+// Use message template
+function useTemplate(templateKey) {
+    const template = messageTemplates[templateKey];
+    if (!template) return;
+    
+    const subjectField = document.getElementById('subject');
+    const messageField = document.getElementById('messageContent');
+    
+    if (subjectField.value === '' || confirm('This will replace your current message content. Continue?')) {
+        subjectField.value = template.subject;
+        messageField.value = template.content;
+        
+        // Update character count
+        updateCharacterCount();
+        
+        // Show success notification
+        showNotification('Template applied successfully!', 'success');
+        
+        // Focus on message field for editing
+        messageField.focus();
+        messageField.setSelectionRange(messageField.value.length, messageField.value.length);
+    }
+}
+
+// Update character count
+function updateCharacterCount() {
+    const messageField = document.getElementById('messageContent');
+    const charCount = document.getElementById('charCount');
+    
+    if (messageField && charCount) {
+        const count = messageField.value.length;
+        charCount.textContent = count;
+        
+        // Change color based on length
+        if (count > 1000) {
+            charCount.style.color = '#dc2626'; // Red
+        } else if (count > 800) {
+            charCount.style.color = '#f59e0b'; // Orange
+        } else {
+            charCount.style.color = 'var(--soft-gray)';
+        }
+    }
+}
+
+// Save draft functionality
+function saveDraft() {
+    const form = document.getElementById('messageForm');
+    const formData = new FormData(form);
+    
+    const draft = {
+        receiverId: formData.get('receiverId'),
+        jobId: formData.get('jobId'),
+        subject: formData.get('subject'),
+        messageContent: formData.get('messageContent'),
+        timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('message_draft', JSON.stringify(draft));
+    showNotification('Draft saved successfully!', 'success');
+}
+
+// Load draft functionality
+function loadDraft() {
+    const savedDraft = localStorage.getItem('message_draft');
+    if (!savedDraft) return;
+    
+    try {
+        const draft = JSON.parse(savedDraft);
+        
+        if (draft.receiverId) document.getElementById('receiverId').value = draft.receiverId;
+        if (draft.jobId) document.getElementById('jobId').value = draft.jobId;
+        if (draft.subject) document.getElementById('subject').value = draft.subject;
+        if (draft.messageContent) {
+            document.getElementById('messageContent').value = draft.messageContent;
+            updateCharacterCount();
+        }
+        
+        showNotification('Draft loaded successfully!', 'info');
+    } catch (error) {
+        console.error('Error loading draft:', error);
+    }
+}
+
+// Preview message functionality
+function previewMessage() {
+    const receiverId = document.getElementById('receiverId').value;
+    const jobId = document.getElementById('jobId').value;
+    const subject = document.getElementById('subject').value;
+    const messageContent = document.getElementById('messageContent').value;
+    
+    // Validate required fields
+    if (!receiverId || !messageContent) {
+        showNotification('Please fill in recipient and message content', 'error');
+        return;
+    }
+    
+    // Get selected option text
+    const receiverSelect = document.getElementById('receiverId');
+    const receiverText = receiverSelect.options[receiverSelect.selectedIndex].text;
+    
+    const jobSelect = document.getElementById('jobId');
+    const jobText = jobId ? jobSelect.options[jobSelect.selectedIndex].text : 'None';
+    
+    // Update preview content
+    document.getElementById('previewRecipient').textContent = receiverText;
+    document.getElementById('previewProject').textContent = jobText;
+    document.getElementById('previewSubject').textContent = subject || '(No subject)';
+    document.getElementById('previewMessageContent').textContent = messageContent;
+    
+    // Show modal
+    document.getElementById('previewModal').classList.add('active');
+}
+
+// Close preview modal
+function closePreview() {
+    document.getElementById('previewModal').classList.remove('active');
+}
+
+// Send from preview
+function sendFromPreview() {
+    closePreview();
+    document.getElementById('messageForm').submit();
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Form validation
+function validateForm() {
+    const receiverId = document.getElementById('receiverId').value;
+    const messageContent = document.getElementById('messageContent').value.trim();
+    
+    let isValid = true;
+    let errors = [];
+    
+    if (!receiverId) {
+        errors.push('Please select a recipient');
+        isValid = false;
+    }
+    
+    if (!messageContent) {
+        errors.push('Please enter a message');
+        isValid = false;
+    } else if (messageContent.length < 10) {
+        errors.push('Message must be at least 10 characters long');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        showNotification(errors.join('. '), 'error');
+    }
+    
+    return isValid;
+}
+
+// Auto-save functionality
+function initializeAutoSave() {
+    const fields = ['receiverId', 'jobId', 'subject', 'messageContent'];
+    let autoSaveTimeout;
+    
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        
+        field.addEventListener('input', function() {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                saveDraft();
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        });
+    });
+}
+
+// Form submission handling
+function handleFormSubmission() {
+    const form = document.getElementById('messageForm');
+    
+    form.addEventListener('submit', function(event) {
+        if (!validateForm()) {
+            event.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        submitBtn.disabled = true;
+        
+        // Clear draft on successful submission
+        localStorage.removeItem('message_draft');
+        
+        // Note: Form will submit normally, this is just for UI feedback
+        // In case of error, restore button state
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+    });
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        // Ctrl/Cmd + Enter to send message
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (validateForm()) {
+                document.getElementById('messageForm').submit();
+            }
+        }
+        
+        // Ctrl/Cmd + S to save draft
+        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+            event.preventDefault();
+            saveDraft();
+        }
+        
+        // Ctrl/Cmd + P to preview
+        if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+            event.preventDefault();
+            previewMessage();
+        }
+        
+        // Escape to close modal
+        if (event.key === 'Escape') {
+            closePreview();
+        }
+    });
+}
+
+// URL parameter handling
+function handleUrlParameters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Pre-fill receiver if provided
+    const receiverId = urlParams.get('receiver_id');
+    if (receiverId) {
+        const receiverSelect = document.getElementById('receiverId');
+        if (receiverSelect) {
+            receiverSelect.value = receiverId;
+        }
+    }
+    
+    // Pre-fill job if provided
+    const jobId = urlParams.get('job_id');
+    if (jobId) {
+        const jobSelect = document.getElementById('jobId');
+        if (jobSelect) {
+            jobSelect.value = jobId;
+        }
+    }
+}
+
+// Initialize word count and suggestions
+function initializeWordCount() {
+    const messageField = document.getElementById('messageContent');
+    const charCountElement = document.getElementById('charCount');
+    
+    if (!messageField || !charCountElement) return;
+    
+    function updateCounts() {
+        const text = messageField.value;
+        const charCount = text.length;
+        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+        
+        charCountElement.textContent = `${charCount} characters, ${wordCount} words`;
+        
+        // Provide suggestions based on length
+        if (charCount < 50) {
+            charCountElement.title = 'Consider adding more detail to your message';
+        } else if (charCount > 1500) {
+            charCountElement.title = 'Consider breaking this into multiple messages';
+        } else {
+            charCountElement.title = '';
+        }
+    }
+    
+    messageField.addEventListener('input', updateCounts);
+    updateCounts(); // Initial count
+}
+
+// Recipient selection enhancement
+function enhanceRecipientSelection() {
+    const receiverSelect = document.getElementById('receiverId');
+    if (!receiverSelect) return;
+    
+    receiverSelect.addEventListener('change', function() {
+        if (this.value) {
+            // Show related projects for selected recipient
+            updateJobOptions(this.value);
+        }
+    });
+}
+
+// Update job options based on selected recipient
+function updateJobOptions(receiverId) {
+    const jobSelect = document.getElementById('jobId');
+    if (!jobSelect) return;
+    
+    // Filter job options to show only those related to the selected recipient
+    // This would typically be done server-side, but we can enhance the UI
+    const options = Array.from(jobSelect.options);
+    options.forEach(option => {
+        if (option.value === '') return; // Keep the default option
+        
+        // In a real implementation, you would check if the job involves the selected recipient
+        // For now, we'll just show all options
+        option.style.display = 'block';
+    });
+}
+
+// Message formatting helpers
+function initializeMessageFormatting() {
+    const messageField = document.getElementById('messageContent');
+    if (!messageField) return;
+    
+    // Add formatting buttons (simple implementation)
+    const formatToolbar = document.createElement('div');
+    formatToolbar.className = 'format-toolbar';
+    formatToolbar.innerHTML = `
+        <button type="button" class="format-btn" onclick="insertText('**', '**')" title="Bold">
+            <i class="fas fa-bold"></i>
+        </button>
+        <button type="button" class="format-btn" onclick="insertText('*', '*')" title="Italic">
+            <i class="fas fa-italic"></i>
+        </button>
+        <button type="button" class="format-btn" onclick="insertText('\\n• ', '')" title="Bullet Point">
+            <i class="fas fa-list-ul"></i>
+        </button>
+        <button type="button" class="format-btn" onclick="insertText('\\n1. ', '')" title="Numbered List">
+            <i class="fas fa-list-ol"></i>
+        </button>
+    `;
+    
+    messageField.parentNode.insertBefore(formatToolbar, messageField);
+}
+
+// Insert text at cursor position
+function insertText(before, after = '') {
+    const messageField = document.getElementById('messageContent');
+    const start = messageField.selectionStart;
+    const end = messageField.selectionEnd;
+    const text = messageField.value;
+    const selectedText = text.substring(start, end);
+    
+    messageField.value = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    
+    // Reset cursor position
+    const newPosition = start + before.length + selectedText.length + after.length;
+    messageField.setSelectionRange(newPosition, newPosition);
+    messageField.focus();
+    
+    updateCharacterCount();
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Core functionality
+    updateCharacterCount();
+    initializeAutoSave();
+    handleFormSubmission();
+    initializeKeyboardShortcuts();
+    handleUrlParameters();
+    initializeWordCount();
+    enhanceRecipientSelection();
+    initializeMessageFormatting();
+    
+    // Load saved draft
+    setTimeout(loadDraft, 500);
+    
+    // Add animations to template cards
+    const templateCards = document.querySelectorAll('.template-card');
+    templateCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+    
+    // Add animations to tip cards
+    const tipCards = document.querySelectorAll('.tip-card');
+    tipCards.forEach((card, index) => {
+        card.style.animationDelay = `${(index + 4) * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+    
+    // Focus on first empty required field
+    const receiverField = document.getElementById('receiverId');
+    const messageField = document.getElementById('messageContent');
+    
+    if (receiverField && !receiverField.value) {
+        receiverField.focus();
+    } else if (messageField && !messageField.value) {
+        messageField.focus();
+    }
+    
+    // Add character count listener
+    const messageTextarea = document.getElementById('messageContent');
+    if (messageTextarea) {
+        messageTextarea.addEventListener('input', updateCharacterCount);
+    }
+    
+    // Modal click outside to close
+    const modal = document.getElementById('previewModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closePreview();
+        }
+    });
+    
+    // Enhance form accessibility
+    enhanceFormAccessibility();
+});
+
+// Enhance form accessibility
+function enhanceFormAccessibility() {
+    // Add ARIA labels and descriptions
+    const fields = document.querySelectorAll('.form-input, .form-select, .form-textarea');
+    fields.forEach(field => {
+        const label = field.parentNode.querySelector('.form-label');
+        const help = field.parentNode.querySelector('.form-help');
+        
+        if (label) {
+            field.setAttribute('aria-labelledby', label.id || 'label-' + field.id);
+        }
+        
+        if (help) {
+            field.setAttribute('aria-describedby', help.id || 'help-' + field.id);
+        }
+    });
+    
+    // Enhanced error states
+    const errorMessages = document.querySelectorAll('.error-message');
+    errorMessages.forEach(error => {
+        const field = error.parentNode.parentNode.querySelector('.form-input, .form-select, .form-textarea');
+        if (field) {
+            field.setAttribute('aria-invalid', 'true');
+            field.setAttribute('aria-describedby', error.id || 'error-' + field.id);
+        }
+    });
+}
+
+// Additional CSS for new features
+const additionalStyles = `
+.format-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.format-btn {
+    padding: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--soft-gray);
+    font-size: 0.85rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.format-btn:hover {
+    background: var(--accent-blue);
+    color: var(--white);
+    border-color: var(--accent-blue);
+}
+
+.format-toolbar + .form-textarea {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-info .notification-content i {
+    color: var(--accent-blue);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.template-card.selected {
+    border-color: var(--accent-blue);
+    background: #eff6ff;
+}
+
+.template-card.selected .template-icon {
+    background: var(--success-green);
+}
+
+@media (max-width: 768px) {
+    .format-toolbar {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .format-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+}
+
+.form-input:invalid,
+.form-select:invalid,
+.form-textarea:invalid {
+    border-color: #ef4444;
+}
+
+.form-input:valid,
+.form-select:valid,
+.form-textarea:valid {
+    border-color: var(--success-green);
+}
+
+.character-count.warning {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.character-count.error {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.draft-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: var(--accent-blue);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    z-index: 999;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.template-card:focus {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+.tip-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
+// Add draft indicator
+function showDraftIndicator() {
+    // Remove existing indicator
+    const existingIndicator = document.querySelector('.draft-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    const indicator = document.createElement('div');
+    indicator.className = 'draft-indicator';
+    indicator.innerHTML = '<i class="fas fa-save"></i> Draft saved';
+    document.body.appendChild(indicator);
+    
+    setTimeout(() => {
+        if (indicator.parentElement) {
+            indicator.remove();
+        }
+    }, 3000);
+}
+
+// Override the saveDraft function to show indicator
+const originalSaveDraft = saveDraft;
+saveDraft = function() {
+    originalSaveDraft();
+    showDraftIndicator();
+};
+</script>
+{% endblock editor_content %}

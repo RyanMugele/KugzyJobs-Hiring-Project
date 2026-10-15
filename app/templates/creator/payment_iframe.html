@@ -1,0 +1,695 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Payment - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="payment-container">
+    <div class="payment-wrapper">
+        <!-- Payment Header -->
+        <div class="payment-header">
+            <div class="header-content">
+                <div class="payment-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Complete Your Payment</h1>
+                    <p>Secure payment processing for: <strong>{{ payment.job.title }}</strong></p>
+                </div>
+                <div class="amount-display">
+                    <span class="currency">$</span>
+                    <span class="amount">{{ "%.2f"|format(payment.agreedAmount) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Summary -->
+        <div class="payment-summary">
+            <div class="summary-content">
+                <div class="summary-item">
+                    <span class="label">Project:</span>
+                    <span class="value">{{ payment.job.title }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Editor:</span>
+                    <span class="value">
+                        {% if payment.job.selectedEditor %}
+                            {{ payment.job.selectedEditor.user.fullName }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Payment Method:</span>
+                    <span class="value">Pesapal Gateway</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Amount:</span>
+                    <span class="value amount-text">${{ "%.2f"|format(payment.agreedAmount) }}</span>
+                </div>
+                {% if payment.invoiceNumber %}
+                <div class="summary-item">
+                    <span class="label">Invoice:</span>
+                    <span class="value">{{ payment.invoiceNumber }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment Gateway Iframe -->
+        <div class="payment-iframe-container">
+            <div class="iframe-header">
+                <div class="security-indicator">
+                    <i class="fas fa-shield-check"></i>
+                    <span>Secure Payment Gateway</span>
+                </div>
+                <div class="powered-by">
+                    <span>Powered by Pesapal</span>
+                </div>
+            </div>
+
+            <div class="iframe-wrapper">
+                <div class="loading-overlay" id="payment-loading">
+                    <div class="loading-content">
+                        <div class="spinner"></div>
+                        <h3>Loading Payment Gateway...</h3>
+                        <p>Please wait while we prepare your secure payment form</p>
+                    </div>
+                </div>
+
+                <iframe 
+                    id="payment-iframe"
+                    src="{{ iframe_src }}" 
+                    frameborder="0"
+                    scrolling="auto"
+                    allowtransparency="true"
+                    allow="payment"
+                    sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation"
+                    title="Pesapal Payment Gateway">
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="payment-status" id="payment-status">
+            <div class="status-content">
+                <div class="status-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="status-text">
+                    <h4>Payment in Progress</h4>
+                    <p>Complete the payment form above to proceed with your transaction</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help and Support -->
+        <div class="payment-help">
+            <div class="help-content">
+                <h4><i class="fas fa-question-circle"></i> Need Help?</h4>
+                <div class="help-options">
+                    <div class="help-item">
+                        <strong>Payment Issues:</strong>
+                        <p>If you experience any problems with the payment gateway, please try refreshing the page or contact our support team.</p>
+                    </div>
+                    <div class="help-item">
+                        <strong>Security:</strong>
+                        <p>Your payment information is processed securely through Pesapal's encrypted gateway. We never store your card details.</p>
+                    </div>
+                    <div class="help-item">
+                        <strong>Processing Time:</strong>
+                        <p>Payments typically process within a few minutes. You'll receive confirmation once the transaction is complete.</p>
+                    </div>
+                </div>
+                
+                <div class="help-actions">
+                    <a href="{{ url_for('creator.payments') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Payments
+                    </a>
+                    <a href="mailto:support@kugzyjobs.com" class="btn btn-outline">
+                        <i class="fas fa-envelope"></i>
+                        Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .payment-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 2rem 0;
+    }
+
+    .payment-wrapper {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .payment-header {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        border: 1px solid var(--border-gray);
+    }
+
+    .header-content {
+        padding: 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .payment-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .header-text {
+        flex: 1;
+    }
+
+    .header-text h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        margin: 0;
+        font-size: 1.125rem;
+    }
+
+    .amount-display {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .currency {
+        font-size: 1.5rem;
+        color: var(--soft-gray);
+        font-weight: 600;
+    }
+
+    .amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        letter-spacing: -1px;
+    }
+
+    .payment-summary {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .summary-content {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .summary-item .label {
+        font-size: 0.875rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .summary-item .value {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 1rem;
+    }
+
+    .summary-item .amount-text {
+        font-size: 1.25rem;
+        color: var(--success-green);
+    }
+
+    .payment-iframe-container {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        border: 1px solid var(--border-gray);
+    }
+
+    .iframe-header {
+        padding: 1.5rem 2rem;
+        background: #f1f5f9;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .security-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--success-green);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .powered-by {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+    }
+
+    .iframe-wrapper {
+        position: relative;
+        height: 600px;
+        overflow: hidden;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .loading-content {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid var(--border-gray);
+        border-top: 3px solid var(--accent-blue);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1.5rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .loading-content p {
+        color: var(--soft-gray);
+        margin: 0;
+    }
+
+    #payment-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: var(--white);
+    }
+
+    .payment-status {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+    }
+
+    .status-content {
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .status-icon {
+        width: 48px;
+        height: 48px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #d97706;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .status-text h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .status-text p {
+        color: var(--soft-gray);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .payment-help {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .help-content {
+        padding: 2rem;
+    }
+
+    .help-content h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .help-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .help-item strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .help-item p {
+        color: var(--soft-gray);
+        margin: 0;
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+
+    .help-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-secondary:hover {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-outline:hover {
+        background: var(--light-gray);
+    }
+
+    /* Success State */
+    .payment-success .status-icon {
+        background: #dcfce7;
+        color: var(--success-green);
+    }
+
+    .payment-success .status-icon i::before {
+        content: '\f00c';
+    }
+
+    /* Error State */
+    .payment-error .status-icon {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .payment-error .status-icon i::before {
+        content: '\f00d';
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .payment-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .amount-display {
+            text-align: center;
+        }
+
+        .summary-content {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .iframe-header {
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .iframe-wrapper {
+            height: 500px;
+        }
+
+        .status-content {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .help-options {
+            grid-template-columns: 1fr;
+        }
+
+        .help-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .payment-container {
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+        }
+
+        .amount {
+            font-size: 2rem;
+        }
+
+        .iframe-wrapper {
+            height: 450px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const iframe = document.getElementById('payment-iframe');
+        const loadingOverlay = document.getElementById('payment-loading');
+        const statusElement = document.getElementById('payment-status');
+        
+        // Hide loading overlay when iframe loads
+        iframe.addEventListener('load', function() {
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+            }, 1000);
+        });
+
+        // Listen for messages from iframe (payment completion)
+        window.addEventListener('message', function(event) {
+            // Validate origin for security
+            if (event.origin !== 'https://pay.pesapal.com' && 
+                event.origin !== 'https://cybqa.pesapal.com') {
+                return;
+            }
+
+            try {
+                const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                
+                if (data.status) {
+                    updatePaymentStatus(data.status, data.message);
+                }
+            } catch (e) {
+                console.log('Message parsing error:', e);
+            }
+        });
+
+        // Check for URL parameters (callback handling)
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderTrackingId = urlParams.get('OrderTrackingId');
+        const orderStatus = urlParams.get('OrderStatus');
+
+        if (orderTrackingId) {
+            // Redirect to callback handler
+            window.location.href = '{{ url_for("creator.pesapal_payment_callback") }}?' + 
+                                  new URLSearchParams({
+                                      'OrderTrackingId': orderTrackingId,
+                                      'OrderStatus': orderStatus || ''
+                                  }).toString();
+        }
+
+        // Auto-refresh iframe on error
+        iframe.addEventListener('error', function() {
+            console.log('Iframe loading error, attempting refresh...');
+            setTimeout(() => {
+                iframe.src = iframe.src;
+            }, 3000);
+        });
+
+        // Timeout handling
+        setTimeout(() => {
+            if (!loadingOverlay.classList.contains('hidden')) {
+                loadingOverlay.innerHTML = `
+                    <div class="loading-content">
+                        <div class="spinner"></div>
+                        <h3>Taking longer than expected...</h3>
+                        <p>If the payment form doesn't load, please refresh the page</p>
+                        <button onclick="window.location.reload()" class="btn btn-secondary" style="margin-top: 1rem;">
+                            <i class="fas fa-refresh"></i> Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        }, 15000);
+
+        function updatePaymentStatus(status, message) {
+            const statusIcon = statusElement.querySelector('.status-icon i');
+            const statusTitle = statusElement.querySelector('.status-text h4');
+            const statusDesc = statusElement.querySelector('.status-text p');
+
+            switch(status.toLowerCase()) {
+                case 'completed':
+                case 'success':
+                    statusElement.className = 'payment-status payment-success';
+                    statusIcon.className = 'fas fa-check-circle';
+                    statusTitle.textContent = 'Payment Successful!';
+                    statusDesc.textContent = 'Your payment has been processed successfully. Redirecting...';
+                    
+                    setTimeout(() => {
+                        window.location.href = '{{ url_for("creator.payment_success", payment_id=payment.paymentId) }}';
+                    }, 2000);
+                    break;
+
+                case 'failed':
+                case 'error':
+                    statusElement.className = 'payment-status payment-error';
+                    statusIcon.className = 'fas fa-exclamation-circle';
+                    statusTitle.textContent = 'Payment Failed';
+                    statusDesc.textContent = message || 'There was an issue processing your payment. Please try again.';
+                    break;
+
+                case 'pending':
+                    statusTitle.textContent = 'Payment Processing';
+                    statusDesc.textContent = 'Your payment is being processed. Please wait...';
+                    break;
+            }
+        }
+
+        // Prevent page unload during payment
+        let paymentInProgress = true;
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (paymentInProgress) {
+                const confirmationMessage = 'Payment is in progress. Are you sure you want to leave?';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+
+        // Remove unload protection after 10 minutes
+        setTimeout(() => {
+            paymentInProgress = false;
+        }, 600000);
+    });
+</script>
+{% endblock page_content %}

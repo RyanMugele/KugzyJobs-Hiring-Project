@@ -1,0 +1,2455 @@
+{% extends "editor/base.html" %}
+
+{% block title %}{{ portfolio.title }} - Portfolio - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="portfolio-detail-container">
+    <!-- Navigation Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ url_for('editor.portfolio') }}" class="breadcrumb-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Portfolio
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">{{ portfolio.title }}</span>
+    </div>
+
+    <!-- Portfolio Header -->
+    <div class="portfolio-header">
+        <div class="header-main">
+            <div class="portfolio-title-section">
+                <h1>{{ portfolio.title }}</h1>
+                <div class="portfolio-meta">
+                    <span class="creation-date">
+                        <i class="fas fa-calendar-plus"></i>
+                        Created {{ moment(portfolio.dateCreated).fromNow() }}
+                    </span>
+                    {% if portfolio.lastUpdated != portfolio.dateCreated %}
+                    <span class="update-date">
+                        <i class="fas fa-edit"></i>
+                        Updated {{ moment(portfolio.lastUpdated).fromNow() }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="status-section">
+                <div class="status-badge status-{{ portfolio.verificationStatus }}">
+                    {% if portfolio.verificationStatus == 'approved' %}
+                    <i class="fas fa-check-circle"></i>
+                    Approved
+                    {% elif portfolio.verificationStatus == 'pending' %}
+                    <i class="fas fa-clock"></i>
+                    Pending Verification
+                    {% elif portfolio.verificationStatus == 'rejected' %}
+                    <i class="fas fa-times-circle"></i>
+                    Rejected
+                    {% endif %}
+                </div>
+                
+                <div class="status-info">
+                    {% if portfolio.verificationStatus == 'approved' %}
+                    <p class="status-message success">This portfolio item is visible to clients</p>
+                    {% elif portfolio.verificationStatus == 'pending' %}
+                    <p class="status-message pending">Under review by our verification team</p>
+                    {% elif portfolio.verificationStatus == 'rejected' %}
+                    <p class="status-message rejected">Needs improvements before approval</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="header-actions">
+            {% if portfolio.verificationStatus in ['pending', 'rejected'] %}
+            <a href="{{ url_for('editor.edit_portfolio', portfolio_id=portfolio.portfolioId) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Edit Portfolio
+            </a>
+            {% endif %}
+            
+            {% if portfolio.videoUrl %}
+            <button class="btn btn-secondary" onclick="openVideoModal()">
+                <i class="fas fa-play"></i>
+                Preview Video
+            </button>
+            {% endif %}
+            
+            <div class="dropdown">
+                <button class="btn btn-outline dropdown-toggle" onclick="toggleDropdown(this)">
+                    <i class="fas fa-ellipsis-v"></i>
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    {% if portfolio.videoUrl %}
+                    <button class="dropdown-item" onclick="copyVideoLink()">
+                        <i class="fas fa-link"></i>
+                        Copy Video Link
+                    </button>
+                    {% endif %}
+                    
+                    <button class="dropdown-item" onclick="copyPortfolioLink()">
+                        <i class="fas fa-share"></i>
+                        Copy Portfolio Link
+                    </button>
+                    
+                    {% if portfolio.verificationStatus != 'approved' %}
+                    <hr class="dropdown-divider">
+                    <button class="dropdown-item danger" onclick="showDeleteModal()">
+                        <i class="fas fa-trash"></i>
+                        Delete Portfolio
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Left Column: Portfolio Content -->
+        <div class="main-content">
+            <!-- Video Section -->
+            {% if portfolio.videoUrl %}
+            <div class="portfolio-card video-card">
+                <div class="card-header">
+                    <h3>Video Content</h3>
+                    <div class="video-controls">
+                        <button class="btn btn-sm btn-primary" onclick="openVideoModal()">
+                            <i class="fas fa-play"></i>
+                            Play Video
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="copyVideoLink()">
+                            <i class="fas fa-link"></i>
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="video-preview" onclick="openVideoModal()">
+                        <div class="video-thumbnail">
+                            <div class="video-overlay">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div class="video-placeholder">
+                                <i class="fas fa-video"></i>
+                                <span>Click to Preview</span>
+                                <p>{{ portfolio.videoUrl }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="video-info">
+                        <div class="video-url">
+                            <label>Video URL:</label>
+                            <div class="url-display">
+                                <input type="text" value="{{ portfolio.videoUrl }}" readonly class="url-input">
+                                <button class="btn btn-sm btn-outline" onclick="copyVideoLink()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Description Section -->
+            {% if portfolio.description %}
+            <div class="portfolio-card description-card">
+                <div class="card-header">
+                    <h3>Description</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="description-content">
+                        <p>{{ portfolio.description }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Skills Section -->
+            {% if portfolio.skillTags %}
+            <div class="portfolio-card skills-card">
+                <div class="card-header">
+                    <h3>Skills Demonstrated</h3>
+                    <span class="skills-count">{{ portfolio.getSkillTagsList()|length }} skill{{ "s" if portfolio.getSkillTagsList()|length != 1 else "" }}</span>
+                </div>
+                
+                <div class="card-content">
+                    <div class="skills-list">
+                        {% for skill in portfolio.getSkillTagsList() %}
+                        <span class="skill-tag">{{ skill.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rejection Feedback (if applicable) -->
+            {% if portfolio.verificationStatus == 'rejected' and portfolio.rejectionReason %}
+            <div class="portfolio-card rejection-card">
+                <div class="card-header">
+                    <h3>Verification Feedback</h3>
+                    <span class="feedback-type">Requires Attention</span>
+                </div>
+                
+                <div class="card-content">
+                    <div class="rejection-content">
+                        <div class="rejection-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="rejection-details">
+                            <h4>Reason for Rejection</h4>
+                            <p>{{ portfolio.rejectionReason }}</p>
+                            <div class="rejection-actions">
+                                <a href="{{ url_for('editor.edit_portfolio', portfolio_id=portfolio.portfolioId) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                    Make Improvements
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Portfolio Timeline -->
+            <div class="portfolio-card timeline-card">
+                <div class="card-header">
+                    <h3>Portfolio Timeline</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Portfolio Created</div>
+                                <div class="timeline-date">{{ moment(portfolio.dateCreated).format('MMMM D, YYYY [at] h:mm A') }}</div>
+                                <div class="timeline-description">Portfolio item was created and submitted for verification</div>
+                            </div>
+                        </div>
+
+                        {% if portfolio.lastUpdated != portfolio.dateCreated %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Portfolio Updated</div>
+                                <div class="timeline-date">{{ moment(portfolio.lastUpdated).format('MMMM D, YYYY [at] h:mm A') }}</div>
+                                <div class="timeline-description">Changes were made to improve the portfolio item</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if portfolio.verificationStatus == 'pending' %}
+                        <div class="timeline-item current">
+                            <div class="timeline-marker">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Under Review</div>
+                                <div class="timeline-date">In Progress</div>
+                                <div class="timeline-description">Our team is reviewing your portfolio item for quality and compliance</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item pending">
+                            <div class="timeline-marker">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Verification Decision</div>
+                                <div class="timeline-date">Pending</div>
+                                <div class="timeline-description">Awaiting final verification decision</div>
+                            </div>
+                        </div>
+                        {% elif portfolio.verificationStatus == 'approved' %}
+                        <div class="timeline-item completed success">
+                            <div class="timeline-marker">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Portfolio Approved</div>
+                                <div class="timeline-date">{{ moment(portfolio.lastUpdated).format('MMMM D, YYYY [at] h:mm A') }}</div>
+                                <div class="timeline-description">Portfolio item approved and now visible to potential clients</div>
+                            </div>
+                        </div>
+                        {% elif portfolio.verificationStatus == 'rejected' %}
+                        <div class="timeline-item completed rejected">
+                            <div class="timeline-marker">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Portfolio Rejected</div>
+                                <div class="timeline-date">{{ moment(portfolio.lastUpdated).format('MMMM D, YYYY [at] h:mm A') }}</div>
+                                <div class="timeline-description">Portfolio item needs improvements before approval</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div class="sidebar-content">
+            <!-- Portfolio Stats -->
+            <div class="portfolio-card stats-card">
+                <div class="card-header">
+                    <h3>Portfolio Stats</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="stats-list">
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Created</div>
+                                <div class="stat-value">{{ moment(portfolio.dateCreated).format('MMM D, YYYY') }}</div>
+                            </div>
+                        </div>
+
+                        {% if portfolio.lastUpdated != portfolio.dateCreated %}
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Last Updated</div>
+                                <div class="stat-value">{{ moment(portfolio.lastUpdated).format('MMM D, YYYY') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Visibility</div>
+                                <div class="stat-value">
+                                    {% if portfolio.verificationStatus == 'approved' %}
+                                    <span class="text-success">Public</span>
+                                    {% else %}
+                                    <span class="text-muted">Private</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if portfolio.skillTags %}
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Skills Count</div>
+                                <div class="stat-value">{{ portfolio.getSkillTagsList()|length }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="portfolio-card actions-card">
+                <div class="card-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="action-list">
+                        {% if portfolio.verificationStatus in ['pending', 'rejected'] %}
+                        <a href="{{ url_for('editor.edit_portfolio', portfolio_id=portfolio.portfolioId) }}" class="action-item">
+                            <div class="action-icon edit">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Edit Portfolio</div>
+                                <div class="action-description">Make changes to improve your portfolio</div>
+                            </div>
+                        </a>
+                        {% endif %}
+
+                        <a href="{{ url_for('editor.portfolio') }}" class="action-item">
+                            <div class="action-icon portfolio">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">View All Portfolio</div>
+                                <div class="action-description">Browse all your portfolio items</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('editor.new_portfolio') }}" class="action-item">
+                            <div class="action-icon add">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Add New Item</div>
+                                <div class="action-description">Create another portfolio piece</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('editor.jobs') }}" class="action-item">
+                            <div class="action-icon jobs">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Browse Jobs</div>
+                                <div class="action-description">Find new editing opportunities</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Tips -->
+            <div class="portfolio-card tips-card">
+                <div class="card-header">
+                    <h3>Portfolio Tips</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="tips-list">
+                        {% if portfolio.verificationStatus == 'pending' %}
+                        <div class="tip-item">
+                            <i class="fas fa-clock text-warning"></i>
+                            <span>Verification typically takes 24-48 hours</span>
+                        </div>
+                        {% elif portfolio.verificationStatus == 'rejected' %}
+                        <div class="tip-item">
+                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                            <span>Address feedback points to improve approval chances</span>
+                        </div>
+                        {% elif portfolio.verificationStatus == 'approved' %}
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span>This portfolio is now visible to potential clients</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="tip-item">
+                            <i class="fas fa-video"></i>
+                            <span>Keep videos concise - highlight your best work in 30-60 seconds</span>
+                        </div>
+
+                        <div class="tip-item">
+                            <i class="fas fa-tag"></i>
+                            <span>Use specific skill tags that clients commonly search for</span>
+                        </div>
+
+                        <div class="tip-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Update your portfolio regularly with recent work</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Preview Modal -->
+{% if portfolio.videoUrl %}
+<div id="videoModal" class="modal">
+    <div class="modal-content video-modal-content">
+        <div class="modal-header">
+            <h3>{{ portfolio.title }} - Video Preview</h3>
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="video-container">
+                <div class="video-preview-large">
+                    <div class="video-placeholder-large">
+                        <i class="fas fa-video"></i>
+                        <h4>Video Preview</h4>
+                        <p>{{ portfolio.videoUrl }}</p>
+                        <p class="video-note">In a real implementation, this would show an embedded video player</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Delete Portfolio Item</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <p>Are you sure you want to delete "<strong>{{ portfolio.title }}</strong>"?</p>
+                    <p class="warning-text">This action cannot be undone. The portfolio item will be permanently removed from your profile.</p>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <form method="POST" action="{{ url_for('editor.delete_portfolio', portfolio_id=portfolio.portfolioId) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Delete Portfolio Item
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Portfolio Detail Page Styles */
+.portfolio-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: var(--primary-black);
+}
+
+.breadcrumb-separator {
+    color: var(--soft-gray);
+}
+
+.breadcrumb-current {
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+/* Portfolio Header */
+.portfolio-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 2rem;
+}
+
+.portfolio-title-section h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.portfolio-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.portfolio-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-section {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+.status-approved {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.status-pending {
+    background: #fef3cd;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.status-info {
+    text-align: right;
+}
+
+.status-message {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.status-message.success {
+    color: var(--success-green);
+    font-weight: 500;
+}
+
+.status-message.pending {
+    color: #92400e;
+    font-weight: 500;
+}
+
+.status-message.rejected {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+/* Portfolio Cards */
+.portfolio-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--light-gray);
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.skills-count,
+.feedback-type {
+    background: var(--white);
+    color: var(--soft-gray);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--border-gray);
+}
+
+.video-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.card-content {
+    padding: 2rem;
+}
+
+/* Video Section */
+.video-preview {
+    height: 300px;
+    background: var(--light-gray);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.video-preview:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-md);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--primary-black);
+    transition: all 0.3s ease;
+}
+
+.video-preview:hover .video-overlay {
+    background: var(--white);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    padding: 2rem;
+}
+
+.video-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.video-placeholder span {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.video-placeholder p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin: 0;
+    word-break: break-all;
+}
+
+.video-info {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.video-url label {
+    display: block;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.url-display {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.url-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    background: var(--white);
+    color: var(--soft-gray);
+}
+
+/* Description Section */
+.description-content p {
+    color: var(--primary-black);
+    line-height: 1.7;
+    font-size: 1.05rem;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* Skills Section */
+.skills-list {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.skill-tag {
+    background: var(--primary-black);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.skill-tag:hover {
+    background: var(--accent-blue);
+    transform: translateY(-2px);
+}
+
+/* Rejection Section */
+.rejection-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.rejection-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #fee2e2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.rejection-details h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.rejection-details p {
+    color: #dc2626;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid #dc2626;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-gray);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 2rem;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--white);
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-item.completed .timeline-marker {
+    background: var(--success-green);
+}
+
+.timeline-item.current .timeline-marker {
+    background: var(--accent-blue);
+}
+
+.timeline-item.pending .timeline-marker {
+    background: var(--soft-gray);
+}
+
+.timeline-item.success .timeline-marker {
+    background: var(--success-green);
+}
+
+.timeline-item.rejected .timeline-marker {
+    background: #ef4444;
+}
+
+.timeline-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-bottom: 0.5rem;
+}
+
+.timeline-description {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+}
+
+/* Sidebar Content */
+.sidebar-content .portfolio-card {
+    margin-bottom: 1.5rem;
+}
+
+/* Stats */
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-blue);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+/* Quick Actions */
+.action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    color: var(--primary-black);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.action-item:hover {
+    background: var(--light-gray);
+    border-color: var(--border-gray);
+    transform: translateX(4px);
+}
+
+.action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.action-icon.edit { background: var(--accent-blue); }
+.action-icon.portfolio { background: #8b5cf6; }
+.action-icon.add { background: var(--success-green); }
+.action-icon.jobs { background: #f59e0b; }
+
+.action-content {
+    flex: 1;
+}
+
+.action-title {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.action-description {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+/* Tips */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+}
+
+.tip-item i {
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+    width: 16px;
+}
+
+/* Dropdown */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    border: none;
+    background: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-gray);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dropdown-toggle:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    z-index: 100;
+    display: none;
+}
+
+.dropdown-menu.active {
+    display: block;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--primary-black);
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: var(--light-gray);
+}
+
+.dropdown-item.danger {
+    color: #ef4444;
+}
+
+.dropdown-item.danger:hover {
+    background: #fee2e2;
+}
+
+.dropdown-item i {
+    width: 14px;
+    text-align: center;
+    color: var(--soft-gray);
+}
+
+.dropdown-item.danger i {
+    color: #ef4444;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-gray);
+    border: none;
+    margin: 0.5rem 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.video-modal-content {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.video-preview-large {
+    width: 100%;
+    height: 400px;
+    background: var(--light-gray);
+    border: 2px dashed var(--border-gray);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-placeholder-large {
+    text-align: center;
+    color: var(--soft-gray);
+    padding: 2rem;
+}
+
+.video-placeholder-large i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.video-placeholder-large h4 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.video-placeholder-large p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+.video-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.warning-message {
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #fef3cd;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.warning-message i {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.warning-message div {
+    flex: 1;
+}
+
+.warning-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Utility Classes */
+.text-success { color: var(--success-green); }
+.text-muted { color: var(--soft-gray); }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar-content {
+        order: -1;
+    }
+    
+    .sidebar-content .portfolio-card {
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .portfolio-header {
+        padding: 1.5rem;
+    }
+    
+    .header-main {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+    
+    .status-section {
+        text-align: left;
+        width: 100%;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .header-actions .btn,
+    .header-actions .dropdown-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .portfolio-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .video-preview {
+        height: 200px;
+    }
+    
+    .video-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .video-controls .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .url-display {
+        flex-direction: column;
+    }
+    
+    .rejection-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-item {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-marker {
+        left: -1.5rem;
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+    }
+    
+    .timeline::before {
+        left: 20px;
+    }
+    
+    .stats-list {
+        gap: 1rem;
+    }
+    
+    .card-content {
+        padding: 1.5rem;
+    }
+    
+    .card-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-header,
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .portfolio-title-section h1 {
+        font-size: 1.5rem;
+    }
+    
+    .video-preview {
+        height: 150px;
+    }
+    
+    .video-preview-large {
+        height: 250px;
+    }
+    
+    .video-placeholder i {
+        font-size: 2rem;
+    }
+    
+    .video-placeholder span {
+        font-size: 1rem;
+    }
+    
+    .skills-list {
+        justify-content: center;
+    }
+    
+    .action-item {
+        text-align: center;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.portfolio-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.portfolio-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.portfolio-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+/* Hover Effects */
+.portfolio-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.timeline-item:hover .timeline-marker {
+    transform: scale(1.1);
+}
+
+.stat-item:hover .stat-icon {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.action-item:hover .action-icon {
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+// Portfolio detail page functionality
+
+// Video modal functions
+function openVideoModal() {
+    document.getElementById('videoModal').classList.add('active');
+}
+
+function closeVideoModal() {
+    document.getElementById('videoModal').classList.remove('active');
+}
+
+// Delete modal functions
+function showDeleteModal() {
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+// Dropdown functionality
+function toggleDropdown(button) {
+    const dropdown = button.nextElementSibling;
+    const isActive = dropdown.classList.contains('active');
+    
+    // Close all dropdowns
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('active');
+    });
+    
+    // Toggle current dropdown
+    if (!isActive) {
+        dropdown.classList.add('active');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+
+// Copy video link functionality
+function copyVideoLink() {
+    const videoUrl = '{{ portfolio.videoUrl }}';
+    navigator.clipboard.writeText(videoUrl).then(() => {
+        showSuccessMessage('Video link copied to clipboard!');
+    }).catch(() => {
+        showErrorMessage('Failed to copy video link. Please try again.');
+    });
+}
+
+// Copy portfolio link functionality
+function copyPortfolioLink() {
+    const portfolioUrl = window.location.href;
+    navigator.clipboard.writeText(portfolioUrl).then(() => {
+        showSuccessMessage('Portfolio link copied to clipboard!');
+    }).catch(() => {
+        showErrorMessage('Failed to copy portfolio link. Please try again.');
+    });
+}
+
+// Show success/error messages
+function showSuccessMessage(message) {
+    showMessage(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showMessage(message, 'error');
+}
+
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-body">${message}</div>`;
+    
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Initialize modal functionality
+function initializeModals() {
+    const modals = document.querySelectorAll('.modal');
+    
+    modals.forEach(modal => {
+        // Close modal on background click
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (this.id === 'videoModal') closeVideoModal();
+                if (this.id === 'deleteModal') closeDeleteModal();
+            }
+        });
+    });
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            closeVideoModal();
+            closeDeleteModal();
+        }
+        
+        // E to edit portfolio (if editable)
+        if (e.key === 'e' && !e.ctrlKey && !e.metaKey && !e.target.matches('input, textarea')) {
+            const editBtn = document.querySelector('a[href*="edit_portfolio"]');
+            if (editBtn) {
+                editBtn.click();
+            }
+        }
+        
+        // B to go back to portfolio
+        if (e.key === 'b' && !e.ctrlKey && !e.metaKey && !e.target.matches('input, textarea')) {
+            window.location.href = '{{ url_for("editor.portfolio") }}';
+        }
+        
+        // Space to preview video
+        if (e.key === ' ' && !e.target.matches('input, textarea, button')) {
+            e.preventDefault();
+            openVideoModal();
+        }
+    });
+}
+
+// Enhanced button interactions
+function enhanceButtons() {
+    document.querySelectorAll('.btn').forEach(button => {
+        if (button.href && !button.onclick) {
+            button.addEventListener('click', function() {
+                this.classList.add('loading');
+                this.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    this.classList.remove('loading');
+                    this.style.pointerEvents = 'auto';
+                }, 2000);
+            });
+        }
+    });
+}
+
+// Initialize tooltips
+function initializeTooltips() {
+    const tooltipElements = document.querySelectorAll('[title]');
+    
+    tooltipElements.forEach(element => {
+        element.addEventListener('mouseenter', function(e) {
+            const title = this.getAttribute('title');
+            if (title) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = title;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    background: var(--primary-black);
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    z-index: 1000;
+                    pointer-events: none;
+                    white-space: nowrap;
+                `;
+                
+                document.body.appendChild(tooltip);
+                
+                const rect = this.getBoundingClientRect();
+                tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+                
+                this.setAttribute('data-original-title', title);
+                this.removeAttribute('title');
+                
+                this.addEventListener('mouseleave', function() {
+                    document.body.removeChild(tooltip);
+                    this.setAttribute('title', this.getAttribute('data-original-title'));
+                    this.removeAttribute('data-original-title');
+                }, { once: true });
+            }
+        });
+    });
+}
+
+// Check URL parameters for success messages
+function checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('updated') === 'true') {
+        showSuccessMessage('Portfolio item updated successfully!');
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+}
+
+// Add smooth scrolling for internal links
+function initializeSmoothScrolling() {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+// Add CSS for toast notifications and additional effects
+const additionalStyles = `
+<style>
+.toast {
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.toast-success {
+    background: var(--success-green);
+    color: white;
+}
+
+.toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.tooltip {
+    animation: fadeIn 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    .toast-container {
+        right: 1rem;
+        left: 1rem;
+    }
+    
+    .toast {
+        max-width: none;
+    }
+}
+
+/* Pulse animation for pending status */
+.status-pending {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Skill tag hover effects */
+.skill-tag {
+    cursor: pointer;
+}
+
+.skill-tag:hover {
+    background: var(--accent-blue);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Timeline item hover effects */
+.timeline-item {
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover {
+    transform: translateX(4px);
+}
+
+/* Action item enhanced effects */
+.action-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.action-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.action-item:hover::before {
+    left: 100%;
+}
+</style>
+`;
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add additional styles
+    document.head.insertAdjacentHTML('beforeend', additionalStyles);
+    
+    // Initialize all functionality
+    initializeModals();
+    initializeKeyboardShortcuts();
+    enhanceButtons();
+    initializeTooltips();
+    initializeSmoothScrolling();
+    checkUrlParams();
+    
+    // Add click animations to action items
+    document.querySelectorAll('.action-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.transform = 'translateX(8px) scale(0.98)';
+            
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    // Add hover effects to stat items
+    document.querySelectorAll('.stat-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px) scale(1.02)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+    
+    // Initialize video preview click handlers
+    const videoPreview = document.querySelector('.video-preview');
+    if (videoPreview) {
+        videoPreview.addEventListener('click', openVideoModal);
+    }
+    
+    // Add keyboard shortcut hints
+    const shortcutHints = document.createElement('div');
+    shortcutHints.className = 'keyboard-shortcuts';
+    shortcutHints.innerHTML = `
+        <div style="position: fixed; bottom: 1rem; left: 1rem; background: var(--primary-black); color: var(--white); padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.75rem; opacity: 0; transition: opacity 0.3s ease; z-index: 1000;">
+            <div>Press <kbd>E</kbd> to edit, <kbd>B</kbd> to go back, <kbd>Space</kbd> to preview video</div>
+        </div>
+    `;
+    
+    // Show hints on hover over action buttons
+    const actionButtons = document.querySelectorAll('.header-actions .btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            const hint = shortcutHints.querySelector('div');
+            if (hint) hint.style.opacity = '1';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            const hint = shortcutHints.querySelector('div');
+            if (hint) hint.style.opacity = '0';
+        });
+    });
+    
+    document.body.appendChild(shortcutHints);
+    
+    // Add print functionality
+    const printBtn = document.createElement('button');
+    printBtn.className = 'btn btn-outline btn-sm';
+    printBtn.innerHTML = '<i class="fas fa-print"></i> Print';
+    printBtn.onclick = () => window.print();
+    
+    const headerActions = document.querySelector('.header-actions');
+    if (headerActions) {
+        headerActions.appendChild(printBtn);
+    }
+});
+
+// Handle page visibility for animations
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Page is visible again, refresh any time-sensitive content
+        const timeElements = document.querySelectorAll('.timeline-date, .portfolio-meta span');
+        timeElements.forEach(element => {
+            // In a real implementation, you might want to update relative time displays
+            // For now, we'll just add a subtle highlight effect
+            if (element.textContent.includes('ago')) {
+                element.style.opacity = '0.8';
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                }, 100);
+            }
+        });
+    }
+});
+
+// Handle form submissions with loading states
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    if (submitBtn) {
+        const originalText = submitBtn.innerHTML;
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        
+        // Re-enable after timeout (in case of redirect failure)
+        setTimeout(() => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }, 5000);
+    }
+});
+
+// Add intersection observer for scroll animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe cards for animation on scroll
+document.querySelectorAll('.portfolio-card').forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+    observer.observe(card);
+});
+
+// Enhanced skill tag interactions
+document.querySelectorAll('.skill-tag').forEach(tag => {
+    tag.addEventListener('click', function() {
+        // Simulate search for this skill
+        const skill = this.textContent.trim();
+        showSuccessMessage(`Searching for jobs requiring "${skill}"...`);
+        
+        // In a real implementation, this could redirect to jobs page with skill filter
+        setTimeout(() => {
+            // window.location.href = `{{ url_for('editor.jobs') }}?skillFilter=${encodeURIComponent(skill)}`;
+        }, 1500);
+    });
+    
+    // Add tooltip
+    tag.title = `Click to search for jobs requiring ${tag.textContent.trim()}`;
+});
+
+// Add right-click context menu for enhanced functionality
+document.addEventListener('contextmenu', function(e) {
+    // Disable context menu for skill tags and provide custom action
+    if (e.target.classList.contains('skill-tag')) {
+        e.preventDefault();
+        const skill = e.target.textContent.trim();
+        
+        // Create custom context menu
+        const contextMenu = document.createElement('div');
+        contextMenu.className = 'context-menu';
+        contextMenu.innerHTML = `
+            <div class="context-item" onclick="searchJobsWithSkill('${skill}')">
+                <i class="fas fa-search"></i>
+                Search jobs with "${skill}"
+            </div>
+            <div class="context-item" onclick="copySkillName('${skill}')">
+                <i class="fas fa-copy"></i>
+                Copy skill name
+            </div>
+        `;
+        contextMenu.style.cssText = `
+            position: fixed;
+            background: var(--white);
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            min-width: 180px;
+        `;
+        
+        // Position menu
+        contextMenu.style.left = e.pageX + 'px';
+        contextMenu.style.top = e.pageY + 'px';
+        
+        document.body.appendChild(contextMenu);
+        
+        // Remove menu on click outside
+        setTimeout(() => {
+            document.addEventListener('click', function removeMenu() {
+                if (contextMenu.parentNode) {
+                    contextMenu.parentNode.removeChild(contextMenu);
+                }
+                document.removeEventListener('click', removeMenu);
+            });
+        }, 10);
+    }
+});
+
+// Context menu functions
+function searchJobsWithSkill(skill) {
+    showSuccessMessage(`Searching for jobs requiring "${skill}"...`);
+    // window.location.href = `{{ url_for('editor.jobs') }}?skillFilter=${encodeURIComponent(skill)}`;
+}
+
+function copySkillName(skill) {
+    navigator.clipboard.writeText(skill).then(() => {
+        showSuccessMessage(`"${skill}" copied to clipboard!`);
+    });
+}
+
+// Add dynamic status updates (simulated)
+function checkPortfolioStatus() {
+    const currentStatus = '{{ portfolio.verificationStatus }}';
+    
+    // In a real implementation, this would check for status updates
+    // For demo purposes, we'll just add a subtle pulse to pending items
+    if (currentStatus === 'pending') {
+        const statusBadge = document.querySelector('.status-badge.status-pending');
+        if (statusBadge) {
+            statusBadge.style.animation = 'pulse 2s infinite';
+        }
+    }
+}
+
+// Call status check on page load
+checkPortfolioStatus();
+
+// Auto-refresh status for pending portfolios (every 30 seconds)
+if ('{{ portfolio.verificationStatus }}' === 'pending') {
+    setInterval(checkPortfolioStatus, 30000);
+}
+
+// Add performance monitoring
+function logPerformanceMetrics() {
+    if ('performance' in window) {
+        const navigation = performance.getEntriesByType('navigation')[0];
+        const loadTime = navigation.loadEventEnd - navigation.loadEventStart;
+        
+        if (loadTime > 3000) {
+            console.info('Page load time:', loadTime + 'ms - Consider optimizing images');
+        }
+    }
+}
+
+// Log performance after page load
+window.addEventListener('load', logPerformanceMetrics);
+
+// Add error boundary for JavaScript errors
+window.addEventListener('error', function(e) {
+    console.error('JavaScript error occurred:', e.error);
+    
+    // Show user-friendly error message
+    showErrorMessage('Something went wrong. Please refresh the page and try again.');
+});
+
+// Add unhandled promise rejection handler
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('Unhandled promise rejection:', e.reason);
+    e.preventDefault();
+});
+
+// Enhanced accessibility features
+function enhanceAccessibility() {
+    // Add ARIA labels to interactive elements
+    const buttons = document.querySelectorAll('button:not([aria-label])');
+    buttons.forEach(button => {
+        const text = button.textContent.trim() || button.title;
+        if (text) {
+            button.setAttribute('aria-label', text);
+        }
+    });
+    
+    // Add focus indicators
+    const focusableElements = document.querySelectorAll('a, button, input, select, textarea, [tabindex]');
+    focusableElements.forEach(element => {
+        element.addEventListener('focus', function() {
+            this.style.outline = '2px solid var(--accent-blue)';
+            this.style.outlineOffset = '2px';
+        });
+        
+        element.addEventListener('blur', function() {
+            this.style.outline = '';
+            this.style.outlineOffset = '';
+        });
+    });
+}
+
+// Call accessibility enhancements
+enhanceAccessibility();
+
+// Add CSS for context menu and additional styles
+const finalStyles = `
+<style>
+.context-menu {
+    font-size: 0.9rem;
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.context-item:hover {
+    background: var(--light-gray);
+}
+
+.context-item i {
+    width: 14px;
+    color: var(--soft-gray);
+}
+
+/* Print styles */
+@media print {
+    .header-actions,
+    .dropdown,
+    .modal,
+    .toast-container {
+        display: none !important;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .portfolio-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+        margin-bottom: 1rem;
+    }
+    
+    .video-preview {
+        background: #f5f5f5 !important;
+        border: 2px dashed #ccc;
+    }
+    
+    .video-placeholder::after {
+        content: " (Video not available in print)";
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .timeline::before {
+        background: #ccc !important;
+    }
+    
+    .timeline-marker {
+        background: #666 !important;
+        color: white !important;
+    }
+    
+    .skill-tag {
+        background: #f0f0f0 !important;
+        color: #333 !important;
+        border: 1px solid #ccc;
+    }
+    
+    .status-badge {
+        border: 2px solid #333 !important;
+    }
+    
+    .breadcrumb {
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .portfolio-header {
+        border: 2px solid #333;
+        margin-bottom: 1rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .status-badge {
+        border: 2px solid currentColor;
+    }
+    
+    .skill-tag {
+        border: 1px solid currentColor;
+    }
+    
+    .timeline-marker {
+        border: 3px solid var(--white);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .portfolio-card {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+    .video-placeholder-large {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+    
+    .modal-content {
+        background: #1a1a1a;
+        color: #e0e0e0;
+    }
+}
+
+/* Focus styles for better accessibility */
+.btn:focus,
+.dropdown-toggle:focus,
+.action-item:focus {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+/* Enhanced hover states */
+.portfolio-card:hover .card-header {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.portfolio-card:hover .card-header h3 {
+    color: var(--white);
+}
+
+/* Skill tag enhanced interactions */
+.skill-tag {
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.skill-tag:hover::before {
+    left: 100%;
+}
+
+/* Timeline enhanced animations */
+.timeline-item {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideInTimeline 0.6s ease forwards;
+}
+
+.timeline-item:nth-child(2) { animation-delay: 0.1s; }
+.timeline-item:nth-child(3) { animation-delay: 0.2s; }
+.timeline-item:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes slideInTimeline {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive text scaling */
+@media (max-width: 480px) {
+    .timeline-title {
+        font-size: 0.9rem;
+    }
+    
+    .timeline-description {
+        font-size: 0.8rem;
+    }
+    
+    .stat-value {
+        font-size: 0.9rem;
+    }
+    
+    .action-title {
+        font-size: 0.9rem;
+    }
+    
+    .action-description {
+        font-size: 0.75rem;
+    }
+}
+</style>
+`;
+
+// Add final styles to document
+document.head.insertAdjacentHTML('beforeend', finalStyles);
+</script>
+{% endblock editor_content %}

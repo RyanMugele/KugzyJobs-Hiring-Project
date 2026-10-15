@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+
+{% block title %}Send Message - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="message-container">
+    <div class="message-wrapper">
+        <!-- Header Section -->
+        <div class="message-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.messages') }}">Messages</a>
+                    <span>/</span>
+                    <span>Send Message</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="message-icon">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Send Message</h1>
+                        <p>Compose a message to communicate with an editor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Form -->
+        <div class="message-form-section">
+            <div class="form-content">
+                <form method="POST" class="message-form">
+                    {{ form.hidden_tag() }}
+                    {{ form.receiverId() }}
+                    {{ form.jobId() }}
+
+                    <!-- Subject Field -->
+                    <div class="form-group">
+                        {{ form.subject.label(class="form-label") }}
+                        {{ form.subject(class="form-control", placeholder="Enter message subject (optional)") }}
+                        {% if form.subject.errors %}
+                        <div class="field-errors">
+                            {% for error in form.subject.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="field-help">
+                            <i class="fas fa-info-circle"></i>
+                            Optional subject line to help organize your conversation
+                        </div>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="form-group">
+                        {{ form.messageContent.label(class="form-label required") }}
+                        {{ form.messageContent(class="message-textarea", placeholder="Type your message here...\n\nBe clear and professional in your communication. Include specific details about your project requirements, timeline, and any questions you have.") }}
+                        {% if form.messageContent.errors %}
+                        <div class="field-errors">
+                            {% for error in form.messageContent.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="textarea-footer">
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Be specific about your project needs and expectations
+                            </div>
+                            <div class="character-count">
+                                <span id="char-count">0</span> / 1000 characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message Tips -->
+                    <div class="tips-section">
+                        <h4><i class="fas fa-lightbulb"></i> Message Tips</h4>
+                        <div class="tips-grid">
+                            <div class="tip-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Be clear about your project requirements</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Mention your timeline and deadlines</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-dollar-sign"></i>
+                                <span>Discuss budget expectations if relevant</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-handshake"></i>
+                                <span>Maintain a professional and friendly tone</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <a href="{{ url_for('creator.messages') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary", id="send-message") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Templates -->
+        <div class="templates-section">
+            <div class="templates-content">
+                <h3><i class="fas fa-templates"></i> Quick Templates</h3>
+                <p>Click a template to add it to your message</p>
+                
+                <div class="templates-grid">
+                    <div class="template-item" data-template="project-inquiry">
+                        <h4>Project Inquiry</h4>
+                        <p>Initial contact about a potential project</p>
+                    </div>
+                    
+                    <div class="template-item" data-template="follow-up">
+                        <h4>Follow Up</h4>
+                        <p>Following up on a previous conversation</p>
+                    </div>
+                    
+                    <div class="template-item" data-template="clarification">
+                        <h4>Clarification</h4>
+                        <p>Asking for clarification on project details</p>
+                    </div>
+                    
+                    <div class="template-item" data-template="feedback">
+                        <h4>Feedback Request</h4>
+                        <p>Requesting feedback or portfolio samples</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .message-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .message-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .message-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, var(--accent-blue), #3b82f6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+    }
+
+    .message-form-section, .templates-section {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        margin-bottom: 2rem;
+    }
+
+    .form-content, .templates-content {
+        padding: 2.5rem;
+    }
+
+    .message-form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.95rem;
+    }
+
+    .form-label.required::after {
+        content: ' *';
+        color: #ef4444;
+    }
+
+    .form-control, .message-textarea {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        background: var(--white);
+        transition: border-color 0.2s ease;
+    }
+
+    .message-textarea {
+        resize: vertical;
+        min-height: 200px;
+        font-family: inherit;
+        line-height: 1.6;
+    }
+
+    .form-control:focus, .message-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .textarea-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    .field-help {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .character-count {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+    }
+
+    .field-errors {
+        margin-top: 0.5rem;
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .tips-section {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .tips-section h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tip-item i {
+        color: var(--accent-blue);
+        flex-shrink: 0;
+    }
+
+    .tip-item span {
+        color: var(--primary-black);
+        font-weight: 500;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .templates-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .templates-content p {
+        color: var(--soft-gray);
+        margin-bottom: 1.5rem;
+    }
+
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .template-item {
+        padding: 1.25rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .template-item:hover {
+        border-color: var(--accent-blue);
+        background: #f0f9ff;
+        transform: translateY(-1px);
+    }
+
+    .template-item h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .template-item p {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .message-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content, .form-content, .templates-content {
+            padding: 2rem;
+        }
+
+        .header-main {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .textarea-footer {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .tips-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .templates-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .message-container {
+            padding: 1rem 0;
+        }
+
+        .header-content, .form-content, .templates-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .message-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .tips-section {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.message-form');
+        const submitBtn = document.getElementById('send-message');
+        const messageTextarea = document.querySelector('.message-textarea');
+        const charCount = document.getElementById('char-count');
+        const templateItems = document.querySelectorAll('.template-item');
+
+        const templates = {
+            'project-inquiry': {
+                subject: 'Project Inquiry - Video Editing',
+                content: `Hi there,
+
+I hope this message finds you well. I'm looking for a skilled video editor for an upcoming project and came across your profile.
+
+Project Details:
+- Type: [Describe your project type]
+- Duration: [Estimated video length]
+- Timeline: [When you need it completed]
+- Budget: [Your budget range]
+
+I'd love to discuss this opportunity with you and see if it would be a good fit. Please let me know if you're interested and available.
+
+Looking forward to hearing from you!
+
+Best regards`
+            },
+            'follow-up': {
+                subject: 'Following up on our conversation',
+                content: `Hi,
+
+I wanted to follow up on our previous conversation about the video editing project.
+
+Have you had a chance to review the details I shared? I'm happy to answer any questions you might have or provide additional information.
+
+Please let me know your thoughts when you have a moment.
+
+Thanks!`
+            },
+            'clarification': {
+                subject: 'Question about your services',
+                content: `Hello,
+
+I'm interested in your video editing services and have a few questions:
+
+1. [Your first question]
+2. [Your second question]
+3. [Your third question]
+
+I'd appreciate any information you can provide to help me better understand how we might work together.
+
+Thank you for your time!`
+            },
+            'feedback': {
+                subject: 'Portfolio and Experience Inquiry',
+                content: `Hi,
+
+I'm considering you for a video editing project and would love to learn more about your experience.
+
+Could you please share:
+- Examples of similar projects you've worked on
+- Your typical turnaround time
+- Any specific expertise that might be relevant
+
+I appreciate your time and look forward to potentially working together.
+
+Best regards`
+            }
+        };
+
+        // Character counter
+        if (messageTextarea && charCount) {
+            messageTextarea.addEventListener('input', function() {
+                const count = this.value.length;
+                charCount.textContent = count;
+                
+                if (count > 1000) {
+                    charCount.style.color = '#ef4444';
+                    this.style.borderColor = '#ef4444';
+                } else if (count > 800) {
+                    charCount.style.color = '#f59e0b';
+                    this.style.borderColor = '#f59e0b';
+                } else {
+                    charCount.style.color = 'var(--soft-gray)';
+                    this.style.borderColor = 'var(--border-gray)';
+                }
+                
+                updateSubmitButton();
+            });
+            
+            // Initial count
+            charCount.textContent = messageTextarea.value.length;
+        }
+
+        // Template functionality
+        templateItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const templateType = this.dataset.template;
+                const template = templates[templateType];
+                
+                if (template) {
+                    // Fill in the template
+                    const subjectField = document.querySelector('input[name="subject"]');
+                    if (subjectField && !subjectField.value) {
+                        subjectField.value = template.subject;
+                    }
+                    
+                    if (messageTextarea) {
+                        if (confirm('This will replace your current message. Continue?')) {
+                            messageTextarea.value = template.content;
+                            messageTextarea.focus();
+                            
+                            // Update character count
+                            if (charCount) {
+                                charCount.textContent = messageTextarea.value.length;
+                            }
+                            
+                            updateSubmitButton();
+                        }
+                    }
+                }
+                
+                // Visual feedback
+                this.style.background = '#dcfce7';
+                this.style.borderColor = '#10b981';
+                setTimeout(() => {
+                    this.style.background = '#f8fafc';
+                    this.style.borderColor = 'var(--border-gray)';
+                }, 1000);
+            });
+        });
+
+        // Form validation
+        function updateSubmitButton() {
+            const messageContent = messageTextarea.value.trim();
+            submitBtn.disabled = messageContent.length === 0;
+        }
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            const messageContent = messageTextarea.value.trim();
+            
+            if (messageContent.length === 0) {
+                e.preventDefault();
+                alert('Please enter a message before sending.');
+                messageTextarea.focus();
+                return false;
+            }
+            
+            if (messageContent.length > 1000) {
+                e.preventDefault();
+                alert('Message is too long. Please keep it under 1000 characters.');
+                messageTextarea.focus();
+                return false;
+            }
+
+            // Show loading state
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Message...';
+            submitBtn.disabled = true;
+
+            // Prevent multiple submissions
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // Initialize
+        updateSubmitButton();
+
+        // Auto-resize textarea
+        messageTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.max(200, this.scrollHeight) + 'px';
+        });
+    });
+</script>
+{% endblock page_content %}

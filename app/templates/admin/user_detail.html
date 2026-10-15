@@ -1,0 +1,459 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}{{ data.user.fullName }} - User Details{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1 class="admin-page-title">{{ data.user.fullName }}</h1>
+            <p class="admin-page-subtitle">{{ data.user.userType.title() }} Account Details</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+            {% if data.user.isActive %}
+            <a href="{{ url_for('admin.suspend_user', user_id=data.user.userId) }}" class="btn admin-btn-warning">
+                <i class="fas fa-ban"></i> Suspend User
+            </a>
+            {% else %}
+            <form method="POST" action="{{ url_for('admin.reactivate_user', user_id=data.user.userId) }}" style="display: inline;">
+                <button type="submit" class="btn admin-btn-success" onclick="return confirm('Are you sure you want to reactivate this user?')">
+                    <i class="fas fa-check"></i> Reactivate User
+                </button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('admin.reset_user_password', user_id=data.user.userId) }}" class="btn admin-btn-danger">
+                <i class="fas fa-key"></i> Reset Password
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- User Overview Cards -->
+<div class="admin-stats-grid" style="margin-bottom: 2rem;">
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon users">
+                <i class="fas fa-star"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ "%.1f"|format(data.user.averageRating) }}</div>
+        <div class="admin-stat-label">Average Rating ({{ data.user.totalRatings }} reviews)</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon portfolios">
+                <i class="fas fa-envelope"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.sent_messages|length }}</div>
+        <div class="admin-stat-label">Messages Sent</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon jobs">
+                <i class="fas fa-flag"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.reports_count }}</div>
+        <div class="admin-stat-label">Reports About User</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon reports">
+                <i class="fas fa-calendar"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.user.dateCreated.strftime('%b %Y') }}</div>
+        <div class="admin-stat-label">Member Since</div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+    <!-- Left Column -->
+    <div>
+        <!-- Basic Information -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Basic Information</h3>
+                <span class="admin-status-badge {% if data.user.isActive %}active{% else %}suspended{% endif %}">
+                    {% if data.user.isActive %}Active{% else %}Suspended{% endif %}
+                </span>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                    <div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Full Name</label>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ data.user.fullName }}</div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Email Address</label>
+                            <div style="color: var(--primary-black);">{{ data.user.emailAddress }}</div>
+                        </div>
+
+                        {% if data.user.phoneNumber %}
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Phone Number</label>
+                            <div style="color: var(--primary-black);">{{ data.user.phoneNumber }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">User Type</label>
+                            <span class="admin-status-badge {{ data.user.userType }}">
+                                {% if data.user.userType == 'creator' %}
+                                    <i class="fas fa-video"></i> Content Creator
+                                {% elif data.user.userType == 'editor' %}
+                                    <i class="fas fa-cut"></i> Video Editor
+                                {% elif data.user.userType == 'admin' %}
+                                    <i class="fas fa-shield-alt"></i> Administrator
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Join Date</label>
+                            <div style="color: var(--primary-black);">{{ data.user.dateCreated.strftime('%B %d, %Y %H:%M') }}</div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Last Updated</label>
+                            <div style="color: var(--primary-black);">{{ data.user.lastUpdated.strftime('%B %d, %Y %H:%M') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Type Specific Information -->
+        {% if data.user.userType == 'creator' and data.specific_data %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Creator Details</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.specific_data.jobs|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Jobs Posted</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {% set completed_jobs = 0 %}
+                            {% for job in data.specific_data.jobs %}
+                                {% if job.status == 'completed' %}
+                                    {% set completed_jobs = completed_jobs + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ completed_jobs }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Completed Jobs</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {% set active_jobs = 0 %}
+                            {% for job in data.specific_data.jobs %}
+                                {% if job.status in ['posted', 'in_progress'] %}
+                                    {% set active_jobs = active_jobs + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ active_jobs }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Active Jobs</div>
+                    </div>
+
+                    {% if data.specific_data.contentType %}
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.specific_data.contentType }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Content Type</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if data.user.userType == 'editor' and data.specific_data %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Editor Details</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.specific_data.portfolios|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Portfolios</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {% set approved_portfolios = 0 %}
+                            {% for portfolio in data.specific_data.portfolios %}
+                                {% if portfolio.verificationStatus == 'approved' %}
+                                    {% set approved_portfolios = approved_portfolios + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ approved_portfolios }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Approved</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.specific_data.jobApplications|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Applications</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.specific_data.selectedJobs|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Jobs Won</div>
+                    </div>
+
+                    {% if data.specific_data.hourlyRate %}
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            ${{ data.specific_data.hourlyRate }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Hourly Rate</div>
+                    </div>
+                    {% endif %}
+
+                    <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">
+                            <span class="admin-status-badge {% if data.specific_data.isVerified %}approved{% else %}pending{% endif %}">
+                                {% if data.specific_data.isVerified %}Verified{% else %}Unverified{% endif %}
+                            </span>
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600;">Verification</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Ratings -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Recent Ratings Received</h3>
+            </div>
+            <div class="admin-section-content">
+                {% if data.received_ratings %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for rating in data.received_ratings %}
+                    <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); background: var(--white);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">{{ rating.rater.fullName if rating.rater else 'Unknown User' }}</div>
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ rating.job.title if rating.job else 'Unknown Job' }}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #f59e0b;">
+                                    {% for i in range(5) %}
+                                        {% if i < rating.ratingValue %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span style="font-weight: 600;">{{ rating.ratingValue }}/5</span>
+                            </div>
+                        </div>
+                        {% if rating.reviewText %}
+                        <div style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                            "{{ rating.reviewText }}"
+                        </div>
+                        {% endif %}
+                        <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                            {{ rating.dateCreated.strftime('%b %d, %Y') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-star"></i>
+                    <h3>No Ratings Yet</h3>
+                    <p>This user hasn't received any ratings yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Recent Messages Sent</h3>
+            </div>
+            <div class="admin-section-content">
+                {% if data.sent_messages %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for message in data.sent_messages %}
+                    <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); background: var(--white);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">To: {{ message.receiver.fullName if message.receiver else 'Unknown User' }}</div>
+                                {% if message.job %}
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">Re: {{ message.job.title }}</div>
+                                {% endif %}
+                                {% if message.subject %}
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">Subject: {{ message.subject }}</div>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                {{ message.dateCreated.strftime('%b %d, %Y') }}
+                            </div>
+                        </div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            {{ message.messageContent[:100] }}{% if message.messageContent|length > 100 %}...{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-envelope"></i>
+                    <h3>No Messages</h3>
+                    <p>This user hasn't sent any messages yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div>
+        <!-- Profile Picture -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Profile Picture</h3>
+            </div>
+            <div class="admin-section-content" style="text-align: center;">
+                {% if data.user.profilePicture %}
+                <img src="{{ data.user.profilePicture }}" alt="{{ data.user.fullName }}"
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray);">
+                {% else %}
+                <div style="width: 150px; height: 150px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 3rem; margin: 0 auto; border: 3px solid var(--border-gray);">
+                    {{ data.user.fullName[:2].upper() }}
+                </div>
+                <p style="color: var(--soft-gray); margin-top: 1rem; font-size: 0.875rem;">No profile picture uploaded</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Quick Actions</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% if data.user.userType == 'editor' %}
+                    <a href="{{ url_for('admin.portfolios') }}?search={{ data.user.emailAddress }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-folder"></i> View Portfolios
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin.reports') }}?search={{ data.user.emailAddress }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-flag"></i> View Reports
+                    </a>
+
+                    <a href="{{ url_for('admin.search') }}?q={{ data.user.emailAddress }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-search"></i> Search Platform
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reports -->
+        {% if data.recent_reports %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Recent Reports</h3>
+                <span class="admin-status-badge rejected">{{ data.reports_count }} Total</span>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for report in data.recent_reports %}
+                    <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); background: var(--white);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; color: var(--primary-black);">Report #{{ report.reportId }}</div>
+                            <span class="admin-status-badge {{ report.reportStatus }}">{{ report.reportStatus.title() }}</span>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--soft-gray); margin-bottom: 0.5rem;">
+                            By: {{ report.reporter.fullName if report.reporter else 'Unknown User' }}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                            {{ report.dateCreated.strftime('%b %d, %Y') }}
+                        </div>
+                        <div style="margin-top: 0.75rem;">
+                            <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" class="btn admin-btn-sm btn-secondary">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Status -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Account Status</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600;">Account Status</span>
+                        <span class="admin-status-badge {% if data.user.isActive %}active{% else %}suspended{% endif %}">
+                            {% if data.user.isActive %}Active{% else %}Suspended{% endif %}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600;">Email Verified</span>
+                        {% if data.user.isEmailConfirmed %}
+                        <span class="admin-status-badge active">Verified</span>
+                        {% else %}
+                        <span class="admin-status-badge pending">Unverified</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600;">Total Ratings</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">{{ data.user.totalRatings }}</span>
+                    </div>
+
+                    {% if data.user.userType == 'editor' and data.specific_data %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <span style="font-weight: 600;">Editor Verified</span>
+                        <span class="admin-status-badge {% if data.specific_data.isVerified %}approved{% else %}pending{% endif %}">
+                            {% if data.specific_data.isVerified %}Verified{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock admin_content %}

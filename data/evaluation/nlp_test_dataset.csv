@@ -1,0 +1,17 @@
+job_id,job_description,expected_skills,expected_styles,expected_niches
+1,"Need a gaming editor proficient in Adobe Premiere Pro and After Effects for cinematic videos.","Adobe Premiere Pro|After Effects","cinematic","gaming"
+2,"Looking for a travel editor who uses DaVinci Resolve for color grading.","DaVinci Resolve|color grading","","travel"
+3,"Seeking a sports video editor skilled in motion graphics and fast-paced editing.","motion graphics","fast-paced","sports"
+4,"Need a lifestyle content editor experienced in CapCut for short-form videos.","CapCut","short-form","lifestyle"
+5,"Looking for a technology video editor who uses Final Cut Pro for storytelling.","Final Cut Pro","storytelling","technology"
+6,"Seeking a fitness editor experienced in Adobe Premiere Pro and montage editing.","Adobe Premiere Pro","montage","fitness"
+7,"Need an education video editor skilled in After Effects and motion graphics.","After Effects|motion graphics","","education"
+8,"Looking for a gaming editor who creates cinematic storytelling videos.","","cinematic|storytelling","gaming"
+9,"Seeking a beauty content editor experienced in CapCut and short-form editing.","CapCut","short-form","beauty"
+10,"Need a documentary editor using DaVinci Resolve for color grading.","DaVinci Resolve|color grading","","documentary"
+11,"Looking for an editor experienced in Adobe Premiere Pro and Premiere Pro.","Adobe Premiere Pro","",""
+12,"Need a gaming editor who creates cinematic videos with motion graphics.","motion graphics","cinematic","gaming"
+13,"Looking for a video editor for general editing work.","","",""
+14,"Seeking a sports editor experienced in After Effects and storytelling.","After Effects","storytelling","sports"
+15,"Need a travel editor skilled in Final Cut Pro and cinematic storytelling.","Final Cut Pro","cinematic|storytelling","travel"
+

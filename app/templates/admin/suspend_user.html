@@ -1,0 +1,206 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Suspend User{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Suspend User Account</h1>
+    <p class="admin-page-subtitle">Temporarily suspend {{ user.fullName }}'s account access</p>
+</div>
+
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h2 class="admin-section-title">User Information</h2>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <div>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">Basic Details</h3>
+                <p><strong>Full Name:</strong> {{ user.fullName }}</p>
+                <p><strong>Email:</strong> {{ user.emailAddress }}</p>
+                <p><strong>User Type:</strong> 
+                    <span class="admin-status-badge {{ user.userType }}">{{ user.userType.title() }}</span>
+                </p>
+                <p><strong>Current Status:</strong> 
+                    <span class="admin-status-badge {% if user.isActive %}active{% else %}suspended{% endif %}">
+                        {% if user.isActive %}Active{% else %}Suspended{% endif %}
+                    </span>
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">Account Statistics</h3>
+                <p><strong>Account Created:</strong> {{ user.dateCreated.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Average Rating:</strong> 
+                    {% if user.totalRatings > 0 %}
+                        {{ "%.1f"|format(user.averageRating) }}/5.0 ({{ user.totalRatings }} ratings)
+                    {% else %}
+                        No ratings yet
+                    {% endif %}
+                </p>
+                {% if user.userType == 'creator' and user.creator %}
+                    <p><strong>Total Jobs Posted:</strong> {{ user.creator.jobs|length }}</p>
+                {% elif user.userType == 'editor' and user.editor %}
+                    <p><strong>Jobs Completed:</strong> {{ user.editor.selectedJobs|selectattr('status', 'equalto', 'completed')|list|length }}</p>
+                    <p><strong>Verification Status:</strong> 
+                        <span class="admin-status-badge {% if user.editor.isVerified %}approved{% else %}pending{% endif %}">
+                            {% if user.editor.isVerified %}Verified{% else %}Unverified{% endif %}
+                        </span>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.isActive %}
+            <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #ef4444;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                    <strong style="color: #ef4444;">Warning</strong>
+                </div>
+                <p style="color: #7f1d1d; margin: 0; font-size: 0.875rem;">
+                    Suspending this user will immediately prevent them from accessing their account and using platform features. 
+                    They will receive an email notification about the suspension.
+                </p>
+            </div>
+        {% else %}
+            <div style="background: rgba(107, 114, 128, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--soft-gray);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-info-circle" style="color: var(--soft-gray);"></i>
+                    <strong style="color: var(--soft-gray);">Information</strong>
+                </div>
+                <p style="color: var(--soft-gray); margin: 0; font-size: 0.875rem;">
+                    This user account is already suspended. You can reactivate it from the user detail page.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.isActive %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h2 class="admin-section-title">Suspension Details</h2>
+    </div>
+    <div class="admin-section-content">
+        <form method="POST" style="max-width: 600px;">
+            {{ form.hidden_tag() }}
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="{{ form.reason.id }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                    {{ form.reason.label.text }}
+                </label>
+                {{ form.reason(
+                    class="form-control",
+                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); font-size: 0.875rem; min-height: 120px; resize: vertical;",
+                    placeholder="Provide a clear reason for suspension (e.g., policy violation, inappropriate behavior, spam, etc.)"
+                ) }}
+                {% for error in form.reason.errors %}
+                    <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-top: 0.5rem;">
+                    This reason will be included in the suspension notification email sent to the user.
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button type="submit" class="btn admin-btn-danger" style="padding: 0.75rem 2rem;">
+                    <i class="fas fa-ban"></i> Suspend User Account
+                </button>
+                <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="admin-section">
+    <div class="admin-section-content" style="text-align: center;">
+        <i class="fas fa-user-slash" style="font-size: 3rem; color: var(--soft-gray); margin-bottom: 1rem;"></i>
+        <h3 style="color: var(--primary-black); margin-bottom: 0.5rem;">User Already Suspended</h3>
+        <p style="color: var(--soft-gray); margin-bottom: 2rem;">This user account is currently suspended and cannot access the platform.</p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{{ url_for('admin.reactivate_user', user_id=user.userId) }}" 
+               class="btn admin-btn-success" 
+               style="padding: 0.75rem 2rem;"
+               onclick="return confirm('Are you sure you want to reactivate this user account?')">
+                <i class="fas fa-user-check"></i> Reactivate Account
+            </a>
+            <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+                <i class="fas fa-arrow-left"></i> Back to User Details
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Activity Section -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h2 class="admin-section-title">Recent Account Activity</h2>
+    </div>
+    <div class="admin-section-content">
+        {% set recent_messages = user.sentMessages[:5] %}
+        {% set recent_ratings = user.receivedRatings[:5] %}
+        
+        {% if recent_messages or recent_ratings %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary-black);">Recent Messages Sent</h4>
+                    {% if recent_messages %}
+                        {% for message in recent_messages %}
+                            <div style="padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+                                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">
+                                    {{ message.dateCreated.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                                <div style="font-weight: 500; font-size: 0.875rem;">
+                                    {{ message.subject or 'No Subject' }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                    To: {{ message.receiver.fullName if message.receiver else 'Unknown' }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: var(--soft-gray); font-size: 0.875rem; font-style: italic;">No recent messages</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary-black);">Recent Ratings Received</h4>
+                    {% if recent_ratings %}
+                        {% for rating in recent_ratings %}
+                            <div style="padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                        {{ rating.dateCreated.strftime('%Y-%m-%d') }}
+                                    </div>
+                                    <div style="color: #f59e0b; font-weight: 600;">
+                                        {{ '★' * rating.ratingValue }}{{ '☆' * (5 - rating.ratingValue) }}
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                    From: {{ rating.rater.fullName if rating.rater else 'Unknown' }}
+                                </div>
+                                {% if rating.reviewText %}
+                                    <div style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--primary-black);">
+                                        "{{ rating.reviewText[:100] }}{% if rating.reviewText|length > 100 %}...{% endif %}"
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: var(--soft-gray); font-size: 0.875rem; font-style: italic;">No recent ratings</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="admin-empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No Recent Activity</h3>
+                <p>This user has not had any recent account activity.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock admin_content %}

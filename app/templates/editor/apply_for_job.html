@@ -1,0 +1,1934 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Apply for Job - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="apply-job-container">
+    <!-- Page Header -->
+    <div class="apply-header">
+        <div class="header-content">
+            <h1>Apply for Job</h1>
+            <p>Submit your proposal and showcase why you're the perfect fit for this project</p>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.job_detail', job_id=job.jobId) }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Job
+            </a>
+        </div>
+    </div>
+
+    <!-- Job Summary Card -->
+    <div class="job-summary-card">
+        <div class="job-header">
+            <div class="job-icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="job-details">
+                <h3>{{ job.title }}</h3>
+                <div class="job-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-user"></i>
+                        <span>{{ job.creator.user.fullName }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>{{ job.getBudgetRange() }}</span>
+                    </div>
+                    {% if job.deadline %}
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Due {{ moment(job.deadline).format('MMM D, YYYY') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="job-description">
+            <p>{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+        </div>
+        
+        {% if job.requiredSkills %}
+        <div class="job-skills">
+            <strong>Required Skills:</strong>
+            {% for skill in job.getRequiredSkillsList()[:5] %}
+            <span class="skill-tag">{{ skill }}</span>
+            {% endfor %}
+            {% if job.getRequiredSkillsList()|length > 5 %}
+            <span class="skill-more">+{{ job.getRequiredSkillsList()|length - 5 }} more</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Application Form -->
+    <div class="application-form-container">
+        <form method="POST" class="application-form" id="applicationForm">
+            {{ form.hidden_tag() }}
+            
+            <!-- Proposed Rate -->
+            <div class="form-group">
+                <label for="{{ form.proposedRate.id }}" class="form-label">
+                    <i class="fas fa-dollar-sign"></i>
+                    Your Proposed Rate
+                </label>
+                <div class="rate-input-container">
+                    <span class="currency-symbol">$</span>
+                    {{ form.proposedRate(class="form-input rate-input", placeholder="0.00", id="proposedRate") }}
+                    <span class="rate-unit">per hour</span>
+                </div>
+                {% if form.proposedRate.errors %}
+                <div class="form-errors">
+                    {% for error in form.proposedRate.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="rate-comparison" id="rateComparison">
+                    {% if job.budgetMin and job.budgetMax %}
+                    <span class="budget-range">Job budget: ${{ job.budgetMin }} - ${{ job.budgetMax }} per hour</span>
+                    {% elif job.budgetMin %}
+                    <span class="budget-range">Job budget: From ${{ job.budgetMin }} per hour</span>
+                    {% elif job.budgetMax %}
+                    <span class="budget-range">Job budget: Up to ${{ job.budgetMax }} per hour</span>
+                    {% else %}
+                    <span class="budget-range">Budget is negotiable</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Proposed Timeline -->
+            <div class="form-group">
+                <label for="{{ form.proposedTimeline.id }}" class="form-label">
+                    <i class="fas fa-clock"></i>
+                    Estimated Timeline
+                </label>
+                {{ form.proposedTimeline(class="form-input", placeholder="e.g., 5-7 business days, 2 weeks, etc.", id="proposedTimeline") }}
+                {% if form.proposedTimeline.errors %}
+                <div class="form-errors">
+                    {% for error in form.proposedTimeline.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-help">
+                    Provide a realistic timeframe for completing this project
+                </div>
+            </div>
+
+            <!-- Custom Proposal -->
+            <div class="form-group">
+                <label for="{{ form.customProposal.id }}" class="form-label">
+                    <i class="fas fa-comment-dots"></i>
+                    Your Proposal
+                </label>
+                {{ form.customProposal(class="form-textarea", rows="8", placeholder="Introduce yourself and explain why you're the best fit for this project...", id="customProposal") }}
+                {% if form.customProposal.errors %}
+                <div class="form-errors">
+                    {% for error in form.customProposal.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-footer">
+                    <div class="character-count">
+                        <span id="charCount">0</span> characters
+                    </div>
+                    <div class="form-help">
+                        Highlight your relevant experience and approach to this project
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proposal Templates -->
+            <div class="proposal-templates">
+                <div class="templates-header">
+                    <h3>Proposal Templates</h3>
+                    <p>Use these templates as starting points for your proposal</p>
+                </div>
+                
+                <div class="templates-grid">
+                    <div class="template-card" onclick="useTemplate('experienced')">
+                        <div class="template-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Experienced Professional</h4>
+                            <p>Highlight extensive experience and past successes</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('specialist')">
+                        <div class="template-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Specialist Approach</h4>
+                            <p>Focus on specific skills relevant to the project</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('collaborative')">
+                        <div class="template-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Collaborative Partner</h4>
+                            <p>Emphasize communication and partnership</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('value_focused')">
+                        <div class="template-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Value-Focused</h4>
+                            <p>Highlight value and return on investment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Showcase -->
+            {% if editor_portfolios %}
+            <div class="portfolio-showcase">
+                <div class="showcase-header">
+                    <h3>Your Portfolio Highlights</h3>
+                    <p>Relevant work samples that demonstrate your capabilities</p>
+                </div>
+                
+                <div class="portfolio-grid">
+                    {% for portfolio in editor_portfolios[:3] %}
+                    <div class="portfolio-item">
+                        <div class="portfolio-header">
+                            <div class="portfolio-icon">
+                                <i class="fas fa-play-circle"></i>
+                            </div>
+                            <div class="portfolio-details">
+                                <h4>{{ portfolio.title }}</h4>
+                                <div class="portfolio-skills">
+                                    {% for skill in portfolio.getSkillTagsList()[:3] %}
+                                    <span class="skill-badge">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <p>{{ portfolio.description[:100] }}{% if portfolio.description|length > 100 %}...{% endif %}</p>
+                        <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="portfolio-link">
+                            View Details <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if editor_portfolios|length > 3 %}
+                <div class="portfolio-footer">
+                    <a href="{{ url_for('editor.portfolio') }}" class="btn btn-outline">
+                        View All Portfolio Items ({{ editor_portfolios|length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Application Summary -->
+            <div class="application-summary">
+                <div class="summary-header">
+                    <h3>Application Summary</h3>
+                    <p>Review your proposal before submitting</p>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Proposed Rate</div>
+                        <div class="summary-value" id="summaryRate">$0.00 per hour</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Timeline</div>
+                        <div class="summary-value" id="summaryTimeline">Not specified</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Proposal Length</div>
+                        <div class="summary-value" id="summaryLength">0 characters</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Budget Alignment</div>
+                        <div class="summary-value" id="summaryAlignment">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="saveDraft()">
+                    <i class="fas fa-save"></i>
+                    Save Draft
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="previewApplication()">
+                    <i class="fas fa-eye"></i>
+                    Preview Application
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Application
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Application Tips -->
+    <div class="application-tips">
+        <div class="tips-header">
+            <h3>Application Success Tips</h3>
+            <p>Increase your chances of getting selected</p>
+        </div>
+        
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Be Specific</h4>
+                    <p>Address the specific requirements mentioned in the job posting and explain how you'll meet them.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Showcase Experience</h4>
+                    <p>Mention relevant past projects and include links to your best portfolio pieces.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Price Competitively</h4>
+                    <p>Research market rates and price your services competitively while valuing your expertise.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Communicate Clearly</h4>
+                    <p>Write clearly and professionally. Good communication skills are highly valued by clients.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Application Preview Modal -->
+<div id="applicationPreviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Application Preview</h3>
+            <button class="modal-close" onclick="closeApplicationPreview()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="preview-content">
+                <div class="preview-section">
+                    <h4>Job Details</h4>
+                    <div class="preview-job">
+                        <div class="preview-job-title">{{ job.title }}</div>
+                        <div class="preview-job-creator">by {{ job.creator.user.fullName }}</div>
+                    </div>
+                </div>
+                
+                <div class="preview-section">
+                    <h4>Your Proposal</h4>
+                    <div class="preview-proposal-grid">
+                        <div class="preview-item">
+                            <strong>Rate:</strong> <span id="previewRate">$0.00 per hour</span>
+                        </div>
+                        <div class="preview-item">
+                            <strong>Timeline:</strong> <span id="previewTimeline">Not specified</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="preview-section">
+                    <h4>Proposal Message</h4>
+                    <div class="preview-message" id="previewMessage">No proposal message</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeApplicationPreview()">Edit Application</button>
+            <button class="btn btn-primary" onclick="submitFromPreview()">Submit Application</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Apply Job Page Styles */
+.apply-job-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.apply-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Job Summary Card */
+.job-summary-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.job-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.job-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.job-details h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.75rem;
+}
+
+.job-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.meta-item i {
+    color: var(--accent-blue);
+}
+
+.job-description {
+    margin-bottom: 1.5rem;
+}
+
+.job-description p {
+    color: var(--primary-black);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.job-skills {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.job-skills strong {
+    color: var(--primary-black);
+    font-size: 0.9rem;
+}
+
+.skill-tag {
+    background: var(--white);
+    color: var(--accent-blue);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--accent-blue);
+}
+
+.skill-more {
+    color: var(--soft-gray);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Application Form */
+.application-form-container {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.application-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    font-size: 1.1rem;
+}
+
+.form-label i {
+    width: 18px;
+    color: var(--soft-gray);
+}
+
+/* Rate Input */
+.rate-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.currency-symbol {
+    position: absolute;
+    left: 1rem;
+    color: var(--soft-gray);
+    font-weight: 600;
+    z-index: 1;
+}
+
+.rate-input {
+    padding-left: 2.5rem !important;
+    padding-right: 5rem !important;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.rate-unit {
+    position: absolute;
+    right: 1rem;
+    color: var(--soft-gray);
+    font-size: 0.9rem;
+}
+
+.rate-comparison {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-blue);
+}
+
+.budget-range {
+    font-size: 0.9rem;
+    color: var(--primary-black);
+    font-weight: 500;
+}
+
+/* Form Elements */
+.form-input,
+.form-textarea {
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background: var(--white);
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.6;
+}
+
+.form-help {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    line-height: 1.4;
+}
+
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.character-count {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+.form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Proposal Templates */
+.proposal-templates {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.templates-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.templates-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.templates-header p {
+    color: var(--soft-gray);
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.template-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-blue);
+}
+
+.template-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.template-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.template-content p {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Portfolio Showcase */
+.portfolio-showcase {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.showcase-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.showcase-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.showcase-header p {
+    color: var(--soft-gray);
+}
+
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.portfolio-item {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.portfolio-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.portfolio-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.portfolio-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+}
+
+.portfolio-details h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.portfolio-skills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.skill-badge {
+    background: var(--accent-blue);
+    color: var(--white);
+    padding: 0.125rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.portfolio-item p {
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.portfolio-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.portfolio-link:hover {
+    text-decoration: underline;
+}
+
+.portfolio-footer {
+    text-align: center;
+}
+
+/* Application Summary */
+.application-summary {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.summary-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.summary-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.summary-header p {
+    color: var(--soft-gray);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.summary-item {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.summary-label {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.summary-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Application Tips */
+.application-tips {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.tips-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tips-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tips-header p {
+    color: var(--soft-gray);
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.tip-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.tip-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1rem 2rem 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Preview Styles */
+.preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.preview-section h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.preview-job {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-blue);
+}
+
+.preview-job-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.preview-job-creator {
+    color: var(--soft-gray);
+    font-size: 0.9rem;
+}
+
+.preview-proposal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.preview-item {
+    background: var(--light-gray);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+.preview-item strong {
+    color: var(--primary-black);
+}
+
+.preview-message {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--success-green);
+    line-height: 1.6;
+    color: var(--primary-black);
+    white-space: pre-wrap;
+    font-style: italic;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #2563eb;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .apply-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .job-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .job-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .application-form-container {
+        padding: 1.5rem;
+    }
+    
+    .rate-input-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .currency-symbol,
+    .rate-unit {
+        position: static;
+    }
+    
+    .rate-input {
+        padding: 1rem !important;
+        text-align: center;
+    }
+    
+    .templates-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .template-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .tip-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .form-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .preview-proposal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .job-details h3 {
+        font-size: 1.25rem;
+    }
+    
+    .application-form {
+        gap: 2rem;
+    }
+    
+    .form-input,
+    .form-textarea {
+        padding: 0.75rem;
+    }
+    
+    .form-textarea {
+        min-height: 150px;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .templates-header h3,
+    .tips-header h3,
+    .showcase-header h3,
+    .summary-header h3 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Animation Styles */
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.rate-highlight {
+    animation: rateHighlight 0.3s ease-in-out;
+}
+
+@keyframes rateHighlight {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(59, 130, 246, 0.1); }
+    100% { background-color: transparent; }
+}
+</style>
+
+<script>
+// Proposal templates
+const proposalTemplates = {
+    experienced: {
+        content: `Hello,
+
+I'm excited to apply for your video editing project. With over [X years] of professional video editing experience, I have the skills and expertise to deliver exceptional results for your project.
+
+My experience includes:
+• [Specific relevant experience 1]
+• [Specific relevant experience 2]
+• [Specific relevant experience 3]
+
+I understand your project requirements and am confident I can deliver high-quality work that exceeds your expectations. My approach would be to:
+
+1. Review all project materials and clarify any questions
+2. Create a detailed timeline and milestone plan
+3. Provide regular updates and drafts for your feedback
+4. Deliver polished final deliverables on time
+
+I'm available to start immediately and can complete this project within your timeline. Please feel free to review my portfolio and let me know if you have any questions.
+
+Looking forward to working with you!
+
+Best regards,
+[Your Name]`
+    },
+    specialist: {
+        content: `Hi there,
+
+I specialize in [specific skill/style] video editing and believe I'm the perfect fit for your project. Your requirements align perfectly with my core expertise.
+
+My specialized skills include:
+• [Relevant technical skill 1]
+• [Relevant technical skill 2]
+• [Relevant software/tool expertise]
+
+For your project, I would leverage:
+- [Specific technique or approach 1]
+- [Specific technique or approach 2]
+- [Quality assurance process]
+
+I take pride in delivering pixel-perfect results and maintaining clear communication throughout the project. My typical workflow ensures:
+✓ Quick turnaround times
+✓ Multiple revision rounds included
+✓ Final deliverables in your preferred formats
+
+I'm confident my specialized approach will bring your vision to life effectively.
+
+Best regards,
+[Your Name]`
+    },
+    collaborative: {
+        content: `Hello,
+
+I'm interested in collaborating with you on this video editing project. I believe great results come from strong client-editor partnerships built on clear communication and shared vision.
+
+My collaborative approach includes:
+• Initial consultation to fully understand your goals
+• Regular check-ins and progress updates
+• Open feedback loops throughout the process
+• Flexible revision process to ensure satisfaction
+
+What sets me apart:
+- Proactive communication style
+- Quick response times (typically within 4 hours)
+- Detailed project documentation
+- Transparent workflow with milestone tracking
+
+I view every project as a partnership where your success is my success. I'm committed to not just meeting your requirements, but helping you achieve the best possible outcome for your content.
+
+I'd love to discuss your vision in more detail and show you how we can work together to create something amazing.
+
+Best regards,
+[Your Name]`
+    },
+    value_focused: {
+        content: `Hello,
+
+I'm excited about the opportunity to add significant value to your video editing project. Beyond just completing the work, I focus on delivering results that drive real impact for your content goals.
+
+Value I bring:
+• Cost-effective solutions without compromising quality
+• Strategic editing choices that enhance viewer engagement
+• Optimized deliverables for your target platforms
+• Additional value-adds like thumbnail suggestions or format variations
+
+My track record includes:
+- [Specific measurable result 1]
+- [Specific measurable result 2]
+- [Efficiency or cost-saving achievement]
+
+For your project, I would:
+1. Analyze your content goals and target audience
+2. Apply proven editing techniques that boost engagement
+3. Deliver optimized versions for different platforms
+4. Provide actionable insights for future projects
+
+I believe in delivering more than expected while staying within budget. My goal is to become your go-to video editor for long-term success.
+
+Ready to discuss how we can maximize the impact of your content?
+
+Best regards,
+[Your Name]`
+    }
+};
+
+// Use proposal template
+function useTemplate(templateKey) {
+    const template = proposalTemplates[templateKey];
+    if (!template) return;
+    
+    const proposalTextarea = document.getElementById('customProposal');
+    
+    if (proposalTextarea.value.trim() === '' || confirm('This will replace your current proposal. Continue?')) {
+        proposalTextarea.value = template.content;
+        updateCharacterCount();
+        updateApplicationSummary();
+        
+        showNotification('Template applied successfully!', 'success');
+        proposalTextarea.focus();
+        
+        // Scroll to textarea
+        proposalTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Update character count
+function updateCharacterCount() {
+    const proposalTextarea = document.getElementById('customProposal');
+    const charCount = document.getElementById('charCount');
+    
+    if (proposalTextarea && charCount) {
+        const count = proposalTextarea.value.length;
+        charCount.textContent = count;
+        
+        // Change color based on length
+        if (count > 2000) {
+            charCount.style.color = '#dc2626';
+            charCount.classList.add('error');
+        } else if (count > 1500) {
+            charCount.style.color = '#f59e0b';
+            charCount.classList.add('warning');
+        } else {
+            charCount.style.color = 'var(--soft-gray)';
+            charCount.classList.remove('error', 'warning');
+        }
+    }
+}
+
+// Update application summary
+function updateApplicationSummary() {
+    const rateInput = document.getElementById('proposedRate');
+    const timelineInput = document.getElementById('proposedTimeline');
+    const proposalTextarea = document.getElementById('customProposal');
+    
+    // Update rate
+    const summaryRate = document.getElementById('summaryRate');
+    if (rateInput && summaryRate) {
+        const rate = parseFloat(rateInput.value) || 0;
+        summaryRate.textContent = `$${rate.toFixed(2)} per hour`;
+    }
+    
+    // Update timeline
+    const summaryTimeline = document.getElementById('summaryTimeline');
+    if (timelineInput && summaryTimeline) {
+        summaryTimeline.textContent = timelineInput.value || 'Not specified';
+    }
+    
+    // Update proposal length
+    const summaryLength = document.getElementById('summaryLength');
+    if (proposalTextarea && summaryLength) {
+        const length = proposalTextarea.value.length;
+        summaryLength.textContent = `${length} characters`;
+    }
+    
+    // Update budget alignment
+    updateBudgetAlignment();
+}
+
+// Update budget alignment
+function updateBudgetAlignment() {
+    const rateInput = document.getElementById('proposedRate');
+    const summaryAlignment = document.getElementById('summaryAlignment');
+    
+    if (!rateInput || !summaryAlignment) return;
+    
+    const proposedRate = parseFloat(rateInput.value) || 0;
+    
+    // Get budget from job data (these would be passed from the backend)
+    const jobBudgetMin = {{ job.budgetMin|default(0) }};
+    const jobBudgetMax = {{ job.budgetMax|default(0) }};
+    
+    let alignmentText = '-';
+    let alignmentColor = 'var(--soft-gray)';
+    
+    if (proposedRate > 0) {
+        if (jobBudgetMin && jobBudgetMax) {
+            if (proposedRate >= jobBudgetMin && proposedRate <= jobBudgetMax) {
+                alignmentText = 'Within Budget';
+                alignmentColor = 'var(--success-green)';
+            } else if (proposedRate < jobBudgetMin) {
+                alignmentText = 'Below Budget';
+                alignmentColor = '#f59e0b';
+            } else {
+                alignmentText = 'Above Budget';
+                alignmentColor = '#dc2626';
+            }
+        } else if (jobBudgetMin && proposedRate >= jobBudgetMin) {
+            alignmentText = 'Above Minimum';
+            alignmentColor = 'var(--success-green)';
+        } else if (jobBudgetMax && proposedRate <= jobBudgetMax) {
+            alignmentText = 'Within Maximum';
+            alignmentColor = 'var(--success-green)';
+        } else {
+            alignmentText = 'Competitive';
+            alignmentColor = 'var(--accent-blue)';
+        }
+    }
+    
+    summaryAlignment.textContent = alignmentText;
+    summaryAlignment.style.color = alignmentColor;
+}
+
+// Save draft functionality
+function saveDraft() {
+    const form = document.getElementById('applicationForm');
+    const formData = new FormData(form);
+    
+    const draft = {
+        proposedRate: formData.get('proposedRate'),
+        proposedTimeline: formData.get('proposedTimeline'),
+        customProposal: formData.get('customProposal'),
+        timestamp: new Date().toISOString(),
+        jobId: {{ job.jobId }}
+    };
+    
+    localStorage.setItem(`application_draft_${draft.jobId}`, JSON.stringify(draft));
+    showNotification('Draft saved successfully!', 'success');
+}
+
+// Load draft functionality
+function loadDraft() {
+    const jobId = {{ job.jobId }};
+    const savedDraft = localStorage.getItem(`application_draft_${jobId}`);
+    if (!savedDraft) return;
+    
+    try {
+        const draft = JSON.parse(savedDraft);
+        
+        if (draft.proposedRate) {
+            document.getElementById('proposedRate').value = draft.proposedRate;
+        }
+        if (draft.proposedTimeline) {
+            document.getElementById('proposedTimeline').value = draft.proposedTimeline;
+        }
+        if (draft.customProposal) {
+            document.getElementById('customProposal').value = draft.customProposal;
+        }
+        
+        updateCharacterCount();
+        updateApplicationSummary();
+        
+        showNotification('Draft loaded successfully!', 'info');
+    } catch (error) {
+        console.error('Error loading draft:', error);
+    }
+}
+
+// Preview application functionality
+function previewApplication() {
+    const proposedRate = document.getElementById('proposedRate').value;
+    const proposedTimeline = document.getElementById('proposedTimeline').value;
+    const customProposal = document.getElementById('customProposal').value;
+    
+    // Validate required fields
+    if (!proposedRate || !customProposal.trim()) {
+        showNotification('Please fill in your proposed rate and proposal message', 'error');
+        return;
+    }
+    
+    // Update preview content
+    document.getElementById('previewRate').textContent = `$${parseFloat(proposedRate).toFixed(2)} per hour`;
+    document.getElementById('previewTimeline').textContent = proposedTimeline || 'Not specified';
+    document.getElementById('previewMessage').textContent = customProposal || 'No proposal message';
+    
+    // Show modal
+    document.getElementById('applicationPreviewModal').classList.add('active');
+}
+
+// Close application preview
+function closeApplicationPreview() {
+    document.getElementById('applicationPreviewModal').classList.remove('active');
+}
+
+// Submit from preview
+function submitFromPreview() {
+    closeApplicationPreview();
+    document.getElementById('applicationForm').submit();
+}
+
+// Form validation
+function validateForm() {
+    const proposedRate = document.getElementById('proposedRate').value;
+    const customProposal = document.getElementById('customProposal').value.trim();
+    
+    let isValid = true;
+    let errors = [];
+    
+    if (!proposedRate || parseFloat(proposedRate) <= 0) {
+        errors.push('Please enter a valid proposed rate');
+        isValid = false;
+    }
+    
+    if (!customProposal) {
+        errors.push('Please write a proposal message');
+        isValid = false;
+    } else if (customProposal.length < 50) {
+        errors.push('Proposal message must be at least 50 characters long');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        showNotification(errors.join('. '), 'error');
+    }
+    
+    return isValid;
+}
+
+// Form submission handling
+function handleFormSubmission() {
+    const form = document.getElementById('applicationForm');
+    
+    form.addEventListener('submit', function(event) {
+        if (!validateForm()) {
+            event.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Clear draft on successful submission
+        const jobId = {{ job.jobId }};
+        localStorage.removeItem(`application_draft_${jobId}`);
+        
+        // Note: Form will submit normally, this is just for UI feedback
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+    });
+}
+
+// Auto-save functionality
+function initializeAutoSave() {
+    const fields = ['proposedRate', 'proposedTimeline', 'customProposal'];
+    let autoSaveTimeout;
+    
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        
+        field.addEventListener('input', function() {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                saveDraft();
+            }, 3000); // Auto-save after 3 seconds of inactivity
+            
+            // Update summary in real-time
+            updateApplicationSummary();
+        });
+    });
+}
+
+// Rate input enhancement
+function enhanceRateInput() {
+    const rateInput = document.getElementById('proposedRate');
+    if (!rateInput) return;
+    
+    rateInput.addEventListener('input', function() {
+        // Add highlight animation when rate changes
+        this.parentElement.classList.add('rate-highlight');
+        setTimeout(() => {
+            this.parentElement.classList.remove('rate-highlight');
+        }, 300);
+        
+        // Format the input
+        const value = parseFloat(this.value);
+        if (!isNaN(value)) {
+            this.value = value.toFixed(2);
+        }
+    });
+    
+    rateInput.addEventListener('blur', function() {
+        const value = parseFloat(this.value);
+        if (!isNaN(value)) {
+            this.value = value.toFixed(2);
+        }
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        // Ctrl/Cmd + Enter to submit
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (validateForm()) {
+                document.getElementById('applicationForm').submit();
+            }
+        }
+        
+        // Ctrl/Cmd + S to save draft
+        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+            event.preventDefault();
+            saveDraft();
+        }
+        
+        // Ctrl/Cmd + P to preview
+        if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+            event.preventDefault();
+            previewApplication();
+        }
+        
+        // Escape to close modal
+        if (event.key === 'Escape') {
+            closeApplicationPreview();
+        }
+    });
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Core functionality
+    updateCharacterCount();
+    updateApplicationSummary();
+    handleFormSubmission();
+    initializeAutoSave();
+    enhanceRateInput();
+    initializeKeyboardShortcuts();
+    
+    // Load saved draft
+    setTimeout(loadDraft, 500);
+    
+    // Add character count listener
+    const proposalTextarea = document.getElementById('customProposal');
+    if (proposalTextarea) {
+        proposalTextarea.addEventListener('input', updateCharacterCount);
+    }
+    
+    // Add animations to template cards
+    const templateCards = document.querySelectorAll('.template-card');
+    templateCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+    
+    // Add animations to tip cards
+    const tipCards = document.querySelectorAll('.tip-card');
+    tipCards.forEach((card, index) => {
+        card.style.animationDelay = `${(index + 4) * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+    
+    // Modal click outside to close
+    const modal = document.getElementById('applicationPreviewModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeApplicationPreview();
+        }
+    });
+    
+    // Focus on first empty required field
+    const rateField = document.getElementById('proposedRate');
+    const proposalField = document.getElementById('customProposal');
+    
+    if (rateField && !rateField.value) {
+        rateField.focus();
+    } else if (proposalField && !proposalField.value) {
+        proposalField.focus();
+    }
+});
+
+// Additional CSS for notifications and enhancements
+const additionalStyles = `
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-info .notification-content i {
+    color: var(--accent-blue);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.template-card.selected {
+    border-color: var(--accent-blue);
+    background: #eff6ff;
+    transform: translateY(-2px);
+}
+
+.template-card:focus {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+.character-count.warning {
+    color: #f59e0b !important;
+    font-weight: 600;
+}
+
+.character-count.error {
+    color: #ef4444 !important;
+    font-weight: 600;
+}
+
+@media (max-width: 480px) {
+    .notification {
+        width: calc(100% - 2rem);
+        margin: 1rem;
+        right: 0;
+    }
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock editor_content %}

@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error{% endblock title %}
+
+{% block seo %}
+<meta name="description" content="Internal server error - Something went wrong on our end. The KugzyJobs team is working to fix this issue.">
+<meta name="robots" content="noindex, nofollow">
+{% endblock seo %}
+
+{% block page_content %}
+<section class="error-page">
+    <div class="error-container">
+        <div class="error-content">
+            <!-- Error Number -->
+            <div class="error-number">
+                <span class="number-text">500</span>
+                <div class="number-decoration"></div>
+            </div>
+            
+            <!-- Error Icon -->
+            <div class="error-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message">
+                <h1>Server Error</h1>
+                <p>Oops! Something went wrong on our end. It's like when the editing software crashes right before you save - frustrating, but we're working hard to fix it!</p>
+            </div>
+            
+            <!-- Error Actions -->
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+                <button onclick="location.reload()" class="btn btn-secondary btn-large">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+            
+            <!-- Status Info -->
+            <div class="status-info">
+                <div class="status-card">
+                    <div class="status-header">
+                        <div class="status-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <h3>What's happening?</h3>
+                    </div>
+                    <div class="status-content">
+                        <div class="status-item"><div class="status-indicator"></div>
+                            <span>Our team has been automatically notified</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator working"></div>
+                            <span>Engineers are investigating the issue</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator pending"></div>
+                            <span>Normal service will resume shortly</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="help-section">
+                    <h3>In the meantime...</h3>
+                    <div class="help-options">
+                        <div class="help-option">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <h4>Wait a moment</h4>
+                                <p>Try refreshing the page in a few minutes</p>
+                            </div>
+                        </div>
+                        <div class="help-option">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <h4>Contact Support</h4>
+                                <p>Email us at <a href="mailto:support@kugzyjobs.com">support@kugzyjobs.com</a></p>
+                            </div>
+                        </div>
+                        <div class="help-option">
+                            <i class="fas fa-twitter"></i>
+                            <div>
+                                <h4>Follow Updates</h4>
+                                <p>Check our social media for status updates</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error ID for support -->
+                <div class="error-reference">
+                    <small>Error ID: {{ request.environ.get('werkzeug.request').id if request.environ.get('werkzeug.request') else 'KJ-' + moment().format('YYMMDDHHmmss') }}</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="error-decoration">
+            <div class="repair-icon icon-1">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <div class="repair-icon icon-2">
+                <i class="fas fa-cog"></i>
+            </div>
+            <div class="repair-icon icon-3">
+                <i class="fas fa-hammer"></i>
+            </div>
+            <div class="repair-icon icon-4">
+                <i class="fas fa-screwdriver"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .error-page {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 6%;
+        background: linear-gradient(180deg, var(--white) 0%, var(--light-gray) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="gear-pattern" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="8" fill="none" stroke="%23f59e0b" stroke-width="1" opacity="0.1"/><circle cx="15" cy="15" r="3" fill="%23f59e0b" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23gear-pattern)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .error-container {
+        max-width: 1000px;
+        width: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+    .error-content {
+        text-align: center;
+        background: var(--white);
+        padding: 4rem 3rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-gray);
+        position: relative;
+    }
+
+    .error-number {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .number-text {
+        font-size: clamp(5rem, 12vw, 8rem);
+        font-weight: 900;
+        color: #f59e0b;
+        line-height: 1;
+        display: block;
+        letter-spacing: -4px;
+        position: relative;
+    }
+
+    .number-decoration {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 6px;
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+        border-radius: 3px;
+        opacity: 0.8;
+    }
+
+    .error-icon {
+        margin-bottom: 2rem;
+    }
+
+    .error-icon i {
+        font-size: 4rem;
+        color: #f59e0b;
+        opacity: 0.8;
+        animation: wrench-shake 2s ease-in-out infinite;
+    }
+
+    @keyframes wrench-shake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-15deg); }
+        75% { transform: rotate(15deg); }
+    }
+
+    .error-message h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .error-message p {
+        font-size: 1.25rem;
+        color: var(--soft-gray);
+        line-height: 1.6;
+        margin-bottom: 3rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 3rem;
+    }
+
+    .status-info {
+        border-top: 1px solid var(--border-gray);
+        padding-top: 3rem;
+        display: grid;
+        gap: 2rem;
+    }
+
+    .status-card {
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: left;
+    }
+
+    .status-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--success-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+
+    .status-header h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+    }
+
+    .status-content {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--success-green);
+        position: relative;
+    }
+
+    .status-indicator.working {
+        background: #f59e0b;
+        animation: pulse-working 2s ease-in-out infinite;
+    }
+
+    .status-indicator.pending {
+        background: var(--soft-gray);
+    }
+
+    @keyframes pulse-working {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .help-section {
+        background: var(--white);
+        border: 2px dashed var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .help-section h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .help-options {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .help-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        text-align: left;
+    }
+
+    .help-option i {
+        font-size: 1.5rem;
+        color: var(--accent-blue);
+        margin-top: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .help-option h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .help-option p {
+        color: var(--soft-gray);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .help-option a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .help-option a:hover {
+        text-decoration: underline;
+    }
+
+    .error-reference {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-gray);
+        color: var(--soft-gray);
+        font-family: 'Courier New', monospace;
+    }
+
+    .error-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .repair-icon {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: rgba(245, 158, 11, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+        font-size: 1.5rem;
+        animation: repair-float 8s ease-in-out infinite;
+    }
+
+    .icon-1 {
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+    }
+
+    .icon-2 {
+        top: 30%;
+        right: 15%;
+        animation-delay: 2s;
+        animation: repair-spin 6s linear infinite;
+    }
+
+    .icon-3 {
+        bottom: 30%;
+        left: 15%;
+        animation-delay: 4s;
+    }
+
+    .icon-4 {
+        bottom: 20%;
+        right: 20%;
+        animation-delay: 6s;
+    }
+
+    @keyframes repair-float {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+            transform: translateY(-15px) rotate(180deg);
+        }
+    }
+
+    @keyframes repair-spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .error-page {
+            padding: 2rem 4%;
+            min-height: 70vh;
+        }
+
+        .error-content {
+            padding: 3rem 2rem;
+        }
+
+        .error-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-large {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .status-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .help-option {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .repair-icon {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .error-page {
+            padding: 2rem;
+        }
+
+        .error-content {
+            padding: 2rem 1.5rem;
+        }
+
+        .status-info {
+            padding-top: 2rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate the error elements on load
+        const numberText = document.querySelector('.number-text');
+        const errorIcon = document.querySelector('.error-icon i');
+        
+        if (numberText) {
+            numberText.style.opacity = '0';
+            numberText.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                numberText.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                numberText.style.opacity = '1';
+                numberText.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        if (errorIcon) {
+            errorIcon.style.opacity = '0';
+            errorIcon.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                errorIcon.style.transition = 'all 0.6s ease';
+                errorIcon.style.opacity = '0.8';
+                errorIcon.style.transform = 'scale(1)';
+            }, 600);
+        }
+
+        // Animate status indicators
+        const statusItems = document.querySelectorAll('.status-item');
+        statusItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-20px)';
+            setTimeout(() => {
+                item.style.transition = 'all 0.5s ease';
+                item.style.opacity = '1';
+                item.style.transform = 'translateX(0)';
+            }, 900 + (index * 200));
+        });
+
+        // Auto-refresh attempt after 30 seconds
+        let refreshTimer = setTimeout(() => {
+            if (confirm('Would you like to try refreshing the page automatically?')) {
+                location.reload();
+            }
+        }, 30000);
+
+        // Clear timer if user manually refreshes
+        window.addEventListener('beforeunload', () => {
+            clearTimeout(refreshTimer);
+        });
+
+        // Add interactive effects to help options
+        document.querySelectorAll('.help-option').forEach(option => {
+            option.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            
+            option.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

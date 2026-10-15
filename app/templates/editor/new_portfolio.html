@@ -1,0 +1,1773 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Add Portfolio Item - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="new-portfolio-container">
+    <!-- Navigation Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ url_for('editor.portfolio') }}" class="breadcrumb-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Portfolio
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Add New Item</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Add Portfolio Item</h1>
+            <p>Showcase your best video editing work to attract potential clients</p>
+        </div>
+        
+        <div class="header-tips">
+            <div class="tip-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="tip-content">
+                <h4>Quick Tip</h4>
+                <p>Upload your best work that demonstrates your editing skills and style. Quality over quantity!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-grid">
+        <!-- Form Section -->
+        <div class="form-section">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3>Portfolio Details</h3>
+                    <div class="progress-indicator">
+                        <span class="progress-text">Step 1 of 1</span>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <form method="POST" action="{{ url_for('editor.new_portfolio') }}" class="portfolio-form" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Title Field -->
+                        <div class="form-group {% if form.title.errors %}has-error{% endif %}">
+                            {{ form.title.label(class="form-label required") }}
+                            {{ form.title(class="form-input") }}
+                            {% if form.title.errors %}
+                            <div class="field-error">
+                                {% for error in form.title.errors %}
+                                <span class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Give your portfolio item a clear, descriptive title (max 200 characters)
+                            </div>
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="form-group {% if form.description.errors %}has-error{% endif %}">
+                            {{ form.description.label(class="form-label required") }}
+                            {{ form.description(class="form-textarea") }}
+                            {% if form.description.errors %}
+                            <div class="field-error">
+                                {% for error in form.description.errors %}
+                                <span class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Describe your work, techniques used, and any special achievements (max 1000 characters)
+                            </div>
+                            <div class="character-count">
+                                <span id="descriptionCount">0</span> / 1000 characters
+                            </div>
+                        </div>
+
+                        <!-- Video URL Field -->
+                        <div class="form-group {% if form.videoUrl.errors %}has-error{% endif %}">
+                            {{ form.videoUrl.label(class="form-label required") }}
+                            <div class="input-group">
+                                <span class="input-prefix">
+                                    <i class="fas fa-video"></i>
+                                </span>
+                                {{ form.videoUrl(class="form-input") }}
+                                <button type="button" class="input-suffix btn-preview" onclick="previewVideo()">
+                                    <i class="fas fa-eye"></i>
+                                    Preview
+                                </button>
+                            </div>
+                            {% if form.videoUrl.errors %}
+                            <div class="field-error">
+                                {% for error in form.videoUrl.errors %}
+                                <span class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Enter a valid URL from YouTube, Vimeo, or other video hosting platforms
+                            </div>
+                            <div class="supported-platforms">
+                                <span>Supported platforms:</span>
+                                <div class="platform-icons">
+                                    <i class="fab fa-youtube" title="YouTube"></i>
+                                    <i class="fab fa-vimeo-v" title="Vimeo"></i>
+                                    <i class="fas fa-video" title="Other platforms"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Tags Field -->
+                        <div class="form-group {% if form.skillTags.errors %}has-error{% endif %}">
+                            {{ form.skillTags.label(class="form-label") }}
+                            {{ form.skillTags(class="form-textarea skill-tags-input") }}
+                            {% if form.skillTags.errors %}
+                            <div class="field-error">
+                                {% for error in form.skillTags.errors %}
+                                <span class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Separate skills with commas (e.g., Color Grading, Motion Graphics, Audio Sync)
+                            </div>
+                            <div class="character-count">
+                                <span id="skillTagsCount">0</span> / 300 characters
+                            </div>
+                        </div>
+
+                        <!-- Suggested Skills -->
+                        <div class="suggested-skills">
+                            <h4>Suggested Skills</h4>
+                            <div class="skill-suggestions">
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Color Grading')">Color Grading</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Motion Graphics')">Motion Graphics</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Sound Editing')">Sound Editing</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Visual Effects')">Visual Effects</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Animation')">Animation</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Compositing')">Compositing</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Transitions')">Transitions</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Title Design')">Title Design</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Green Screen')">Green Screen</button>
+                                <button type="button" class="skill-suggestion" onclick="addSkill('Stabilization')">Stabilization</button>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <a href="{{ url_for('editor.portfolio') }}" class="btn btn-outline">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </a>
+                            <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                                <i class="fas fa-save"></i>
+                                Save Draft
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Add Portfolio Item
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <!-- Live Preview Card -->
+            <div class="preview-card">
+                <div class="card-header">
+                    <h3>Live Preview</h3>
+                    <div class="preview-status">
+                        <i class="fas fa-eye"></i>
+                        <span>How clients will see your portfolio item</span>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="portfolio-preview">
+                        <!-- Video Preview -->
+                        <div class="video-preview" id="videoPreview">
+                            <div class="video-placeholder">
+                                <i class="fas fa-video"></i>
+                                <span>Video Preview</span>
+                                <p>Enter a video URL to see preview</p>
+                            </div>
+                        </div>
+
+                        <!-- Content Preview -->
+                        <div class="content-preview">
+                            <h4 id="previewTitle">Portfolio Title</h4>
+                            <p id="previewDescription">Your portfolio description will appear here...</p>
+                            
+                            <div class="preview-tags" id="previewTags">
+                                <span class="preview-tag">Sample Tag</span>
+                            </div>
+                            
+                            <div class="preview-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Just now</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Pending verification</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines Card -->
+            <div class="guidelines-card">
+                <div class="card-header">
+                    <h3>Portfolio Guidelines</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="guidelines-list">
+                        <div class="guideline-item">
+                            <div class="guideline-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="guideline-content">
+                                <h4>High Quality Work</h4>
+                                <p>Submit only your best editing work that showcases your skills and creativity.</p>
+                            </div>
+                        </div>
+
+                        <div class="guideline-item">
+                            <div class="guideline-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="guideline-content">
+                                <h4>Video Requirements</h4>
+                                <p>Use public video URLs from YouTube, Vimeo, or similar platforms. Private videos won't be accessible.</p>
+                            </div>
+                        </div>
+
+                        <div class="guideline-item">
+                            <div class="guideline-icon">
+                                <i class="fas fa-copyright"></i>
+                            </div>
+                            <div class="guideline-content">
+                                <h4>Original Work Only</h4>
+                                <p>Only submit work that you have created or have proper licensing/permission to showcase.</p>
+                            </div>
+                        </div>
+
+                        <div class="guideline-item">
+                            <div class="guideline-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="guideline-content">
+                                <h4>Verification Process</h4>
+                                <p>All portfolio items go through verification (typically 24-48 hours) before becoming visible to clients.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="tips-card">
+                <div class="card-header">
+                    <h3>Pro Tips</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="tips-list">
+                        <div class="tip-item">
+                            <i class="fas fa-star"></i>
+                            <span>Include a variety of editing styles to show your range</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-tag"></i>
+                            <span>Use specific skill tags that clients commonly search for</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Keep videos concise - highlight the best parts in 30-60 seconds</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Update your portfolio regularly with recent work</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Preview Modal -->
+<div id="videoPreviewModal" class="modal">
+    <div class="modal-content video-modal-content">
+        <div class="modal-header">
+            <h3>Video Preview</h3>
+            <button class="modal-close" onclick="closeVideoPreviewModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="video-container">
+                <div class="video-preview-large" id="videoPreviewLarge">
+                    <div class="video-placeholder-large">
+                        <i class="fas fa-video"></i>
+                        <h4>Video Preview</h4>
+                        <p id="previewVideoUrl">Enter a video URL above to see preview</p>
+                        <p class="video-note">In a real implementation, this would show an embedded video player</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* New Portfolio Page Styles */
+.new-portfolio-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: var(--primary-black);
+}
+
+.breadcrumb-separator {
+    color: var(--soft-gray);
+}
+
+.breadcrumb-current {
+    color: var(--soft-gray);
+}
+
+/* Page Header */
+.page-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-tips {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    max-width: 300px;
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.tip-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+}
+
+/* Form Section */
+.form-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--light-gray);
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.progress-indicator {
+    background: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-gray);
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    font-weight: 600;
+}
+
+.card-content {
+    padding: 2rem;
+}
+
+/* Form Styles */
+.portfolio-form {
+    max-width: 100%;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group.has-error .form-input,
+.form-group.has-error .form-textarea {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-label.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.skill-tags-input {
+    min-height: 80px;
+}
+
+.input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.input-prefix {
+    background: var(--light-gray);
+    color: var(--soft-gray);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-gray);
+    border-right: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.input-group .form-input {
+    border-radius: 0;
+    flex: 1;
+}
+
+.input-suffix {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-left: none;
+}
+
+.btn-preview {
+    background: var(--accent-blue);
+    color: var(--white);
+    border: 1px solid var(--accent-blue);
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-preview:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.field-error {
+    margin-top: 0.5rem;
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ef4444;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.field-help {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    line-height: 1.4;
+}
+
+.field-help i {
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.character-count {
+    text-align: right;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--soft-gray);
+}
+
+.supported-platforms {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.platform-icons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.platform-icons i {
+    font-size: 1rem;
+    color: var(--accent-blue);
+    cursor: help;
+}
+
+/* Suggested Skills */
+.suggested-skills {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-md);
+}
+
+.suggested-skills h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.skill-suggestions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.skill-suggestion {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.skill-suggestion:hover {
+    background: var(--accent-blue);
+    color: var(--white);
+    border-color: var(--accent-blue);
+}
+
+.skill-suggestion.added {
+    background: var(--success-green);
+    color: var(--white);
+    border-color: var(--success-green);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Preview Section */
+.preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.preview-card,
+.guidelines-card,
+.tips-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.preview-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+/* Portfolio Preview */
+.portfolio-preview {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.video-preview {
+    height: 200px;
+    background: var(--light-gray);
+    position: relative;
+}
+
+.video-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--soft-gray);
+}
+
+.video-placeholder i {
+    font-size: 2rem;
+}
+
+.video-placeholder p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.content-preview {
+    padding: 1.5rem;
+}
+
+.content-preview h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.75rem;
+}
+
+.content-preview p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.preview-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.preview-tag {
+    background: var(--primary-black);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.preview-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Guidelines */
+.guidelines-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.guideline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.guideline-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.guideline-content h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guideline-content p {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Tips */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+}
+
+.tip-item i {
+    color: var(--accent-blue);
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.video-modal-content {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.video-preview-large {
+    width: 100%;
+    height: 300px;
+    background: var(--light-gray);
+    border: 2px dashed var(--border-gray);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-placeholder-large {
+    text-align: center;
+    color: var(--soft-gray);
+}
+
+.video-placeholder-large i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.video-placeholder-large h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.video-placeholder-large p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.video-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-section {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .header-tips {
+        max-width: none;
+        width: 100%;
+    }
+
+    .card-content {
+        padding: 1.5rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-prefix,
+    .input-suffix {
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .input-group .form-input {
+        border-radius: var(--radius-sm);
+        margin-top: 0.5rem;
+    }
+
+    .supported-platforms {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-header,
+    .modal-body {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-preview {
+        height: 150px;
+    }
+
+    .video-preview-large {
+        height: 200px;
+    }
+
+    .skill-suggestions {
+        justify-content: center;
+    }
+
+    .preview-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Form Validation Styles */
+.form-group.has-error .form-label {
+    color: #ef4444;
+}
+
+.form-group.valid .form-input,
+.form-group.valid .form-textarea {
+    border-color: var(--success-green);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.character-count.warning {
+    color: #f59e0b;
+}
+
+.character-count.error {
+    color: #ef4444;
+}
+
+/* Draft Indicator */
+.draft-indicator {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--accent-blue);
+    color: var(--white);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.draft-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+</style>
+
+<script>
+// New Portfolio Form Functionality
+let isDraftSaving = false;
+let draftSaveTimeout;
+
+// Form validation
+function validateForm() {
+    let isValid = true;
+    const form = document.querySelector('.portfolio-form');
+
+    // Clear previous validation states
+    clearValidationStates();
+
+    // Validate title
+    const title = form.querySelector('[name="title"]');
+    if (!title.value.trim()) {
+        showFieldError(title, 'Title is required');
+        isValid = false;
+    } else if (title.value.length > 200) {
+        showFieldError(title, 'Title must be 200 characters or less');
+        isValid = false;
+    } else {
+        showFieldValid(title);
+    }
+
+    // Validate description
+    const description = form.querySelector('[name="description"]');
+    if (!description.value.trim()) {
+        showFieldError(description, 'Description is required');
+        isValid = false;
+    } else if (description.value.length > 1000) {
+        showFieldError(description, 'Description must be 1000 characters or less');
+        isValid = false;
+    } else {
+        showFieldValid(description);
+    }
+
+    // Validate video URL
+    const videoUrl = form.querySelector('[name="videoUrl"]');
+    if (!videoUrl.value.trim()) {
+        showFieldError(videoUrl, 'Video URL is required');
+        isValid = false;
+    } else if (!isValidUrl(videoUrl.value)) {
+        showFieldError(videoUrl, 'Please enter a valid URL');
+        isValid = false;
+    } else {
+        showFieldValid(videoUrl);
+    }
+
+    // Validate skill tags (optional but with length limit)
+    const skillTags = form.querySelector('[name="skillTags"]');
+    if (skillTags.value.length > 300) {
+        showFieldError(skillTags, 'Skill tags must be 300 characters or less');
+        isValid = false;
+    } else if (skillTags.value.trim()) {
+        showFieldValid(skillTags);
+    }
+
+    return isValid;
+}
+
+function showFieldError(field, message) {
+    const formGroup = field.closest('.form-group');
+    formGroup.classList.add('has-error');
+    formGroup.classList.remove('valid');
+
+    // Add custom error if not already exists from Flask
+    if (!formGroup.querySelector('.field-error')) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.innerHTML = `
+            <span class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                ${message}
+            </span>
+        `;
+
+        const helpText = formGroup.querySelector('.field-help');
+        if (helpText) {
+            helpText.parentNode.insertBefore(errorDiv, helpText);
+        } else {
+            field.parentNode.appendChild(errorDiv);
+        }
+    }
+}
+
+function showFieldValid(field) {
+    const formGroup = field.closest('.form-group');
+    formGroup.classList.remove('has-error');
+    formGroup.classList.add('valid');
+
+    // Remove custom errors (keep Flask errors)
+    const customErrors = formGroup.querySelectorAll('.field-error:not([data-flask-error])');
+    customErrors.forEach(error => error.remove());
+}
+
+function clearValidationStates() {
+    const formGroups = document.querySelectorAll('.form-group');
+    formGroups.forEach(group => {
+        group.classList.remove('has-error', 'valid');
+        // Remove only custom errors, not Flask errors
+        const customErrors = group.querySelectorAll('.field-error:not([data-flask-error])');
+        customErrors.forEach(error => error.remove());
+    });
+}
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+// Character counting
+function updateCharacterCount(input, counterId, maxLength) {
+    const counter = document.getElementById(counterId);
+    const length = input.value.length;
+
+    counter.textContent = length;
+
+    // Update counter styling
+    counter.parentElement.classList.remove('warning', 'error');
+    if (length > maxLength * 0.9) {
+        counter.parentElement.classList.add('warning');
+    }
+    if (length > maxLength) {
+        counter.parentElement.classList.add('error');
+    }
+}
+
+// Live preview updates
+function updatePreview() {
+    const form = document.querySelector('.portfolio-form');
+
+    // Update title
+    const title = form.querySelector('[name="title"]').value || 'Portfolio Title';
+    document.getElementById('previewTitle').textContent = title;
+
+    // Update description
+    const description = form.querySelector('[name="description"]').value || 'Your portfolio description will appear here...';
+    document.getElementById('previewDescription').textContent = description;
+
+    // Update tags
+    const skillTags = form.querySelector('[name="skillTags"]').value;
+    const previewTags = document.getElementById('previewTags');
+
+    if (skillTags.trim()) {
+        const tags = skillTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        previewTags.innerHTML = tags.map(tag =>
+            `<span class="preview-tag">${tag}</span>`
+        ).join('');
+    } else {
+        previewTags.innerHTML = '<span class="preview-tag">Sample Tag</span>';
+    }
+
+    // Update video preview
+    const videoUrl = form.querySelector('[name="videoUrl"]').value;
+    const videoPreview = document.getElementById('videoPreview');
+
+    if (videoUrl.trim() && isValidUrl(videoUrl)) {
+        videoPreview.innerHTML = `
+            <div class="video-thumbnail" onclick="previewVideo()">
+                <div class="video-overlay">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div class="video-placeholder">
+                    <i class="fas fa-video"></i>
+                    <span>Click to Preview</span>
+                </div>
+            </div>
+        `;
+    } else {
+        videoPreview.innerHTML = `
+            <div class="video-placeholder">
+                <i class="fas fa-video"></i>
+                <span>Video Preview</span>
+                <p>Enter a video URL to see preview</p>
+            </div>
+        `;
+    }
+}
+
+// Add skill from suggestions
+function addSkill(skill) {
+    const skillTagsInput = document.querySelector('[name="skillTags"]');
+    const currentTags = skillTagsInput.value;
+
+    // Check if skill already exists
+    const existingTags = currentTags.split(',').map(tag => tag.trim().toLowerCase());
+    if (existingTags.includes(skill.toLowerCase())) {
+        return;
+    }
+
+    // Add skill
+    let newTags = currentTags.trim();
+    if (newTags) {
+        newTags += ', ' + skill;
+    } else {
+        newTags = skill;
+    }
+
+    skillTagsInput.value = newTags;
+    updateCharacterCount(skillTagsInput, 'skillTagsCount', 300);
+    updatePreview();
+
+    // Mark suggestion as added
+    const suggestionBtn = event.target;
+    suggestionBtn.classList.add('added');
+    suggestionBtn.innerHTML = '<i class="fas fa-check"></i> ' + skill;
+
+    // Auto-save draft
+    saveDraftAuto();
+}
+
+// Video preview functionality
+function previewVideo() {
+    const videoUrl = document.querySelector('[name="videoUrl"]').value;
+
+    if (!videoUrl.trim()) {
+        showErrorMessage('Please enter a video URL first');
+        return;
+    }
+
+    if (!isValidUrl(videoUrl)) {
+        showErrorMessage('Please enter a valid video URL');
+        return;
+    }
+
+    // Update modal content
+    document.getElementById('previewVideoUrl').textContent = videoUrl;
+
+    // Show modal
+    document.getElementById('videoPreviewModal').classList.add('active');
+}
+
+function closeVideoPreviewModal() {
+    document.getElementById('videoPreviewModal').classList.remove('active');
+}
+
+// Draft saving functionality
+function saveDraft() {
+    if (isDraftSaving) return;
+
+    isDraftSaving = true;
+    const form = document.querySelector('.portfolio-form');
+    const formData = new FormData(form);
+
+    const draftData = {};
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'csrf_token') {
+            draftData[key] = value;
+        }
+    }
+
+    // Save to localStorage
+    localStorage.setItem('portfolioDraft', JSON.stringify(draftData));
+
+    // Show draft indicator
+    showDraftSaved();
+
+    setTimeout(() => {
+        isDraftSaving = false;
+    }, 1000);
+}
+
+function saveDraftAuto() {
+    clearTimeout(draftSaveTimeout);
+    draftSaveTimeout = setTimeout(saveDraft, 2000);
+}
+
+function loadDraft() {
+    const draftData = localStorage.getItem('portfolioDraft');
+    if (draftData) {
+        const data = JSON.parse(draftData);
+        const form = document.querySelector('.portfolio-form');
+
+        Object.entries(data).forEach(([key, value]) => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field && !field.value) {
+                field.value = value;
+            }
+        });
+
+        // Update preview and character counts
+        updatePreview();
+        updateCharacterCount(form.querySelector('[name="description"]'), 'descriptionCount', 1000);
+        updateCharacterCount(form.querySelector('[name="skillTags"]'), 'skillTagsCount', 300);
+    }
+}
+
+function clearDraft() {
+    localStorage.removeItem('portfolioDraft');
+}
+
+function showDraftSaved() {
+    let indicator = document.querySelector('.draft-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'draft-indicator';
+        indicator.innerHTML = '<i class="fas fa-save"></i> Draft saved';
+        document.body.appendChild(indicator);
+    }
+
+    indicator.classList.add('show');
+    setTimeout(() => {
+        indicator.classList.remove('show');
+    }, 3000);
+}
+
+// Form submission
+function handleFormSubmit(e) {
+    e.preventDefault();
+
+    if (!validateForm()) {
+        showErrorMessage('Please fix the errors below before submitting');
+        return;
+    }
+
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    // Add loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    // Submit form
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Clear draft
+            clearDraft();
+
+            // Redirect to portfolio page with success message
+            window.location.href = '{{ url_for("editor.portfolio") }}?added=true';
+        } else {
+            return response.text().then(text => {
+                throw new Error('Server error: ' + response.status);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Failed to add portfolio item. Please try again.');
+
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+    });
+}
+
+// Show success/error messages
+function showSuccessMessage(message) {
+    showMessage(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showMessage(message, 'error');
+}
+
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-body">${message}</div>`;
+
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            closeVideoPreviewModal();
+        }
+
+        // Ctrl/Cmd + S to save draft
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveDraft();
+        }
+
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.querySelector('.portfolio-form');
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+}
+
+// Initialize modal functionality
+function initializeModals() {
+    const modal = document.getElementById('videoPreviewModal');
+
+    // Close modal on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeVideoPreviewModal();
+        }
+    });
+}
+
+// Add CSS for toast notifications
+const toastStyles = `
+<style>
+.toast {
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.toast-success {
+    background: var(--success-green);
+    color: white;
+}
+
+.toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.video-thumbnail:hover {
+    transform: scale(1.02);
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary-black);
+    transition: all 0.3s ease;
+}
+
+.video-thumbnail:hover .video-overlay {
+    background: var(--white);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .toast-container {
+        right: 1rem;
+        left: 1rem;
+    }
+
+    .toast {
+        max-width: none;
+    }
+}
+</style>
+`;
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add toast styles
+    document.head.insertAdjacentHTML('beforeend', toastStyles);
+
+    // Initialize all functionality
+    loadDraft();
+    initializeKeyboardShortcuts();
+    initializeModals();
+
+    // Set up form event listeners
+    const form = document.querySelector('.portfolio-form');
+    form.addEventListener('submit', handleFormSubmit);
+
+    // Character counting
+    const descriptionField = form.querySelector('[name="description"]');
+    const skillTagsField = form.querySelector('[name="skillTags"]');
+
+    descriptionField.addEventListener('input', function() {
+        updateCharacterCount(this, 'descriptionCount', 1000);
+        updatePreview();
+        saveDraftAuto();
+    });
+
+    skillTagsField.addEventListener('input', function() {
+        updateCharacterCount(this, 'skillTagsCount', 300);
+        updatePreview();
+        saveDraftAuto();
+    });
+
+    // Live preview updates
+    form.addEventListener('input', function(e) {
+        updatePreview();
+        saveDraftAuto();
+    });
+
+    // Initial preview update
+    updatePreview();
+    updateCharacterCount(descriptionField, 'descriptionCount', 1000);
+    updateCharacterCount(skillTagsField, 'skillTagsCount', 300);
+
+    // Mark Flask errors with data attribute for distinction
+    document.querySelectorAll('.field-error').forEach(error => {
+        error.setAttribute('data-flask-error', 'true');
+    });
+
+    // Add real-time validation
+    const formFields = form.querySelectorAll('input, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            // Only validate if field has content or was previously validated
+            if (this.value.trim() || this.closest('.form-group').classList.contains('has-error')) {
+                validateForm();
+            }
+        });
+    });
+});
+
+// Handle page unload with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+    const form = document.querySelector('.portfolio-form');
+    const hasContent = Array.from(form.querySelectorAll('input, textarea')).some(field =>
+        field.name !== 'csrf_token' && field.value.trim()
+    );
+
+    if (hasContent && !localStorage.getItem('portfolioDraft')) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
+</script>
+{% endblock editor_content %}

@@ -1,0 +1,1477 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Browse Jobs - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="jobs-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Browse Available Jobs</h1>
+            <p>Find exciting video editing opportunities that match your skills and interests</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <span class="stat-number">{{ jobs|length }}</span>
+                <span class="stat-label">Available Jobs</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-section">
+        <form method="GET" action="{{ url_for('editor.jobs') }}" class="search-form">
+            <div class="search-row">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    {{ form.searchTerm(class="search-input", placeholder="Search jobs by title, description, or keywords...") }}
+                </div>
+                <button type="submit" class="btn btn-primary search-btn">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+            </div>
+
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="budgetMin">Budget Range</label>
+                    <div class="budget-inputs">
+                        {{ form.budgetMin(class="budget-input", placeholder="Min KES") }}
+                        <span class="budget-separator">to</span>
+                        {{ form.budgetMax(class="budget-input", placeholder="Max KES") }}
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="contentType">Content Type</label>
+                    {{ form.contentType(class="filter-select") }}
+                </div>
+
+                <div class="filter-group">
+                    <label for="skillFilter">Required Skill</label>
+                    {{ form.skillFilter(class="filter-input", placeholder="e.g., Color Grading") }}
+                </div>
+
+                <div class="filter-group">
+                    <label for="sortBy">Sort By</label>
+                    {{ form.sortBy(class="filter-select") }}
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-secondary">Apply Filters</button>
+                    <a href="{{ url_for('editor.jobs') }}" class="btn btn-outline">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Filters Display -->
+    {% if request.args %}
+    <div class="active-filters">
+        <span class="filters-label">Active Filters:</span>
+        <div class="filter-tags">
+            {% if request.args.get('searchTerm') %}
+            <span class="filter-tag">
+                Search: "{{ request.args.get('searchTerm') }}"
+                <a href="{{ url_for('editor.jobs', **dict(request.args.items() | rejectattr('0', 'equalto', 'searchTerm'))) }}" class="remove-filter">×</a>
+            </span>
+            {% endif %}
+            {% if request.args.get('budgetMin') or request.args.get('budgetMax') %}
+            <span class="filter-tag">
+                Budget: KES {{ request.args.get('budgetMin', '0') }} - KES {{ request.args.get('budgetMax', '∞') }}
+                <a href="{{ url_for('editor.jobs', **dict(request.args.items() | rejectattr('0', 'in', ['budgetMin', 'budgetMax']))) }}" class="remove-filter">×</a>
+            </span>
+            {% endif %}
+            {% if request.args.get('contentType') %}
+            <span class="filter-tag">
+                Type: {{ request.args.get('contentType') }}
+                <a href="{{ url_for('editor.jobs', **dict(request.args.items() | rejectattr('0', 'equalto', 'contentType'))) }}" class="remove-filter">×</a>
+            </span>
+            {% endif %}
+            {% if request.args.get('skillFilter') %}
+            <span class="filter-tag">
+                Skill: {{ request.args.get('skillFilter') }}
+                <a href="{{ url_for('editor.jobs', **dict(request.args.items() | rejectattr('0', 'equalto', 'skillFilter'))) }}" class="remove-filter">×</a>
+            </span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('editor.jobs') }}" class="clear-all-filters">Clear All</a>
+    </div>
+    {% endif %}
+
+    <!-- Jobs Grid -->
+    <div class="jobs-grid">
+        {% if jobs %}
+        {% for job in jobs %}
+        <div class="job-card" data-job-id="{{ job.jobId }}">
+            <div class="job-header">
+                <div class="job-title-section">
+                    <h3 class="job-title">
+                        <a href="{{ url_for('editor.job_detail', job_id=job.jobId) }}">{{ job.title }}</a>
+                    </h3>
+                    <div class="job-meta">
+                        <span class="creator-info">
+                            <i class="fas fa-user"></i>
+                            {{ job.creator.user.fullName }}
+                        </span>
+                        <span class="post-date">
+                            <i class="fas fa-calendar"></i>
+                            {{ moment(job.dateCreated).fromNow() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="job-budget">
+                    <div class="budget-amount">{{ job.getBudgetRange() }}</div>
+                    <div class="budget-label">Budget</div>
+                </div>
+            </div>
+
+            <div class="job-description">
+                <p>{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+            </div>
+
+            <div class="job-details">
+                {% if job.deadline %}
+                <div class="job-detail-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Deadline: {{ moment(job.deadline).format('MMM D, YYYY') }}</span>
+                </div>
+                {% endif %}
+
+                {% if job.requiredSkills %}
+                <div class="job-detail-item">
+                    <i class="fas fa-tools"></i>
+                    <span>Skills: {{ job.requiredSkills[:50] }}{% if job.requiredSkills|length > 50 %}...{% endif %}</span>
+                </div>
+                {% endif %}
+
+                <div class="job-detail-item">
+                    <i class="fas fa-users"></i>
+                    <span>{{ job.applications|length }} application{{ "s" if job.applications|length != 1 else "" }}</span>
+                </div>
+            </div>
+
+            {% if job.requiredSkills %}
+            <div class="job-tags">
+                {% for skill in job.getRequiredSkillsList()[:3] %}
+                <span class="skill-tag">{{ skill.strip() }}</span>
+                {% endfor %}
+                {% if job.getRequiredSkillsList()|length > 3 %}
+                <span class="skill-tag more">+{{ job.getRequiredSkillsList()|length - 3 }} more</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="job-actions">
+                <a href="{{ url_for('editor.job_detail', job_id=job.jobId) }}" class="btn btn-outline">
+                    <i class="fas fa-eye"></i>
+                    View Details
+                </a>
+                
+                {% if job.jobId in applied_job_ids %}
+                <button class="btn btn-applied" disabled>
+                    <i class="fas fa-check"></i>
+                    Applied
+                </button>
+                {% else %}
+                <a href="{{ url_for('editor.apply_for_job', job_id=job.jobId) }}" class="btn btn-primary apply-btn">
+                    <i class="fas fa-paper-plane"></i>
+                    Quick Apply
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Application Status Indicator -->
+            {% if job.jobId in applied_job_ids %}
+            <div class="application-indicator">
+                <i class="fas fa-check-circle"></i>
+                <span>Application Submitted</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="no-jobs-state">
+            <div class="empty-state">
+                <i class="fas fa-briefcase"></i>
+                <h3>No Jobs Found</h3>
+                {% if request.args %}
+                <p>No jobs match your current search criteria. Try adjusting your filters or search terms.</p>
+                <a href="{{ url_for('editor.jobs') }}" class="btn btn-primary">View All Jobs</a>
+                {% else %}
+                <p>There are currently no jobs available. Check back later for new opportunities!</p>
+                <a href="{{ url_for('editor.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Load More / Pagination -->
+    {% if jobs and jobs|length >= 10 %}
+    <div class="load-more-section">
+        <button class="btn btn-secondary load-more-btn" onclick="loadMoreJobs()">
+            <i class="fas fa-plus"></i>
+            Load More Jobs
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Quick Apply Modal -->
+    <div id="quickApplyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Quick Application</h3>
+                <button class="modal-close" onclick="closeQuickApply()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quickApplyForm">
+                    <input type="hidden" id="quickJobId" name="jobId">
+                    
+                    <div class="form-group">
+                        <label for="quickRate">Your Rate (USD)</label>
+                        <input type="number" id="quickRate" name="proposedRate" step="0.01" min="0.01" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quickMessage">Quick Message</label>
+                        <textarea id="quickMessage" name="quickMessage" rows="4" class="form-input" placeholder="Brief message about your interest and qualifications..." required></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeQuickApply()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Jobs Page Styles */
+.jobs-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-stats {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    min-width: 150px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+/* Search Section */
+.search-section {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.search-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-input-group {
+    position: relative;
+    flex: 1;
+}
+
+.search-input-group i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--soft-gray);
+    z-index: 2;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-btn {
+    padding: 1rem 2rem;
+    white-space: nowrap;
+}
+
+.filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.filter-input,
+.filter-select,
+.budget-input {
+    padding: 0.75rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus,
+.budget-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.budget-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.budget-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.budget-separator {
+    color: var(--soft-gray);
+    font-size: 0.9rem;
+}
+
+.filter-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-actions .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Active Filters */
+.active-filters {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filters-label {
+    font-weight: 600;
+    color: var(--primary-black);
+    white-space: nowrap;
+}
+
+.filter-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--primary-black);
+}
+
+.remove-filter {
+    color: var(--soft-gray);
+    text-decoration: none;
+    font-weight: bold;
+    margin-left: 0.25rem;
+    cursor: pointer;
+}
+
+.remove-filter:hover {
+    color: #ef4444;
+}
+
+.clear-all-filters {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.clear-all-filters:hover {
+    text-decoration: underline;
+}
+
+/* Jobs Grid */
+.jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.job-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.job-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-blue);
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.job-title-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.job-title {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.job-title a {
+    color: var(--primary-black);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.job-title a:hover {
+    color: var(--accent-blue);
+}
+
+.job-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.job-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.job-budget {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.budget-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--success-green);
+    line-height: 1;
+}
+
+.budget-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+.job-description {
+    margin-bottom: 1.5rem;
+}
+
+.job-description p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.job-details {
+    margin-bottom: 1.5rem;
+}
+
+.job-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.job-detail-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--soft-gray);
+}
+
+.job-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.skill-tag {
+    background: var(--light-gray);
+    color: var(--primary-black);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.skill-tag.more {
+    background: var(--soft-gray);
+    color: var(--white);
+}
+
+.job-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.job-actions .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.btn-applied {
+    background: var(--success-green);
+    color: var(--white);
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.application-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--success-green);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Empty State */
+.no-jobs-state {
+    grid-column: 1 / -1;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--soft-gray);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 2rem;
+    color: var(--border-gray);
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary-black);
+}
+
+.empty-state p {
+    margin-bottom: 2rem;
+    line-height: 1.5;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Load More Section */
+.load-more-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.load-more-btn {
+    padding: 1rem 2rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    resize: vertical;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .jobs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-stats {
+        width: 100%;
+    }
+    
+    .search-row {
+        flex-direction: column;
+    }
+    
+    .search-btn {
+        width: 100%;
+    }
+    
+    .filters-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .jobs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .job-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .job-budget {
+        text-align: left;
+        width: 100%;
+    }
+    
+    .job-actions {
+        flex-direction: column;
+    }
+    
+    .active-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .job-card {
+        padding: 1.5rem;
+    }
+    
+    .job-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-header,
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Jobs page functionality
+function loadMoreJobs() {
+    const button = document.querySelector('.load-more-btn');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    button.disabled = true;
+    
+    // Simulate loading more jobs (in real implementation, this would be an AJAX call)
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        // In real implementation, append new job cards to the grid
+    }, 2000);
+}
+
+function openQuickApply(jobId, jobTitle) {
+    document.getElementById('quickJobId').value = jobId;
+    document.querySelector('#quickApplyModal .modal-header h3').textContent = `Quick Apply - ${jobTitle}`;
+    document.getElementById('quickApplyModal').classList.add('active');
+}
+
+function closeQuickApply() {
+    document.getElementById('quickApplyModal').classList.remove('active');
+    document.getElementById('quickApplyForm').reset();
+}
+
+// Handle quick apply form submission
+document.getElementById('quickApplyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    submitBtn.disabled = true;
+    
+    // In real implementation, submit via AJAX
+    setTimeout(() => {
+        closeQuickApply();
+        
+        // Show success message
+        const jobCard = document.querySelector(`[data-job-id="${formData.get('jobId')}"]`);
+        if (jobCard) {
+            const applyBtn = jobCard.querySelector('.apply-btn');
+            if (applyBtn) {
+                applyBtn.outerHTML = '<button class="btn btn-applied" disabled><i class="fas fa-check"></i> Applied</button>';
+            }
+            
+            // Add application indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'application-indicator';
+            indicator.innerHTML = '<i class="fas fa-check-circle"></i><span>Application Submitted</span>';
+            jobCard.appendChild(indicator);
+        }
+        
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 2000);
+});
+
+// Enhanced search functionality
+document.querySelector('.search-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        this.closest('form').submit();
+    }
+});
+
+// Auto-save search preferences
+function saveSearchPreferences() {
+    const form = document.querySelector('.search-form');
+    const formData = new FormData(form);
+    const preferences = {};
+
+    for (let [key, value] of formData.entries()) {
+        if (value) preferences[key] = value;
+    }
+
+    localStorage.setItem('editorJobSearchPreferences', JSON.stringify(preferences));
+}
+
+// Load saved search preferences
+function loadSearchPreferences() {
+    const saved = localStorage.getItem('editorJobSearchPreferences');
+    if (saved) {
+        const preferences = JSON.parse(saved);
+
+        Object.entries(preferences).forEach(([key, value]) => {
+            const input = document.querySelector(`[name="${key}"]`);
+            if (input) {
+                input.value = value;
+            }
+        });
+    }
+}
+
+// Check application status for jobs
+function checkApplicationStatus(jobId) {
+    return fetch('{{ url_for("editor.ajax_check_application") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId: jobId })
+    })
+    .then(response => response.json())
+    .catch(error => {
+        console.error('Error checking application status:', error);
+        return { has_applied: false };
+    });
+}
+
+// Real-time application status updates
+function updateApplicationStatuses() {
+    const jobCards = document.querySelectorAll('.job-card');
+
+    jobCards.forEach(card => {
+        const jobId = card.dataset.jobId;
+        const applyBtn = card.querySelector('.apply-btn');
+
+        if (applyBtn && jobId) {
+            checkApplicationStatus(jobId).then(data => {
+                if (data.has_applied) {
+                    applyBtn.outerHTML = '<button class="btn btn-applied" disabled><i class="fas fa-check"></i> Applied</button>';
+
+                    if (!card.querySelector('.application-indicator')) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'application-indicator';
+                        indicator.innerHTML = '<i class="fas fa-check-circle"></i><span>Application Submitted</span>';
+                        card.appendChild(indicator);
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Filter jobs in real-time (client-side filtering for better UX)
+function filterJobsRealTime() {
+    const searchInput = document.querySelector('.search-input');
+    const jobCards = document.querySelectorAll('.job-card');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function() {
+            const searchTerm = this.value.toLowerCase();
+
+            jobCards.forEach(card => {
+                const title = card.querySelector('.job-title a').textContent.toLowerCase();
+                const description = card.querySelector('.job-description p').textContent.toLowerCase();
+                const isVisible = title.includes(searchTerm) || description.includes(searchTerm);
+
+                card.style.display = isVisible ? 'block' : 'none';
+            });
+
+            updateJobCount();
+        }, 300));
+    }
+}
+
+// Debounce function for search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Update job count display
+function updateJobCount() {
+    const visibleJobs = document.querySelectorAll('.job-card[style="display: block"], .job-card:not([style*="display: none"])').length;
+    const statNumber = document.querySelector('.stat-number');
+    if (statNumber) {
+        statNumber.textContent = visibleJobs;
+    }
+}
+
+// Smooth scroll to jobs grid after filter application
+function scrollToJobs() {
+    const jobsGrid = document.querySelector('.jobs-grid');
+    if (jobsGrid) {
+        jobsGrid.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+}
+
+// Enhanced job card interactions
+function enhanceJobCards() {
+    const jobCards = document.querySelectorAll('.job-card');
+
+    jobCards.forEach(card => {
+        // Add click to view functionality
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.job-actions') && !e.target.closest('.application-indicator')) {
+                const detailLink = this.querySelector('.job-title a');
+                if (detailLink) {
+                    window.location.href = detailLink.href;
+                }
+            }
+        });
+
+        // Add keyboard navigation
+        card.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.target.closest('.job-actions')) {
+                const detailLink = this.querySelector('.job-title a');
+                if (detailLink) {
+                    detailLink.click();
+                }
+            }
+        });
+
+        // Add loading state to apply buttons
+        const applyBtn = card.querySelector('.apply-btn');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+                this.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    window.location.href = this.href;
+                }, 1000);
+            });
+        }
+    });
+}
+
+// Handle form validation
+function validateSearchForm() {
+    const form = document.querySelector('.search-form');
+    const budgetMin = form.querySelector('[name="budgetMin"]');
+    const budgetMax = form.querySelector('[name="budgetMax"]');
+
+    function validateBudget() {
+        const min = parseFloat(budgetMin.value) || 0;
+        const max = parseFloat(budgetMax.value) || Infinity;
+
+        if (min > max) {
+            budgetMax.setCustomValidity('Maximum budget must be greater than minimum budget');
+            return false;
+        } else {
+            budgetMax.setCustomValidity('');
+            return true;
+        }
+    }
+
+    budgetMin.addEventListener('input', validateBudget);
+    budgetMax.addEventListener('input', validateBudget);
+
+    form.addEventListener('submit', function(e) {
+        if (!validateBudget()) {
+            e.preventDefault();
+            budgetMax.reportValidity();
+        } else {
+            saveSearchPreferences();
+
+            // Add loading state to search button
+            const searchBtn = this.querySelector('.search-btn');
+            const originalText = searchBtn.innerHTML;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+            searchBtn.disabled = true;
+        }
+    });
+}
+
+// Modal functionality
+function initializeModals() {
+    const modal = document.getElementById('quickApplyModal');
+
+    // Close modal on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeQuickApply();
+        }
+    });
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeQuickApply();
+        }
+    });
+}
+
+// Initialize favorites functionality
+function initializeFavorites() {
+    const jobCards = document.querySelectorAll('.job-card');
+
+    jobCards.forEach(card => {
+        const jobId = card.dataset.jobId;
+        const favoriteBtn = document.createElement('button');
+        favoriteBtn.className = 'favorite-btn';
+        favoriteBtn.innerHTML = '<i class="far fa-heart"></i>';
+        favoriteBtn.title = 'Save job';
+
+        // Check if job is already favorited
+        const favorites = JSON.parse(localStorage.getItem('favoriteJobs') || '[]');
+        if (favorites.includes(jobId)) {
+            favoriteBtn.classList.add('favorited');
+            favoriteBtn.innerHTML = '<i class="fas fa-heart"></i>';
+            favoriteBtn.title = 'Remove from saved';
+        }
+
+        favoriteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleFavorite(jobId, this);
+        });
+
+        // Add to job actions
+        const jobActions = card.querySelector('.job-actions');
+        if (jobActions) {
+            jobActions.appendChild(favoriteBtn);
+        }
+    });
+}
+
+function toggleFavorite(jobId, button) {
+    let favorites = JSON.parse(localStorage.getItem('favoriteJobs') || '[]');
+
+    if (favorites.includes(jobId)) {
+        favorites = favorites.filter(id => id !== jobId);
+        button.classList.remove('favorited');
+        button.innerHTML = '<i class="far fa-heart"></i>';
+        button.title = 'Save job';
+    } else {
+        favorites.push(jobId);
+        button.classList.add('favorited');
+        button.innerHTML = '<i class="fas fa-heart"></i>';
+        button.title = 'Remove from saved';
+    }
+
+    localStorage.setItem('favoriteJobs', JSON.stringify(favorites));
+}
+
+// Advanced filtering functionality
+function initializeAdvancedFilters() {
+    // Budget range slider
+    const budgetMin = document.querySelector('[name="budgetMin"]');
+    const budgetMax = document.querySelector('[name="budgetMax"]');
+
+    if (budgetMin && budgetMax) {
+        [budgetMin, budgetMax].forEach(input => {
+            input.addEventListener('input', debounce(function() {
+                const min = parseFloat(budgetMin.value) || 0;
+                const max = parseFloat(budgetMax.value) || Infinity;
+
+                filterJobsByBudget(min, max);
+            }, 500));
+        });
+    }
+
+    // Content type filter
+    const contentTypeSelect = document.querySelector('[name="contentType"]');
+    if (contentTypeSelect) {
+        contentTypeSelect.addEventListener('change', function() {
+            filterJobsByContentType(this.value);
+        });
+    }
+}
+
+function filterJobsByBudget(min, max) {
+    const jobCards = document.querySelectorAll('.job-card');
+
+    jobCards.forEach(card => {
+        const budgetText = card.querySelector('.budget-amount').textContent;
+        const budgetRange = extractBudgetRange(budgetText);
+
+        if (budgetRange) {
+            const isInRange = (budgetRange.min >= min || min === 0) &&
+                            (budgetRange.max <= max || max === Infinity);
+            card.style.display = isInRange ? 'block' : 'none';
+        }
+    });
+
+    updateJobCount();
+}
+
+function filterJobsByContentType(contentType) {
+    if (!contentType) return;
+
+    const jobCards = document.querySelectorAll('.job-card');
+
+    jobCards.forEach(card => {
+        // This would need to be implemented based on how content type is stored/displayed
+        // For now, show all cards
+        card.style.display = 'block';
+    });
+
+    updateJobCount();
+}
+
+function extractBudgetRange(budgetText) {
+    const numbers = budgetText.match(/\d+(?:,\d{3})*/g);
+    if (numbers && numbers.length >= 2) {
+        return {
+            min: parseInt(numbers[0].replace(/,/g, '')),
+            max: parseInt(numbers[1].replace(/,/g, ''))
+        };
+    }
+    return null;
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    loadSearchPreferences();
+    enhanceJobCards();
+    validateSearchForm();
+    initializeModals();
+    initializeFavorites();
+    initializeAdvancedFilters();
+    filterJobsRealTime();
+
+    // Update application statuses every 30 seconds
+    updateApplicationStatuses();
+    setInterval(updateApplicationStatuses, 30000);
+
+    // Add smooth scroll to filter application
+    const searchForm = document.querySelector('.search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function() {
+            setTimeout(scrollToJobs, 100);
+        });
+    }
+
+    // Initialize tooltips for job details
+    const jobDetailItems = document.querySelectorAll('.job-detail-item');
+    jobDetailItems.forEach(item => {
+        item.title = item.textContent.trim();
+    });
+
+    // Add copy job link functionality
+    const jobTitles = document.querySelectorAll('.job-title a');
+    jobTitles.forEach(link => {
+        link.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText(this.href).then(() => {
+                // Show temporary tooltip
+                const tooltip = document.createElement('div');
+                tooltip.textContent = 'Link copied!';
+                tooltip.style.cssText = `
+                    position: absolute;
+                    background: var(--primary-black);
+                    color: white;
+                    padding: 0.5rem;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    z-index: 1000;
+                    pointer-events: none;
+                `;
+                document.body.appendChild(tooltip);
+
+                const rect = this.getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.top - 40) + 'px';
+
+                setTimeout(() => {
+                    document.body.removeChild(tooltip);
+                }, 2000);
+            });
+        });
+    });
+});
+
+// Add CSS for favorite button and enhanced interactions
+const additionalStyles = `
+<style>
+.favorite-btn {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+}
+
+.favorite-btn:hover {
+    background: var(--light-gray);
+    color: #ef4444;
+}
+
+.favorite-btn.favorited {
+    color: #ef4444;
+}
+
+.job-card {
+    cursor: pointer;
+}
+
+.job-card:hover .job-title a {
+    color: var(--accent-blue);
+}
+
+.job-actions {
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .favorite-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--white);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    transform: none;
+}
+
+/* Enhanced hover effects */
+.job-card:hover .skill-tag {
+    background: var(--accent-blue);
+    color: var(--white);
+}
+
+.job-card:hover .budget-amount {
+    color: var(--accent-blue);
+}
+
+/* Smooth transitions */
+* {
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+}
+
+.job-card * {
+    transition-property: color, background-color, transform;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', additionalStyles);
+</script>
+{% endblock editor_content %}

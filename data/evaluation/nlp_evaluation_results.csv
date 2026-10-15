@@ -1,0 +1,16 @@
+job_id,job_description,skills_expected,skills_predicted,skills_tp,skills_fp,skills_fn,styles_expected,styles_predicted,styles_tp,styles_fp,styles_fn,niches_expected,niches_predicted,niches_tp,niches_fp,niches_fn
+1,Need a gaming editor proficient in Adobe Premiere Pro and After Effects for cinematic videos.,adobe premiere pro|after effects,adobe premiere pro|after effects,2,0,0,cinematic,cinematic,1,0,0,gaming,gaming,1,0,0
+2,Looking for a travel editor who uses DaVinci Resolve for color grading.,color grading|davinci resolve,color grading|davinci resolve,2,0,0,,,0,0,0,travel,travel,1,0,0
+3,Seeking a sports video editor skilled in motion graphics and fast-paced editing.,motion graphics,motion graphics,1,0,0,fast-paced,fast-paced,1,0,0,sports,sports,1,0,0
+4,Need a lifestyle content editor experienced in CapCut for short-form videos.,capcut,capcut,1,0,0,short-form,short-form,1,0,0,lifestyle,lifestyle,1,0,0
+5,Looking for a technology video editor who uses Final Cut Pro for storytelling.,final cut pro,final cut pro,1,0,0,storytelling,storytelling,1,0,0,technology,technology,1,0,0
+6,Seeking a fitness editor experienced in Adobe Premiere Pro and montage editing.,adobe premiere pro,adobe premiere pro,1,0,0,montage,montage,1,0,0,fitness,fitness,1,0,0
+7,Need an education video editor skilled in After Effects and motion graphics.,after effects|motion graphics,after effects|motion graphics,2,0,0,,,0,0,0,education,education,1,0,0
+8,Looking for a gaming editor who creates cinematic storytelling videos.,,,0,0,0,cinematic|storytelling,cinematic|storytelling,2,0,0,gaming,gaming,1,0,0
+9,Seeking a beauty content editor experienced in CapCut and short-form editing.,capcut,capcut,1,0,0,short-form,short-form,1,0,0,beauty,beauty,1,0,0
+10,Need a documentary editor using DaVinci Resolve for color grading.,color grading|davinci resolve,color grading|davinci resolve,2,0,0,,,0,0,0,documentary,documentary,1,0,0
+11,Looking for an editor experienced in Adobe Premiere Pro and Premiere Pro.,adobe premiere pro,adobe premiere pro,1,0,0,,,0,0,0,,,0,0,0
+12,Need a gaming editor who creates cinematic videos with motion graphics.,motion graphics,motion graphics,1,0,0,cinematic,cinematic,1,0,0,gaming,gaming,1,0,0
+13,Looking for a video editor for general editing work.,,,0,0,0,,,0,0,0,,,0,0,0
+14,Seeking a sports editor experienced in After Effects and storytelling.,after effects,after effects,1,0,0,storytelling,storytelling,1,0,0,sports,sports,1,0,0
+15,Need a travel editor skilled in Final Cut Pro and cinematic storytelling.,final cut pro,final cut pro,1,0,0,cinematic|storytelling,cinematic|storytelling,2,0,0,travel,travel,1,0,0

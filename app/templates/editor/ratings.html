@@ -1,0 +1,1633 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Ratings & Reviews - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="ratings-container">
+    <!-- Page Header -->
+    <div class="ratings-header">
+        <div class="header-content">
+            <h1>Ratings & Reviews</h1>
+            <p>View ratings you've received and given to creators</p>
+        </div>
+        
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ "%.1f"|format(current_user.averageRating) if current_user.averageRating else "0.0" }}</div>
+                <div class="stat-label">Your Average Rating</div>
+                <div class="stars-display">
+                    {% for i in range(1, 6) %}
+                    <i class="fas fa-star {% if current_user.averageRating and i <= current_user.averageRating %}active{% endif %}"></i>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number">{{ current_user.totalRatings }}</div>
+                <div class="stat-label">Total Reviews</div>
+                <div class="stat-detail">{{ received_ratings|length }} received</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Tabs -->
+    <div class="rating-tabs">
+        <div class="tabs-nav">
+            <button class="tab-link active" onclick="showTab('received')">
+                <span>Ratings Received</span>
+                <span class="tab-count">{{ received_ratings|length }}</span>
+            </button>
+            <button class="tab-link" onclick="showTab('given')">
+                <span>Ratings Given</span>
+                <span class="tab-count">{{ given_ratings|length }}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ratings Content -->
+    <div class="ratings-content">
+        <!-- Received Ratings Tab -->
+        <div id="received-tab" class="tab-content active">
+            <div class="tab-header">
+                <h3>Ratings You've Received</h3>
+                <div class="rating-summary">
+                    {% if received_ratings %}
+                    <div class="rating-breakdown">
+                        {% set rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0} %}
+                        {% for rating in received_ratings %}
+                            {% if rating_counts.update({rating.ratingValue: rating_counts[rating.ratingValue] + 1}) %}{% endif %}
+                        {% endfor %}
+                        
+                        {% for stars in [5, 4, 3, 2, 1] %}
+                        <div class="breakdown-item">
+                            <span class="stars-label">{{ stars }} star{{ "s" if stars != 1 else "" }}</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ (rating_counts[stars] / received_ratings|length * 100)|round }}%"></div>
+                            </div>
+                            <span class="count">{{ rating_counts[stars] }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if received_ratings %}
+            <div class="ratings-grid">
+                {% for rating in received_ratings %}
+                <div class="rating-card received">
+                    <div class="rating-header">
+                        <div class="rater-info">
+                            <div class="rater-avatar">
+                                {% if rating.rater.profilePicture %}
+                                <img src="{{ rating.rater.profilePicture }}" alt="{{ rating.rater.fullName }}" class="avatar-img">
+                                {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="rater-details">
+                                <h4>{{ rating.rater.fullName }}</h4>
+                                <span class="rater-type">Content Creator</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-value">
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                <i class="fas fa-star {% if i <= rating.ratingValue %}active{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="rating-number">{{ rating.ratingValue }}/5</span>
+                        </div>
+                    </div>
+
+                    <div class="rating-content">
+                        {% if rating.job %}
+                        <div class="project-context">
+                            <div class="context-label">Project:</div>
+                            <div class="project-title">{{ rating.job.title }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if rating.reviewText %}
+                        <div class="review-text">
+                            <p>"{{ rating.reviewText }}"</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="rating-meta">
+                            <span class="rating-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ moment(rating.dateCreated).fromNow() }}
+                            </span>
+                            <span class="rating-category">
+                                <i class="fas fa-tag"></i>
+                                {{ rating.getRatingCategory().title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-content">
+                    <i class="fas fa-star"></i>
+                    <h3>No Ratings Yet</h3>
+                    <p>Complete more projects to start receiving ratings from clients. Great work leads to great reviews!</p>
+                    <a href="{{ url_for('editor.jobs') }}" class="btn btn-primary">Browse Available Jobs</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Given Ratings Tab -->
+        <div id="given-tab" class="tab-content">
+            <div class="tab-header">
+                <h3>Ratings You've Given</h3>
+                <div class="given-stats">
+                    {% if given_ratings %}
+                    <span class="avg-given">Average given: {{ "%.1f"|format((given_ratings|sum(attribute='ratingValue') / given_ratings|length)) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if given_ratings %}
+            <div class="ratings-grid">
+                {% for rating in given_ratings %}
+                <div class="rating-card given">
+                    <div class="rating-header">
+                        <div class="ratee-info">
+                            <div class="ratee-avatar">
+                                {% if rating.ratee.profilePicture %}
+                                <img src="{{ rating.ratee.profilePicture }}" alt="{{ rating.ratee.fullName }}" class="avatar-img">
+                                {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="ratee-details">
+                                <h4>{{ rating.ratee.fullName }}</h4>
+                                <span class="ratee-type">Content Creator</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-value">
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                <i class="fas fa-star {% if i <= rating.ratingValue %}active{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="rating-number">{{ rating.ratingValue }}/5</span>
+                        </div>
+                    </div>
+
+                    <div class="rating-content">
+                        {% if rating.job %}
+                        <div class="project-context">
+                            <div class="context-label">Project:</div>
+                            <div class="project-title">{{ rating.job.title }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if rating.reviewText %}
+                        <div class="review-text">
+                            <p>"{{ rating.reviewText }}"</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="rating-meta">
+                            <span class="rating-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ moment(rating.dateCreated).fromNow() }}
+                            </span>
+                            <span class="rating-category">
+                                <i class="fas fa-tag"></i>
+                                {{ rating.getRatingCategory().title() }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="rating-actions">
+                        <button class="btn btn-sm btn-outline" onclick="showRatingDetail('{{ rating.ratingId }}')">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-content">
+                    <i class="fas fa-star-half-alt"></i>
+                    <h3>No Ratings Given</h3>
+                    <p>After completing projects, you can rate your experience working with creators. This helps build trust in our community.</p>
+                    <a href="{{ url_for('editor.projects') }}" class="btn btn-secondary">View Completed Projects</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Ratings Section -->
+    {% set completed_jobs = current_user.getSpecificUserData().getCompletedJobs() %}
+    {% set pending_ratings = [] %}
+    {% for job in completed_jobs %}
+        {% if not given_ratings|selectattr('jobId', 'equalto', job.jobId)|list %}
+            {% if pending_ratings.append(job) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% if pending_ratings %}
+    <div class="pending-ratings-section">
+        <div class="section-header">
+            <h3>Pending Ratings</h3>
+            <p>Rate your experience with these completed projects</p>
+        </div>
+        
+        <div class="pending-ratings-grid">
+            {% for job in pending_ratings %}
+            <div class="pending-rating-card">
+                <div class="project-info">
+                    <h4>{{ job.title }}</h4>
+                    <div class="creator-info">
+                        <span class="creator-name">{{ job.creator.user.fullName }}</span>
+                        <span class="completion-date">Completed {{ moment(job.completedDate).fromNow() }}</span>
+                    </div>
+                </div>
+                
+                <div class="rating-prompt">
+                    <p>How was your experience working on this project?</p>
+                    <a href="{{ url_for('editor.submit_rating', job_id=job.jobId, creator_id=job.creator.user.userId) }}" class="btn btn-primary">
+                        <i class="fas fa-star"></i>
+                        Rate Experience
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Rating Guidelines -->
+    <div class="rating-guidelines">
+        <div class="guidelines-header">
+            <h3>Rating Guidelines</h3>
+            <p>Help maintain a fair and helpful rating system</p>
+        </div>
+        
+        <div class="guidelines-grid">
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Be Fair & Honest</h4>
+                    <p>Rate based on the actual experience, communication quality, and project outcomes.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Provide Constructive Feedback</h4>
+                    <p>Include specific details about what worked well or could be improved.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Focus on Professional Aspects</h4>
+                    <p>Rate communication, project clarity, payment timeliness, and overall professionalism.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Rate Within 30 Days</h4>
+                    <p>Submit ratings promptly while the project experience is still fresh in your memory.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Detail Modal -->
+<div id="ratingDetailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rating Details</h3>
+            <button class="modal-close" onclick="closeRatingDetail()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="rating-detail-content">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Ratings Page Styles */
+.ratings-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.ratings-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-stats {
+    display: flex;
+    gap: 2rem;
+    flex-shrink: 0;
+}
+
+.stat-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    text-align: center;
+    min-width: 180px;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-black);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    margin-bottom: 1rem;
+}
+
+.stars-display {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.stars-display i {
+    font-size: 1.25rem;
+    color: var(--border-gray);
+}
+
+.stars-display i.active {
+    color: #fbbf24;
+}
+
+.stat-detail {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+/* Rating Tabs */
+.rating-tabs {
+    margin-bottom: 2rem;
+}
+
+.tabs-nav {
+    display: flex;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.tab-link {
+    flex: 1;
+    padding: 1rem 2rem;
+    background: transparent;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.tab-link:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.tab-link.active {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 2rem;
+}
+
+.tab-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+/* Rating Breakdown */
+.rating-breakdown {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    min-width: 300px;
+}
+
+.breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.breakdown-item:last-child {
+    margin-bottom: 0;
+}
+
+.stars-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    min-width: 60px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border-gray);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #fbbf24;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.count {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    min-width: 20px;
+    text-align: right;
+}
+
+.given-stats {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+}
+
+.avg-given {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+/* Ratings Grid */
+.ratings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.rating-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.rating-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.rating-card.received {
+    border-left: 4px solid var(--success-green);
+}
+
+.rating-card.given {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.rating-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.rater-info,
+.ratee-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.rater-avatar,
+.ratee-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--soft-gray);
+    font-size: 1.25rem;
+}
+
+.rater-details,
+.ratee-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.rater-details h4,
+.ratee-details h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.rater-type,
+.ratee-type {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.rating-value {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+    margin-bottom: 0.25rem;
+}
+
+.stars i {
+    font-size: 1rem;
+    color: var(--border-gray);
+}
+
+.stars i.active {
+    color: #fbbf24;
+}
+
+.rating-number {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    font-weight: 600;
+}
+
+/* Rating Content */
+.project-context {
+    background: var(--light-gray);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.context-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    font-weight: 600;
+}
+
+.project-title {
+    font-size: 0.9rem;
+    color: var(--primary-black);
+    font-weight: 500;
+}
+
+.review-text {
+    margin-bottom: 1rem;
+}
+
+.review-text p {
+    color: var(--primary-black);
+    line-height: 1.6;
+    font-style: italic;
+    margin: 0;
+    background: var(--light-gray);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #fbbf24;
+}
+
+.rating-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.rating-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rating-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+}
+
+.empty-content i {
+    font-size: 4rem;
+    color: var(--border-gray);
+    margin-bottom: 2rem;
+}
+
+.empty-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.empty-content p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Pending Ratings */
+.pending-ratings-section {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    margin-bottom: 2rem;
+}
+
+.section-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.section-header p {
+    color: var(--soft-gray);
+}
+
+.pending-ratings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.pending-rating-card {
+    background: #fef3cd;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.pending-rating-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.project-info h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.75rem;
+}
+
+.creator-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.creator-name {
+    font-size: 0.9rem;
+    color: var(--primary-black);
+    font-weight: 500;
+}
+
+.completion-date {
+    font-size: 0.8rem;
+    color: #92400e;
+}
+
+.rating-prompt p {
+    font-size: 0.9rem;
+    color: #92400e;
+    margin-bottom: 1rem;
+}
+
+/* Rating Guidelines */
+.rating-guidelines {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.guidelines-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.guidelines-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guidelines-header p {
+    color: var(--soft-gray);
+}
+
+.guidelines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.guideline-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.guideline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.guideline-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guideline-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .ratings-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    .guidelines-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .ratings-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .header-stats {
+        width: 100%;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        min-width: auto;
+        padding: 1.5rem;
+    }
+
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .rating-breakdown {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .ratings-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .rating-card {
+        padding: 1rem;
+    }
+
+    .rating-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .rating-value {
+        text-align: left;
+    }
+
+    .stars {
+        justify-content: flex-start;
+    }
+
+    .rating-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .pending-ratings-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .guidelines-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .guideline-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    .tabs-nav {
+        flex-direction: column;
+    }
+
+    .tab-link {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .rater-info,
+    .ratee-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .project-context {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .breakdown-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Tab functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Remove active class from all tab links
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    // Show selected tab content
+    const selectedTab = document.getElementById(tabName + '-tab');
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+
+    // Add active class to clicked tab link
+    event.target.closest('.tab-link').classList.add('active');
+}
+
+// Rating detail modal functionality
+function showRatingDetail(ratingId) {
+    const modal = document.getElementById('ratingDetailModal');
+    const modalContent = modal.querySelector('.rating-detail-content');
+
+    // Show loading state
+    modalContent.innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading rating details...</p>
+        </div>
+    `;
+
+    modal.classList.add('active');
+
+    // In a real application, you would fetch the rating details here
+    // For this template, we'll simulate the loading
+    setTimeout(() => {
+        modalContent.innerHTML = `
+            <div class="rating-detail-info">
+                <div class="detail-header">
+                    <h4>Rating Details</h4>
+                    <div class="rating-stars">
+                        <i class="fas fa-star active"></i>
+                        <i class="fas fa-star active"></i>
+                        <i class="fas fa-star active"></i>
+                        <i class="fas fa-star active"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+
+                <div class="detail-content">
+                    <div class="detail-section">
+                        <h5>Project Information</h5>
+                        <p><strong>Project:</strong> Sample Video Project</p>
+                        <p><strong>Completed:</strong> 2 weeks ago</p>
+                        <p><strong>Duration:</strong> 1 week</p>
+                    </div>
+
+                    <div class="detail-section">
+                        <h5>Rating Breakdown</h5>
+                        <div class="rating-criteria">
+                            <div class="criteria-item">
+                                <span>Communication</span>
+                                <div class="criteria-stars">
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                </div>
+                            </div>
+                            <div class="criteria-item">
+                                <span>Quality of Work</span>
+                                <div class="criteria-stars">
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                            <div class="criteria-item">
+                                <span>Timeliness</span>
+                                <div class="criteria-stars">
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star active"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h5>Review Text</h5>
+                        <div class="review-text-detail">
+                            <p>"Great experience working with this creator. Clear communication and professional approach throughout the project."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function closeRatingDetail() {
+    const modal = document.getElementById('ratingDetailModal');
+    modal.classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('ratingDetailModal');
+    if (event.target === modal) {
+        closeRatingDetail();
+    }
+});
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth animations to rating cards
+    const ratingCards = document.querySelectorAll('.rating-card');
+    ratingCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+
+    // Add hover effects to guideline cards
+    const guidelineCards = document.querySelectorAll('.guideline-card');
+    guidelineCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = 'var(--shadow-md)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+
+    // Add click effects to pending rating cards
+    const pendingCards = document.querySelectorAll('.pending-rating-card');
+    pendingCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const button = this.querySelector('.btn');
+            if (button) {
+                button.click();
+            }
+        });
+    });
+
+    // Initialize progress bar animations
+    const progressBars = document.querySelectorAll('.progress-fill');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+
+    // Add keyboard navigation for tabs
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            const activeTab = document.querySelector('.tab-link.active');
+            if (activeTab) {
+                const tabLinks = Array.from(document.querySelectorAll('.tab-link'));
+                const currentIndex = tabLinks.indexOf(activeTab);
+                let newIndex;
+
+                if (event.key === 'ArrowLeft') {
+                    newIndex = currentIndex > 0 ? currentIndex - 1 : tabLinks.length - 1;
+                } else {
+                    newIndex = currentIndex < tabLinks.length - 1 ? currentIndex + 1 : 0;
+                }
+
+                tabLinks[newIndex].click();
+                event.preventDefault();
+            }
+        }
+    });
+});
+
+// Additional CSS for animations and modal details
+const additionalStyles = `
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loading-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--soft-gray);
+}
+
+.loading-state i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.rating-detail-info {
+    max-width: 100%;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.detail-header h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 4px;
+}
+
+.rating-stars i {
+    font-size: 1.25rem;
+    color: var(--border-gray);
+}
+
+.rating-stars i.active {
+    color: #fbbf24;
+}
+
+.detail-section {
+    margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.detail-section p {
+    margin-bottom: 0.5rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+}
+
+.rating-criteria {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.criteria-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.criteria-item span {
+    font-weight: 500;
+    color: var(--primary-black);
+}
+
+.criteria-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.criteria-stars i {
+    font-size: 1rem;
+    color: var(--border-gray);
+}
+
+.criteria-stars i.active {
+    color: #fbbf24;
+}
+
+.review-text-detail {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #fbbf24;
+}
+
+.review-text-detail p {
+    margin: 0;
+    font-style: italic;
+    color: var(--primary-black);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .detail-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .criteria-item {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
+// Rating filtering functionality
+function filterRatings(filterType) {
+    const ratingCards = document.querySelectorAll('.rating-card');
+
+    ratingCards.forEach(card => {
+        const ratingValue = parseInt(card.querySelector('.rating-number').textContent);
+        let showCard = true;
+
+        switch(filterType) {
+            case 'excellent':
+                showCard = ratingValue === 5;
+                break;
+            case 'good':
+                showCard = ratingValue === 4;
+                break;
+            case 'neutral':
+                showCard = ratingValue === 3;
+                break;
+            case 'poor':
+                showCard = ratingValue <= 2;
+                break;
+            case 'all':
+            default:
+                showCard = true;
+                break;
+        }
+
+        if (showCard) {
+            card.style.display = 'block';
+            card.classList.add('fade-in');
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Export rating data functionality
+function exportRatingData() {
+    const ratingData = [];
+    const ratingCards = document.querySelectorAll('.rating-card');
+
+    ratingCards.forEach(card => {
+        const raterName = card.querySelector('.rater-details h4, .ratee-details h4').textContent;
+        const ratingValue = card.querySelector('.rating-number').textContent;
+        const projectTitle = card.querySelector('.project-title')?.textContent || 'N/A';
+        const reviewText = card.querySelector('.review-text p')?.textContent || 'No review';
+        const date = card.querySelector('.rating-date').textContent;
+
+        ratingData.push({
+            raterName,
+            ratingValue,
+            projectTitle,
+            reviewText,
+            date
+        });
+    });
+
+    // Convert to CSV format
+    const csvContent = [
+        ['Rater Name', 'Rating', 'Project', 'Review', 'Date'],
+        ...ratingData.map(row => [row.raterName, row.ratingValue, row.projectTitle, row.reviewText, row.date])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    // Download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rating_data.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Rating statistics calculation
+function calculateRatingStats() {
+    const ratingCards = document.querySelectorAll('.rating-card.received');
+    const ratings = Array.from(ratingCards).map(card => {
+        return parseInt(card.querySelector('.rating-number').textContent);
+    });
+
+    if (ratings.length === 0) return null;
+
+    const total = ratings.length;
+    const sum = ratings.reduce((a, b) => a + b, 0);
+    const average = sum / total;
+
+    const distribution = {
+        5: ratings.filter(r => r === 5).length,
+        4: ratings.filter(r => r === 4).length,
+        3: ratings.filter(r => r === 3).length,
+        2: ratings.filter(r => r === 2).length,
+        1: ratings.filter(r => r === 1).length
+    };
+
+    return {
+        total,
+        average: average.toFixed(1),
+        distribution,
+        positivePercentage: ((distribution[4] + distribution[5]) / total * 100).toFixed(1),
+        negativePercentage: ((distribution[1] + distribution[2]) / total * 100).toFixed(1)
+    };
+}
+
+// Update rating statistics display
+function updateStatsDisplay() {
+    const stats = calculateRatingStats();
+    if (!stats) return;
+
+    // Update average rating display
+    const avgElement = document.querySelector('.stat-number');
+    if (avgElement) {
+        avgElement.textContent = stats.average;
+    }
+
+    // Update total ratings
+    const totalElement = document.querySelector('.stat-detail');
+    if (totalElement) {
+        totalElement.textContent = `${stats.total} received`;
+    }
+
+    // Update progress bars
+    Object.keys(stats.distribution).forEach(rating => {
+        const progressBar = document.querySelector(`[data-rating="${rating}"] .progress-fill`);
+        if (progressBar) {
+            const percentage = (stats.distribution[rating] / stats.total * 100);
+            progressBar.style.width = `${percentage}%`;
+        }
+    });
+}
+
+// Initialize statistics on page load
+document.addEventListener('DOMContentLoaded', updateStatsDisplay);
+</script>
+{% endblock editor_content %}

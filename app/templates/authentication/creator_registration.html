@@ -1,0 +1,914 @@
+{% extends "base.html" %}
+
+{% block title %}Join as Content Creator{% endblock title %}
+
+{% block seo %}
+<meta name="description" content="Create your Content Creator account on KugzyJobs. Connect with professional video editors and bring your creative vision to life.">
+<meta name="robots" content="index, follow">
+{% endblock seo %}
+
+{% block page_content %}
+<section class="auth-page creator-registration">
+    <div class="auth-container">
+        <div class="auth-content">
+            <!-- Auth Header -->
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <a href="{{ url_for('main.index') }}">
+                        <span class="logo-text">KugzyJobs</span>
+                    </a>
+                </div>
+                <div class="user-type-badge creator-badge">
+                    <i class="fas fa-video"></i>
+                    <span>Content Creator</span>
+                </div>
+                <h1>Create Your Creator Account</h1>
+                <p>Join thousands of content creators who trust KugzyJobs to find skilled video editors</p>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="auth-form-container">
+                <form method="POST" action="" class="auth-form" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Full Name Field -->
+                    <div class="form-group">
+                        {{ form.fullName.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            {{ form.fullName(class="form-control" + (" error" if form.fullName.errors else ""), placeholder="Enter your full name") }}
+                        </div>
+                        {% if form.fullName.errors %}
+                        <div class="field-errors">
+                            {% for error in form.fullName.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="form-group">
+                        {{ form.emailAddress.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            {{ form.emailAddress(class="form-control" + (" error" if form.emailAddress.errors else ""), placeholder="Enter your email address") }}
+                        </div>
+                        {% if form.emailAddress.errors %}
+                        <div class="field-errors">
+                            {% for error in form.emailAddress.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Content Type Field -->
+                    <div class="form-group">
+                        {{ form.contentType.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            {{ form.contentType(class="form-control" + (" error" if form.contentType.errors else "")) }}
+                        </div>
+                        {% if form.contentType.errors %}
+                        <div class="field-errors">
+                            {% for error in form.contentType.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Platform Focus Field -->
+                    <div class="form-group">
+                        {{ form.platformFocus.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            {{ form.platformFocus(class="form-control" + (" error" if form.platformFocus.errors else "")) }}
+                        </div>
+                        {% if form.platformFocus.errors %}
+                        <div class="field-errors">
+                            {% for error in form.platformFocus.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        {{ form.password.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            {{ form.password(class="form-control" + (" error" if form.password.errors else ""), placeholder="Create a strong password") }}
+                            <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                <i class="fas fa-eye" id="password-toggle-icon"></i>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}
+                        <div class="field-errors">
+                            {% for error in form.password.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strength-fill"></div>
+                            </div>
+                            <span class="strength-text" id="strength-text">Password strength</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="form-group">
+                        {{ form.confirmPassword.label(class="form-label") }}
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            {{ form.confirmPassword(class="form-control" + (" error" if form.confirmPassword.errors else ""), placeholder="Confirm your password") }}
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                                <i class="fas fa-eye" id="confirmPassword-toggle-icon"></i>
+                            </button>
+                        </div>
+                        {% if form.confirmPassword.errors %}
+                        <div class="field-errors">
+                            {% for error in form.confirmPassword.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Terms Agreement -->
+                    <div class="form-group checkbox-group">
+                        <div class="checkbox-wrapper">
+                            {{ form.consent(class="checkbox" + (" error" if form.consent.errors else "")) }}
+                            {{ form.consent.label(class="checkbox-label") }}
+                        </div>
+                        {% if form.consent.errors %}
+                        <div class="field-errors">
+                            {% for error in form.consent.errors %}
+                            <span class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-submit">
+                        {{ form.submit(class="btn btn-creator btn-full") }}
+                    </div>
+
+                    <!-- Form-level errors -->
+                    {% if form.errors and not (form.fullName.errors or form.emailAddress.errors or form.contentType.errors or form.platformFocus.errors or form.password.errors or form.confirmPassword.errors or form.consent.errors) %}
+                    <div class="form-errors">
+                        {% for field, errors in form.errors.items() %}
+                            {% if field not in ['fullName', 'emailAddress', 'contentType', 'platformFocus', 'password', 'confirmPassword', 'consent'] %}
+                                {% for error in errors %}
+                                <div class="error-message">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    {{ error }}
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Auth Footer -->
+            <div class="auth-footer">
+                <p>Already have an account? 
+                    <a href="{{ url_for('authentication.login') }}" class="auth-link">
+                        Sign in here
+                    </a>
+                </p>
+                
+                <p class="account-switch">
+                    Want to join as a video editor? 
+                    <a href="{{ url_for('authentication.editor_registration') }}" class="auth-link">
+                        Switch to Editor registration
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Side Panel -->
+        <div class="auth-side-panel creator-panel">
+            <div class="panel-content">
+                <div class="panel-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h2>Content Creator Benefits</h2>
+                <p>Join the premier platform for content creators and unlock access to professional video editors who will bring your vision to life.</p>
+                
+                <div class="panel-features">
+                    <div class="panel-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Find Perfect Editors</h4>
+                            <p>Browse verified video editors with portfolios and reviews</p>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-check"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Secure Collaboration</h4>
+                            <p>Safe payment system and project management tools</p>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Fast Turnaround</h4>
+                            <p>Get your projects completed on time, every time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .creator-registration {
+        background: linear-gradient(135deg, var(--accent-blue) 0%, #8b5cf6 100%);
+    }
+
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--light-gray) 0%, var(--white) 100%);
+        padding: 2rem;
+        position: relative;
+    }
+
+    .auth-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="creator-pattern" width="25" height="25" patternUnits="userSpaceOnUse"><circle cx="12.5" cy="12.5" r="1" fill="%233b82f6" opacity="0.1"/><rect x="8" y="8" width="9" height="9" fill="none" stroke="%233b82f6" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23creator-pattern)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .auth-container {
+        max-width: 1200px;
+        width: 100%;
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 700px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .auth-content {
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-logo {
+        margin-bottom: 1rem;
+    }
+
+    .logo-text {
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: var(--primary-black);
+        text-decoration: none;
+        position: relative;
+    }
+
+    .logo-text::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-blue), var(--success-green));
+        border-radius: 1px;
+    }
+
+    .user-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .creator-badge {
+        background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+        color: var(--white);
+    }
+
+    .auth-header h1 {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .auth-header p {
+        color: var(--soft-gray);
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .auth-form-container {
+        flex: 1;
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.95rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        z-index: 2;
+        color: var(--soft-gray);
+        font-size: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        border: 2px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: var(--white);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control.error {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: var(--soft-gray);
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 1rem;
+        background: none;
+        border: none;
+        color: var(--soft-gray);
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+        color: var(--primary-black);
+    }
+
+    .password-strength {
+        margin-top: 0.5rem;
+    }
+
+    .strength-bar {
+        width: 100%;
+        height: 4px;
+        background: var(--border-gray);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
+    }
+
+    .strength-fill {
+        height: 100%;
+        width: 0%;
+        background: #ef4444;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .strength-text {
+        font-size: 0.8rem;
+        color: var(--soft-gray);
+    }
+
+    .field-errors {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .error-message {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #ef4444;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .error-message i {
+        font-size: 0.75rem;
+    }
+
+    .checkbox-group {
+        margin: 0.5rem 0;
+    }
+
+    .checkbox-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .checkbox {
+        width: 1.125rem;
+        height: 1.125rem;
+        accent-color: var(--accent-blue);
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .checkbox-label {
+        font-size: 0.9rem;
+        color: var(--soft-gray);
+        cursor: pointer;
+        line-height: 1.4;
+    }
+
+    .checkbox-label a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .checkbox-label a:hover {
+        text-decoration: underline;
+    }
+
+    .form-submit {
+        margin-top: 1rem;
+    }
+
+    .btn-full {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        justify-content: center;
+    }
+
+    .btn-creator {
+        background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-sm);
+        transition: all 0.3s ease;
+    }
+
+    .btn-creator:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-errors {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--radius-sm);
+        margin-top: 1rem;
+    }
+
+    .auth-footer {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .auth-footer p {
+        color: var(--soft-gray);
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .account-switch {
+        font-size: 0.9rem !important;
+    }
+
+    .auth-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .auth-link:hover {
+        color: var(--primary-black);
+        text-decoration: underline;
+    }
+
+    /* Side Panel */
+    .auth-side-panel {
+        background: linear-gradient(135deg, var(--primary-black) 0%, var(--secondary-black) 100%);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .creator-panel {
+        background: linear-gradient(135deg, var(--accent-blue) 0%, #8b5cf6 100%);
+    }
+
+    .auth-side-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="side-creator-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="%23ffffff" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23side-creator-grid)"/></svg>');
+    }
+
+    .panel-content {
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .panel-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        font-size: 2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .panel-content h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        letter-spacing: -0.5px;
+    }
+
+    .panel-content p {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+    }
+
+    .panel-features {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: left;
+    }
+
+    .panel-feature {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+    }
+
+    .feature-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .feature-content p {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .auth-page {
+            padding: 1rem;
+        }
+
+        .auth-container {
+            grid-template-columns: 1fr;
+            max-width: 500px;
+        }
+
+        .auth-side-panel {
+            order: -1;
+            padding: 2rem;
+        }
+
+        .auth-content {
+            padding: 2rem;
+            max-height: none;
+        }
+
+        .panel-features {
+            gap: 1rem;
+        }
+
+        .panel-feature {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .auth-content {
+            padding: 1.5rem;
+        }
+
+        .auth-side-panel {
+            padding: 1.5rem;
+        }
+
+        .auth-form {
+            gap: 1rem;
+        }
+    }
+
+    /* Loading state */
+    .btn-creator:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-creator.loading {
+        position: relative;
+        color: transparent;
+    }
+
+    .btn-creator.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid var(--white);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+</style>
+
+<script>
+    function togglePassword(fieldName) {
+        const passwordInput = document.querySelector(`input[name="${fieldName}"]`);
+        const toggleIcon = document.getElementById(`${fieldName}-toggle-icon`);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let strengthText = 'Very Weak';
+        let strengthColor = '#ef4444';
+
+        if (password.length >= 8) strength += 1;
+        if (password.match(/[a-z]/)) strength += 1;
+        if (password.match(/[A-Z]/)) strength += 1;
+        if (password.match(/[0-9]/)) strength += 1;
+        if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+
+        switch (strength) {
+            case 0:
+            case 1:
+                strengthText = 'Very Weak';
+                strengthColor = '#ef4444';
+                break;
+            case 2:
+                strengthText = 'Weak';
+                strengthColor = '#f59e0b';
+                break;
+            case 3:
+                strengthText = 'Fair';
+                strengthColor = '#eab308';
+                break;
+            case 4:
+                strengthText = 'Good';
+                strengthColor = '#22c55e';
+                break;
+            case 5:
+                strengthText = 'Strong';
+                strengthColor = '#16a34a';
+                break;
+        }
+
+        return {
+            score: strength,
+            text: strengthText,
+            color: strengthColor,
+            percentage: (strength / 5) * 100
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.auth-form');
+        const submitBtn = form.querySelector('.btn-creator');
+        const passwordInput = form.querySelector('input[name="password"]');
+        const strengthFill = document.getElementById('strength-fill');
+        const strengthText = document.getElementById('strength-text');
+
+        // Password strength indicator
+        if (passwordInput && strengthFill && strengthText) {
+            passwordInput.addEventListener('input', function() {
+                const strength = checkPasswordStrength(this.value);
+                
+                strengthFill.style.width = strength.percentage + '%';
+                strengthFill.style.backgroundColor = strength.color;
+                strengthText.textContent = strength.text;
+                strengthText.style.color = strength.color;
+            });
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            // Add loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // Remove loading state if there are errors (form doesn't redirect)
+            setTimeout(() => {
+                if (document.querySelector('.error-message')) {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                }
+            }, 100);
+        });
+
+        // Enhanced form validation feedback
+        const inputs = form.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.classList.contains('error')) {
+                    this.classList.remove('error');
+                    // Hide error messages when user starts typing
+                    const errorContainer = this.closest('.form-group').querySelector('.field-errors');
+                    if (errorContainer) {
+                        errorContainer.style.display = 'none';
+                    }
+                }
+            });
+
+            // Show errors again on blur if field is still invalid
+            input.addEventListener('blur', function() {
+                if (!this.value && this.hasAttribute('required')) {
+                    this.classList.add('error');
+                    const errorContainer = this.closest('.form-group').querySelector('.field-errors');
+                    if (errorContainer) {
+                        errorContainer.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        // Auto-focus first input
+        const firstInput = form.querySelector('.form-control');
+        if (firstInput) {
+            firstInput.focus();
+        }
+
+        // Animate panel features on load
+        const panelFeatures = document.querySelectorAll('.panel-feature');
+        panelFeatures.forEach((feature, index) => {
+            feature.style.opacity = '0';
+            feature.style.transform = 'translateX(-20px)';
+            setTimeout(() => {
+                feature.style.transition = 'all 0.5s ease';
+                feature.style.opacity = '1';
+                feature.style.transform = 'translateX(0)';
+            }, 300 + (index * 150));
+        });
+    });
+</script>
+{% endblock page_content %}

@@ -1,0 +1,1119 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Search Results{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Platform Search</h1>
+    <p class="admin-page-subtitle">
+        {% if query %}
+            Search results for "{{ query }}" in {{ search_type }}
+        {% else %}
+            Global search across the platform
+        {% endif %}
+    </p>
+</div>
+
+<!-- Search Form -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Search Platform</h3>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            {% if results %}
+            <span style="color: var(--soft-gray); font-size: 0.875rem;">
+                Found {{ results|length }} result(s)
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="admin-section-content">
+        <form method="GET" action="{{ url_for('admin.search') }}" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Search Query</label>
+                <input type="text" name="q" value="{{ query or '' }}" placeholder="Enter search terms..." 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); font-size: 0.875rem;"
+                       autofocus>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Search In</label>
+                <select name="type" class="btn btn-secondary" style="width: 100%;">
+                    <option value="users" {% if search_type == 'users' %}selected{% endif %}>Users</option>
+                    <option value="portfolios" {% if search_type == 'portfolios' %}selected{% endif %}>Portfolios</option>
+                    <option value="jobs" {% if search_type == 'jobs' %}selected{% endif %}>Jobs</option>
+                    <option value="reports" {% if search_type == 'reports' %}selected{% endif %}>Reports</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Search Results -->
+{% if query %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">
+            Search Results for "{{ query }}" in {{ search_type.title() }}
+        </h3>
+        <div style="display: flex; gap: 1rem;">
+            {% if results %}
+            <button class="btn btn-secondary" onclick="exportResults()">
+                <i class="fas fa-download"></i> Export Results
+            </button>
+            {% endif %}
+            <a href="{{ url_for('admin.search') }}" class="btn btn-secondary">
+                <i class="fas fa-undo"></i> New Search
+            </a>
+        </div>
+    </div>
+    <div class="admin-section-content">
+        {% if results %}
+            
+            <!-- User Results -->
+            {% if search_type == 'users' %}
+            <div style="overflow-x: auto;">
+                <table class="admin-data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Join Date</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in results %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    {% if user.profilePicture %}
+                                    <img src="{{ user.profilePicture }}" alt="{{ user.fullName }}" 
+                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                    {% else %}
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">
+                                        {{ user.fullName[:2].upper() }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--primary-black);">
+                                            <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" 
+                                               style="text-decoration: none; color: inherit;">
+                                                {{ user.fullName }}
+                                            </a>
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ user.emailAddress }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="admin-status-badge {{ user.userType }}">
+                                    {% if user.userType == 'creator' %}
+                                        <i class="fas fa-video"></i> Creator
+                                    {% elif user.userType == 'editor' %}
+                                        <i class="fas fa-cut"></i> Editor
+                                    {% elif user.userType == 'admin' %}
+                                        <i class="fas fa-shield-alt"></i> Admin
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="admin-status-badge {% if user.isActive %}active{% else %}suspended{% endif %}">
+                                    {% if user.isActive %}Active{% else %}Suspended{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ moment(user.dateCreated).format('MMM DD, YYYY') }}</td>
+                            <td>
+                                {% if user.totalRatings > 0 %}
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="color: #f59e0b; font-size: 0.875rem;">
+                                        {% for i in range(5) %}
+                                            {% if i < user.averageRating|round %}★{% else %}☆{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <span style="font-weight: 600;">{{ "%.1f"|format(user.averageRating) }}</span>
+                                </div>
+                                {% else %}
+                                <span style="color: var(--soft-gray); font-size: 0.875rem;">No ratings</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="admin-action-buttons">
+                                    <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" 
+                                       class="btn admin-btn-sm btn-secondary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% if user.userType == 'editor' %}
+                                    <a href="{{ url_for('admin.portfolios') }}?search={{ user.emailAddress }}" 
+                                       class="btn admin-btn-sm btn-secondary">
+                                        <i class="fas fa-folder"></i> Portfolios
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Portfolio Results -->
+            {% if search_type == 'portfolios' %}
+            <div style="display: grid; gap: 1.5rem;">
+                {% for portfolio in results %}
+                <div style="border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 2rem; background: var(--white);">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                                {% if portfolio.editor.user.profilePicture %}
+                                <img src="{{ portfolio.editor.user.profilePicture }}" alt="{{ portfolio.editor.user.fullName }}" 
+                                     style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--success-green); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                    {{ portfolio.editor.user.fullName[:2].upper() }}
+                                </div>
+                                {% endif %}
+                                
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-weight: 700; font-size: 1.25rem; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ portfolio.title }}
+                                        </a>
+                                    </h4>
+                                    <p style="margin: 0; color: var(--soft-gray); font-size: 0.875rem;">
+                                        by <a href="{{ url_for('admin.user_detail', user_id=portfolio.editor.user.userId) }}" 
+                                              style="text-decoration: none; color: var(--accent-blue); font-weight: 600;">
+                                            {{ portfolio.editor.user.fullName }}
+                                        </a>
+                                    </p>
+                                </div>
+                                
+                                <span class="admin-status-badge {{ portfolio.verificationStatus }}">
+                                    {{ portfolio.verificationStatus.title() }}
+                                </span>
+                            </div>
+
+                            {% if portfolio.description %}
+                            <div style="margin-bottom: 1rem;">
+                                <p style="color: var(--soft-gray); line-height: 1.6; margin: 0;">
+                                    {{ portfolio.description[:150] }}{% if portfolio.description|length > 150 %}...{% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+
+                            {% if portfolio.skillTags %}
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                {% for skill in portfolio.getSkillTagsList()[:5] %}
+                                <span style="background: var(--light-gray); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--soft-gray);">
+                                    {{ skill }}
+                                </span>
+                                {% endfor %}
+                                {% if portfolio.getSkillTagsList()|length > 5 %}
+                                <span style="color: var(--soft-gray); font-size: 0.75rem;">+{{ portfolio.getSkillTagsList()|length - 5 }} more</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; min-width: 120px;">
+                            <a href="{{ url_for('admin.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" 
+                               class="btn admin-btn-sm btn-secondary" style="width: 100%; text-align: center;">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ url_for('admin.user_detail', user_id=portfolio.editor.user.userId) }}" 
+                               class="btn admin-btn-sm btn-secondary" style="width: 100%; text-align: center;">
+                                <i class="fas fa-user"></i> Editor
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Job Results -->
+            {% if search_type == 'jobs' %}
+            <div style="overflow-x: auto;">
+                <table class="admin-data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Creator</th>
+                            <th>Status</th>
+                            <th>Budget</th>
+                            <th>Posted</th>
+                            <th>Applications</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in results %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">{{ job.title }}</div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                                        {{ job.description[:50] }}{% if job.description|length > 50 %}...{% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=job.creator.user.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ job.creator.user.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ job.creator.user.emailAddress }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="admin-status-badge {{ job.status }}">
+                                    {{ job.status.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--primary-black);">{{ job.getBudgetRange() }}</div>
+                            </td>
+                            <td>{{ moment(job.dateCreated).format('MMM DD, YYYY') }}</td>
+                            <td>
+                                <div style="text-align: center; font-weight: 600; color: var(--accent-blue);">
+                                    {{ job.applications|length }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="admin-action-buttons">
+                                    <a href="{{ url_for('admin.user_detail', user_id=job.creator.user.userId) }}" 
+                                       class="btn admin-btn-sm btn-secondary">
+                                        <i class="fas fa-user"></i> Creator
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Report Results -->
+            {% if search_type == 'reports' %}
+            <div style="overflow-x: auto;">
+                <table class="admin-data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Reporter</th>
+                            <th>Reported Content</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in results %}
+                        <tr>
+                            <td style="font-weight: 600; color: var(--primary-black);">
+                                <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" 
+                                   style="text-decoration: none; color: inherit;">
+                                    #{{ report.reportId }}
+                                </a>
+                            </td>
+                            <td>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reporter.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ report.reporter.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ report.reporter.userType.title() }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if report.reportedUser %}
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reportedUser.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ report.reportedUser.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">User Report</div>
+                                </div>
+                                {% elif report.reportedPortfolio %}
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.portfolio_detail', portfolio_id=report.reportedPortfolio.portfolioId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ report.reportedPortfolio.title }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">Portfolio Report</div>
+                                </div>
+                                {% else %}
+                                <span style="color: var(--soft-gray); font-style: italic;">Content Report</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="admin-status-badge rejected">{{ report.getReportType().title() }}</span>
+                            </td>
+                            <td>
+                                <span class="admin-status-badge {{ report.reportStatus }}">
+                                    {{ report.reportStatus.title() }}
+                                </span>
+                            </td>
+                            <td>{{ moment(report.dateCreated).format('MMM DD, YYYY') }}</td>
+                            <td>
+                                <div class="admin-action-buttons">
+                                    <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" 
+                                       class="btn admin-btn-sm btn-secondary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% if report.reportStatus in ['pending', 'reviewed'] %}
+                                    <a href="{{ url_for('admin.resolve_report', report_id=report.reportId) }}" 
+                                       class="btn admin-btn-sm admin-btn-success">
+                                        <i class="fas fa-gavel"></i> Resolve
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No Results Found</h3>
+            <p>No {{ search_type }} match your search query "{{ query }}".</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="clearSearch()">
+                    <i class="fas fa-undo"></i> Clear Search
+                </button>
+                <button class="btn btn-primary" onclick="expandSearch()">
+                    <i class="fas fa-expand-arrows-alt"></i> Search All Categories
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Search Suggestions (if no query) -->
+{% if not query %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Quick Search Options</h3>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div style="padding: 1.5rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2rem; color: var(--accent-blue); margin-bottom: 1rem;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 style="margin: 0 0 0.5rem 0; font-weight: 600;">Find Users</h4>
+                <p style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 1rem;">Search by name, email, or user type</p>
+                <button class="btn btn-secondary" onclick="quickSearch('users', 'suspended users')">
+                    Suspended Users
+                </button>
+            </div>
+            
+            <div style="padding: 1.5rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2rem; color: var(--success-green); margin-bottom: 1rem;">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h4 style="margin: 0 0 0.5rem 0; font-weight: 600;">Browse Portfolios</h4>
+                <p style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 1rem;">Find portfolios by title or skills</p>
+                <button class="btn btn-secondary" onclick="quickSearch('portfolios', 'pending portfolios')">
+                    Pending Reviews
+                </button>
+            </div>
+            
+            <div style="padding: 1.5rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2rem; color: #f59e0b; margin-bottom: 1rem;">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <h4 style="margin: 0 0 0.5rem 0; font-weight: 600;">Job Listings</h4>
+                <p style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 1rem;">Search jobs by title or creator</p>
+                <button class="btn btn-secondary" onclick="quickSearch('jobs', 'active jobs')">
+                    Active Jobs
+                </button>
+            </div>
+            
+            <div style="padding: 1.5rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <h4 style="margin: 0 0 0.5rem 0; font-weight: 600;">Reports</h4>
+                <p style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 1rem;">Find reports by ID or user</p>
+                <button class="btn btn-secondary" onclick="quickSearch('reports', 'pending reports')">
+                    Pending Reports
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Searches -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Search Tips</h3>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600; color: var(--primary-black);">User Search</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.6;">
+                    <li>Search by full name or email address</li>
+                    <li>Use "creator" or "editor" to filter by type</li>
+                    <li>Search "suspended" to find inactive accounts</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600; color: var(--primary-black);">Portfolio Search</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.6;">
+                    <li>Search by portfolio title or description</li>
+                    <li>Use skill names to find specific expertise</li>
+                    <li>Search "pending" or "rejected" for status</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600; color: var(--primary-black);">Job Search</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.6;">
+                    <li>Search by job title or description</li>
+                    <li>Include creator name to find specific jobs</li>
+                    <li>Search "completed" or "in progress" for status</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600; color: var(--primary-black);">Report Search</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.6;">
+                    <li>Search by report ID (e.g., "123")</li>
+                    <li>Include reporter or reported user name</li>
+                    <li>Search "resolved" or "pending" for status</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Search functionality
+function quickSearch(type, query) {
+    const form = document.querySelector('form');
+    form.querySelector('input[name="q"]').value = query;
+    form.querySelector('select[name="type"]').value = type;
+    form.submit();
+}
+
+function clearSearch() {
+    window.location.href = '{{ url_for("admin.search") }}';
+}
+
+function expandSearch() {
+    {% if query %}
+    // Search in all categories
+    const currentQuery = '{{ query }}';
+    const searchTypes = ['users', 'portfolios', 'jobs', 'reports'];
+    
+    // Open searches in new tabs
+    searchTypes.forEach(type => {
+        if (type !== '{{ search_type }}') {
+            const url = `{{ url_for("admin.search") }}?q=${encodeURIComponent(currentQuery)}&type=${type}`;
+            window.open(url, '_blank');
+        }
+    });
+    {% endif %}
+}
+
+function exportResults() {
+    {% if results %}
+    const results = [
+        {% for result in results %}
+        {
+            {% if search_type == 'users' %}
+            id: {{ result.userId }},
+            name: '{{ result.fullName }}',
+            email: '{{ result.emailAddress }}',
+            type: '{{ result.userType }}',
+            status: '{% if result.isActive %}active{% else %}suspended{% endif %}',
+            rating: {{ result.averageRating or 0 }},
+            joinDate: '{{ result.dateCreated }}'
+            {% elif search_type == 'portfolios' %}
+            id: {{ result.portfolioId }},
+            title: '{{ result.title }}',
+            editor: '{{ result.editor.user.fullName }}',
+            status: '{{ result.verificationStatus }}',
+            dateCreated: '{{ result.dateCreated }}'
+            {% elif search_type == 'jobs' %}
+            id: {{ result.jobId }},
+            title: '{{ result.title }}',
+            creator: '{{ result.creator.user.fullName }}',
+            status: '{{ result.status }}',
+            budget: '{{ result.getBudgetRange() }}',
+            applications: {{ result.applications|length }},
+            dateCreated: '{{ result.dateCreated }}'
+            {% elif search_type == 'reports' %}
+            id: {{ result.reportId }},
+            reporter: '{{ result.reporter.fullName }}',
+            reportedUser: '{% if result.reportedUser %}{{ result.reportedUser.fullName }}{% else %}N/A{% endif %}',
+            type: '{{ result.getReportType() }}',
+            status: '{{ result.reportStatus }}',
+            dateCreated: '{{ result.dateCreated }}'
+            {% endif %}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(results, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `search_results_{{ search_type }}_{{ moment().format('YYYY-MM-DD') }}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    {% endif %}
+}
+
+// Auto-focus search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput && !searchInput.value) {
+        searchInput.focus();
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + K to focus search
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        document.querySelector('input[name="q"]').focus();
+    }
+
+    // Enter to submit search
+    if (event.key === 'Enter' && event.target.matches('input[name="q"]')) {
+        event.target.closest('form').submit();
+    }
+
+    // Escape to clear search
+    if (event.key === 'Escape' && document.activeElement.matches('input[name="q"]')) {
+        clearSearch();
+    }
+});
+
+// Save search history (localStorage)
+function saveSearchHistory(query, type) {
+    if (!query.trim()) return;
+
+    let history = JSON.parse(localStorage.getItem('adminSearchHistory') || '[]');
+    const searchItem = {
+        query: query,
+        type: type,
+        timestamp: new Date().toISOString()
+    };
+
+    // Remove duplicate
+    history = history.filter(item => !(item.query === query && item.type === type));
+
+    // Add to beginning
+    history.unshift(searchItem);
+
+    // Keep only last 10 searches
+    history = history.slice(0, 10);
+
+    localStorage.setItem('adminSearchHistory', JSON.stringify(history));
+}
+
+// Load and display search history
+function loadSearchHistory() {
+    const history = JSON.parse(localStorage.getItem('adminSearchHistory') || '[]');
+    const searchInput = document.querySelector('input[name="q"]');
+
+    if (history.length > 0 && searchInput) {
+        searchInput.addEventListener('focus', function() {
+            showSearchSuggestions(history);
+        });
+    }
+}
+
+function showSearchSuggestions(history) {
+    // Remove existing suggestions
+    const existingSuggestions = document.querySelector('.search-suggestions');
+    if (existingSuggestions) {
+        existingSuggestions.remove();
+    }
+
+    const searchInput = document.querySelector('input[name="q"]');
+    const suggestions = document.createElement('div');
+    suggestions.className = 'search-suggestions';
+    suggestions.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid var(--border-gray);
+        border-top: none;
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        box-shadow: var(--shadow-md);
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+    `;
+
+    history.forEach(item => {
+        const suggestion = document.createElement('div');
+        suggestion.style.cssText = `
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        suggestion.innerHTML = `
+            <div>
+                <div style="font-weight: 600; color: var(--primary-black);">${item.query}</div>
+                <div style="font-size: 0.75rem; color: var(--soft-gray);">in ${item.type}</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                ${moment(item.timestamp).fromNow()}
+            </div>
+        `;
+
+        suggestion.addEventListener('click', function() {
+            searchInput.value = item.query;
+            document.querySelector('select[name="type"]').value = item.type;
+            suggestions.remove();
+            searchInput.closest('form').submit();
+        });
+
+        suggestion.addEventListener('mouseenter', function() {
+            this.style.background = 'var(--light-gray)';
+        });
+
+        suggestion.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+        });
+
+        suggestions.appendChild(suggestion);
+    });
+
+    // Position relative to search input
+    const searchContainer = searchInput.parentElement;
+    searchContainer.style.position = 'relative';
+    searchContainer.appendChild(suggestions);
+
+    // Hide on click outside
+    setTimeout(() => {
+        document.addEventListener('click', function hideSearchSuggestions(event) {
+            if (!searchContainer.contains(event.target)) {
+                suggestions.remove();
+                document.removeEventListener('click', hideSearchSuggestions);
+            }
+        });
+    }, 100);
+}
+
+// Save search when form is submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.querySelector('form[action="{{ url_for("admin.search") }}"]');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function() {
+            const query = this.querySelector('input[name="q"]').value;
+            const type = this.querySelector('select[name="type"]').value;
+            saveSearchHistory(query, type);
+        });
+    }
+
+    // Load search history
+    loadSearchHistory();
+
+    // Highlight search terms in results
+    {% if query %}
+    highlightSearchTerms('{{ query }}');
+    {% endif %}
+});
+
+// Highlight search terms in results
+function highlightSearchTerms(query) {
+    const terms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+    if (terms.length === 0) return;
+
+    const resultsContainer = document.querySelector('.admin-section-content');
+    if (!resultsContainer) return;
+
+    const walker = document.createTreeWalker(
+        resultsContainer,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+
+    const textNodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+        textNodes.push(node);
+    }
+
+    textNodes.forEach(textNode => {
+        let content = textNode.textContent;
+        let highlighted = false;
+
+        terms.forEach(term => {
+            const regex = new RegExp(`(${term})`, 'gi');
+            if (regex.test(content)) {
+                content = content.replace(regex, '<mark style="background: yellow; padding: 0 2px;">$1</mark>');
+                highlighted = true;
+            }
+        });
+
+        if (highlighted) {
+            const span = document.createElement('span');
+            span.innerHTML = content;
+            textNode.parentNode.replaceChild(span, textNode);
+        }
+    });
+}
+
+// Advanced search functionality
+function toggleAdvancedSearch() {
+    const advancedSearch = document.getElementById('advanced-search');
+    if (advancedSearch) {
+        advancedSearch.style.display = advancedSearch.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Real-time search suggestions
+let searchTimeout;
+function setupLiveSearch() {
+    const searchInput = document.querySelector('input[name="q"]');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length >= 3) {
+            searchTimeout = setTimeout(() => {
+                fetchSearchSuggestions(query);
+            }, 300);
+        }
+    });
+}
+
+function fetchSearchSuggestions(query) {
+    // This would typically make an AJAX call to get live suggestions
+    // For now, we'll use the existing search history
+    const history = JSON.parse(localStorage.getItem('adminSearchHistory') || '[]');
+    const filteredHistory = history.filter(item =>
+        item.query.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filteredHistory.length > 0) {
+        showSearchSuggestions(filteredHistory.slice(0, 5));
+    }
+}
+
+// Copy search URL functionality
+function copySearchUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        // Show temporary success message
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.style.color = 'var(--success-green)';
+
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.color = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy URL:', err);
+        alert('Failed to copy URL to clipboard');
+    });
+}
+
+// Search analytics (track popular searches)
+function trackSearchAnalytics(query, type, resultCount) {
+    const analytics = JSON.parse(localStorage.getItem('adminSearchAnalytics') || '{}');
+    const key = `${type}:${query.toLowerCase()}`;
+
+    if (!analytics[key]) {
+        analytics[key] = {
+            query: query,
+            type: type,
+            searchCount: 0,
+            avgResults: 0,
+            lastSearched: null
+        };
+    }
+
+    analytics[key].searchCount++;
+    analytics[key].avgResults = ((analytics[key].avgResults * (analytics[key].searchCount - 1)) + resultCount) / analytics[key].searchCount;
+    analytics[key].lastSearched = new Date().toISOString();
+
+    localStorage.setItem('adminSearchAnalytics', JSON.stringify(analytics));
+}
+
+// Initialize search analytics
+{% if query and results %}
+trackSearchAnalytics('{{ query }}', '{{ search_type }}', {{ results|length }});
+{% endif %}
+
+// Search result interaction tracking
+document.addEventListener('click', function(event) {
+    if (event.target.closest('a[href*="user_detail"], a[href*="portfolio_detail"], a[href*="report_detail"]')) {
+        const link = event.target.closest('a');
+        const resultType = link.href.includes('user_detail') ? 'user' :
+                          link.href.includes('portfolio_detail') ? 'portfolio' : 'report';
+
+        // Track which results users actually click on
+        console.log(`Clicked ${resultType} result from search`);
+    }
+});
+
+// Bulk actions for search results (if implemented)
+function selectAllResults() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][name="selected"]');
+    const selectAllCheckbox = document.querySelector('#select-all');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+
+    updateBulkActionButtons();
+}
+
+function updateBulkActionButtons() {
+    const selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected"]:checked').length;
+    const bulkActionButtons = document.querySelector('.bulk-actions');
+
+    if (bulkActionButtons) {
+        bulkActionButtons.style.display = selectedCount > 0 ? 'block' : 'none';
+        bulkActionButtons.querySelector('.selected-count').textContent = selectedCount;
+    }
+}
+
+// Initialize live search
+document.addEventListener('DOMContentLoaded', function() {
+    setupLiveSearch();
+});
+</script>
+
+<style>
+/* Search result highlighting */
+mark {
+    background: rgba(255, 255, 0, 0.3);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Search suggestions */
+.search-suggestions {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Advanced search toggle */
+.advanced-search-toggle {
+    cursor: pointer;
+    color: var(--accent-blue);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.advanced-search-toggle:hover {
+    text-decoration: underline;
+}
+
+/* Search shortcuts info */
+.search-shortcuts {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.search-shortcuts.show {
+    opacity: 1;
+}
+
+/* Responsive search form */
+@media (max-width: 768px) {
+    .admin-section-content form {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .admin-section-content form > div {
+        width: 100%;
+    }
+
+    .search-suggestions {
+        position: fixed !important;
+        top: auto !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+        max-height: 50vh !important;
+    }
+}
+
+/* Loading state for search */
+.search-loading {
+    position: relative;
+}
+
+.search-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-gray);
+    border-top: 2px solid var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Search result cards hover effects */
+.admin-data-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Search tips styling */
+.search-tips {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.search-tips h4 {
+    color: var(--accent-blue);
+    margin-bottom: 1rem;
+}
+
+/* Quick search cards */
+.quick-search-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.quick-search-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-blue);
+}
+
+.quick-search-card:hover .quick-search-icon {
+    transform: scale(1.1);
+}
+
+/* Search result statistics */
+.search-stats {
+    background: var(--light-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--soft-gray);
+}
+
+.search-stats .result-count {
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.search-stats .search-time {
+    font-style: italic;
+}
+
+/* No results animation */
+.admin-empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<!-- Search Shortcuts Helper -->
+<div class="search-shortcuts" id="search-shortcuts">
+    <div><kbd>Ctrl</kbd> + <kbd>K</kbd> to focus search</div>
+    <div><kbd>Esc</kbd> to clear search</div>
+</div>
+
+<script>
+// Show search shortcuts on first visit
+document.addEventListener('DOMContentLoaded', function() {
+    const hasSeenShortcuts = localStorage.getItem('adminSearchShortcuts');
+    if (!hasSeenShortcuts) {
+        setTimeout(() => {
+            const shortcuts = document.getElementById('search-shortcuts');
+            shortcuts.classList.add('show');
+
+            setTimeout(() => {
+                shortcuts.classList.remove('show');
+                localStorage.setItem('adminSearchShortcuts', 'true');
+            }, 3000);
+        }, 1000);
+    }
+});
+</script>
+{% endblock admin_content %}

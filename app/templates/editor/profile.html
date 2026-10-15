@@ -1,0 +1,1827 @@
+{% extends "editor/base.html" %}
+
+{% block title %}My Profile - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="header-content">
+            <div class="profile-avatar-section">
+                <div class="profile-avatar">
+                    {% if current_user.profilePicture %}
+                    <img src="{{ current_user.profilePicture }}" alt="{{ current_user.fullName }}" class="avatar-img">
+                    {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                    <div class="avatar-overlay">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <h1>{{ current_user.fullName }}</h1>
+                    <p class="user-type">Video Editor</p>
+                    
+                    {% if current_user.averageRating %}
+                    <div class="rating-display">
+                        <div class="stars">
+                            {% for i in range(1, 6) %}
+                            <i class="fas fa-star {% if i <= current_user.averageRating %}active{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <span class="rating-text">{{ "%.1f"|format(current_user.averageRating) }} ({{ current_user.totalRatings }} review{{ "s" if current_user.totalRatings != 1 else "" }})</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="profile-status">
+                        {% if editor.isVerified %}
+                        <span class="status-badge verified">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Editor
+                        </span>
+                        {% else %}
+                        <span class="status-badge pending">
+                            <i class="fas fa-clock"></i>
+                            Verification Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="btn btn-secondary" onclick="toggleEditMode()">
+                    <i class="fas fa-edit"></i>
+                    <span id="editToggleText">Edit Profile</span>
+                </button>
+                <a href="{{ url_for('editor.portfolio') }}" class="btn btn-primary">
+                    <i class="fas fa-folder-open"></i>
+                    View Portfolio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content Grid -->
+    <div class="profile-grid">
+        <!-- Main Profile Form -->
+        <div class="main-content">
+            <div class="profile-card">
+                <div class="card-header">
+                    <h3>Profile Information</h3>
+                    <div class="completion-indicator">
+                        <div class="completion-bar">
+                            <div class="completion-fill" id="completionBar"></div>
+                        </div>
+                        <span class="completion-text" id="completionText">0% Complete</span>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <form method="POST" action="{{ url_for('editor.profile') }}" id="profileForm" class="profile-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h4>Basic Information</h4>
+                            
+                            <div class="form-group">
+                                {{ form.fullName.label(class="form-label required") }}
+                                {{ form.fullName(class="form-input", readonly=True) }}
+                                <div class="field-help">Your full name as it will appear to clients</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-input" value="{{ current_user.emailAddress }}" readonly>
+                                <div class="field-help">Contact our support team to change your email address</div>
+                            </div>
+                        </div>
+
+                        <!-- Professional Information -->
+                        <div class="form-section">
+                            <h4>Professional Information</h4>
+                            
+                            <div class="form-group">
+                                {{ form.specializations.label(class="form-label") }}
+                                {{ form.specializations(class="form-input", readonly=True, rows="3") }}
+                                <div class="field-help">Describe your areas of expertise (e.g., Color Grading, Motion Graphics, Sound Editing)</div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.experienceLevel.label(class="form-label") }}
+                                    {{ form.experienceLevel(class="form-select", disabled=True) }}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.hourlyRate.label(class="form-label") }}
+                                    <div class="input-group">
+                                        <span class="input-prefix">KES</span>
+                                        {{ form.hourlyRate(class="form-input", readonly=True, step="0.01", min="0") }}
+                                        <span class="input-suffix">/hour</span>
+                                    </div>
+                                    <div class="field-help">Your preferred hourly rate for projects</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions" id="formActions" style="display: none;">
+                            <button type="button" class="btn btn-outline" onclick="cancelEdit()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Statistics -->
+            <div class="profile-card stats-card">
+                <div class="card-header">
+                    <h3>Profile Statistics</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon applications">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ editor.jobApplications|length }}</div>
+                                <div class="stat-label">Applications Submitted</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon projects">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ editor.getCompletedJobs()|length }}</div>
+                                <div class="stat-label">Projects Completed</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon portfolio">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ editor.getVerifiedPortfolios()|length }}</div>
+                                <div class="stat-label">Portfolio Items</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon rating">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ "%.1f"|format(current_user.averageRating) if current_user.averageRating else "0.0" }}</div>
+                                <div class="stat-label">Average Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="profile-card activity-card">
+                <div class="card-header">
+                    <h3>Recent Activity</h3>
+                    <a href="{{ url_for('editor.applications') }}" class="view-all-link">View All</a>
+                </div>
+                
+                <div class="card-content">
+                  {% set recent_applications = (editor.jobApplications|sort(attribute='dateCreated', reverse=True))[:5] %}
+                    {% if recent_applications %}
+                    <div class="activity-list">
+                        {% for application in recent_applications %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                {% if application.status == 'pending' %}
+                                <i class="fas fa-clock text-warning"></i>
+                                {% elif application.status == 'accepted' %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {% elif application.status == 'declined' %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">
+                                    <a href="{{ url_for('editor.application_detail', application_id=application.jobApplicationId) }}">
+                                        {{ application.job.title }}
+                                    </a>
+                                </div>
+                                <div class="activity-meta">
+                                    <span class="activity-status status-{{ application.status }}">{{ application.status.title() }}</span>
+                                    <span class="activity-date">{{ moment(application.dateCreated).fromNow() }}</span>
+                                </div>
+                            </div>
+                            <div class="activity-amount">
+                                KES {{ "{:,.0f}"|format(application.proposedRate) }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-activity">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>No applications yet. <a href="{{ url_for('editor.jobs') }}">Browse available jobs</a> to get started!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-content">
+            <!-- Quick Actions -->
+            <div class="profile-card quick-actions-card">
+                <div class="card-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="action-list">
+                        <a href="{{ url_for('editor.jobs') }}" class="action-item">
+                            <div class="action-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Browse Jobs</div>
+                                <div class="action-description">Find new editing opportunities</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('editor.new_portfolio') }}" class="action-item">
+                            <div class="action-icon">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Add Portfolio Item</div>
+                                <div class="action-description">Showcase your best work</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('editor.projects') }}" class="action-item">
+                            <div class="action-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">View Projects</div>
+                                <div class="action-description">Manage active projects</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('editor.messages') }}" class="action-item">
+                            <div class="action-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Messages</div>
+                                <div class="action-description">Communicate with clients</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification Status -->
+            <div class="profile-card verification-card">
+                <div class="card-header">
+                    <h3>Verification Status</h3>
+                </div>
+                
+                <div class="card-content">
+                    {% if editor.isVerified %}
+                    <div class="verification-status verified">
+                        <div class="verification-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="verification-content">
+                            <h4>Profile Verified</h4>
+                            <p>Your profile has been verified and you can receive job invitations.</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="verification-status pending">
+                        <div class="verification-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="verification-content">
+                            <h4>Verification Pending</h4>
+                            <p>Complete your portfolio to get verified and access more opportunities.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="verification-checklist">
+                        <h4>Verification Checklist</h4>
+                        <div class="checklist-item {{ 'completed' if current_user.fullName else 'pending' }}">
+                            <i class="fas fa-{{ 'check' if current_user.fullName else 'times' }}"></i>
+                            <span>Complete profile information</span>
+                        </div>
+                        <div class="checklist-item {{ 'completed' if editor.portfolios|length > 0 else 'pending' }}">
+                            <i class="fas fa-{{ 'check' if editor.portfolios|length > 0 else 'times' }}"></i>
+                            <span>Add portfolio items</span>
+                        </div>
+                        <div class="checklist-item {{ 'completed' if editor.specializations else 'pending' }}">
+                            <i class="fas fa-{{ 'check' if editor.specializations else 'times' }}"></i>
+                            <span>Specify specializations</span>
+                        </div>
+                        <div class="checklist-item {{ 'completed' if editor.hourlyRate else 'pending' }}">
+                            <i class="fas fa-{{ 'check' if editor.hourlyRate else 'times' }}"></i>
+                            <span>Set hourly rate</span>
+                        </div>
+                    </div>
+                    
+                    <div class="verification-actions">
+                        <a href="{{ url_for('editor.portfolio') }}" class="btn btn-primary btn-full">
+                            <i class="fas fa-plus"></i>
+                            Complete Portfolio
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Tips -->
+            <div class="profile-card tips-card">
+                <div class="card-header">
+                    <h3>Profile Tips</h3>
+                </div>
+                
+                <div class="card-content">
+                    <div class="tips-list">
+                        <div class="tip-item">
+                            <div class="tip-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="tip-content">
+                                <h4>Add a Professional Photo</h4>
+                                <p>Profiles with photos get 40% more views from potential clients.</p>
+                            </div>
+                        </div>
+
+                        <div class="tip-item">
+                            <div class="tip-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="tip-content">
+                                <h4>Showcase Your Best Work</h4>
+                                <p>Add 3-5 portfolio items that highlight your editing skills and style.</p>
+                            </div>
+                        </div>
+
+                        <div class="tip-item">
+                            <div class="tip-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="tip-content">
+                                <h4>Set Competitive Rates</h4>
+                                <p>Research market rates for your experience level and adjust accordingly.</p>
+                            </div>
+                        </div>
+
+                        <div class="tip-item">
+                            <div class="tip-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <div class="tip-content">
+                                <h4>Be Responsive</h4>
+                                <p>Quick responses to messages increase your chances of getting hired.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Profile Page Styles */
+.profile-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Profile Header */
+.profile-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.profile-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+}
+
+.profile-avatar {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--white);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--soft-gray);
+    font-size: 3rem;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.profile-avatar:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.user-type {
+    font-size: 1.1rem;
+    color: var(--soft-gray);
+    margin-bottom: 1rem;
+}
+
+.rating-display {
+    margin-bottom: 1rem;
+}
+
+.stars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.stars i {
+    font-size: 1rem;
+    color: var(--border-gray);
+}
+
+.stars i.active {
+    color: #fbbf24;
+}
+
+.rating-text {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.profile-status {
+    margin-top: 1rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.verified {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.pending {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+/* Profile Grid */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+/* Profile Cards */
+.profile-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--light-gray);
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.completion-indicator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.completion-bar {
+    width: 100px;
+    height: 6px;
+    background: var(--border-gray);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.completion-fill {
+    height: 100%;
+    background: var(--success-green);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.completion-text {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    font-weight: 600;
+}
+
+.view-all-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.view-all-link:hover {
+    color: var(--primary-black);
+}
+
+.card-content {
+    padding: 2rem;
+}
+
+/* Form Styles */
+.profile-form {
+    max-width: 800px;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 2rem;
+}
+
+.form-section h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-label.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: var(--white);
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input[readonly],
+.form-select[disabled] {
+    background: var(--light-gray);
+    color: var(--soft-gray);
+    cursor: not-allowed;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+}
+
+.input-prefix,
+.input-suffix {
+    background: var(--light-gray);
+    color: var(--soft-gray);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-gray);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.input-prefix {
+    border-right: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.input-suffix {
+    border-left: none;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.input-group .form-input {
+    border-radius: 0;
+    flex: 1;
+}
+
+.field-help {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--white);
+    flex-shrink: 0;
+}
+
+.stat-icon.applications { background: var(--accent-blue); }
+.stat-icon.projects { background: var(--success-green); }
+.stat-icon.portfolio { background: #8b5cf6; }
+.stat-icon.rating { background: #f59e0b; }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+    background: var(--light-gray);
+    transform: translateX(4px);
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.activity-title a {
+    color: var(--primary-black);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.activity-title a:hover {
+    color: var(--accent-blue);
+}
+
+.activity-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.activity-status {
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.25px;
+}
+
+.status-pending { background: #fef3cd; color: #92400e; }
+.status-accepted { background: #dcfce7; color: #15803d; }
+.status-declined { background: #fee2e2; color: #dc2626; }
+
+.activity-amount {
+    font-weight: 700;
+    color: var(--success-green);
+    flex-shrink: 0;
+}
+
+.empty-activity {
+    text-align: center;
+    padding: 2rem;
+    color: var(--soft-gray);
+}
+
+.empty-activity i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--border-gray);
+}
+
+.empty-activity a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Quick Actions */
+.action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    color: var(--primary-black);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.action-item:hover {
+    background: var(--light-gray);
+    border-color: var(--border-gray);
+    transform: translateX(4px);
+}
+
+.action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.action-content {
+    flex: 1;
+}
+
+.action-title {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.action-description {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+/* Verification Status */
+.verification-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.verification-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.verification-status.verified .verification-icon {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.verification-status.pending .verification-icon {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.verification-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.verification-content p {
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.verification-checklist {
+    margin-bottom: 2rem;
+}
+
+.verification-checklist h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.checklist-item.completed {
+    color: var(--success-green);
+}
+
+.checklist-item.pending {
+    color: var(--soft-gray);
+}
+
+.checklist-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.verification-actions {
+    margin-top: 1.5rem;
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Tips Card */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.tip-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.tip-content h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Utility Classes */
+.text-success { color: var(--success-green); }
+.text-warning { color: #f59e0b; }
+.text-danger { color: #ef4444; }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar-content {
+        order: -1;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+    
+    .profile-avatar-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+        width: 100%;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .card-content {
+        padding: 1.5rem;
+    }
+    
+    .card-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .completion-indicator {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-info h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-item {
+        padding: 0.75rem;
+    }
+    
+    .activity-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .activity-meta {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.profile-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.profile-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+/* Form Edit Mode Styles */
+.form-input.edit-mode,
+.form-select.edit-mode {
+    background: var(--white);
+    color: var(--primary-black);
+    cursor: text;
+}
+
+.form-input.edit-mode:focus,
+.form-select.edit-mode:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Profile completeness indicator animation */
+.completion-fill.animate {
+    transition: width 0.8s ease-in-out;
+}
+</style>
+
+<script>
+// Profile page functionality
+let isEditMode = false;
+let originalFormData = {};
+
+// Toggle edit mode
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const form = document.getElementById('profileForm');
+    const editToggleText = document.getElementById('editToggleText');
+    const formActions = document.getElementById('formActions');
+    
+    if (isEditMode) {
+        // Store original form data
+        storeOriginalFormData();
+        
+        // Enable form fields
+        enableFormFields();
+        
+        // Update UI
+        editToggleText.textContent = 'Cancel Edit';
+        formActions.style.display = 'flex';
+        
+        // Focus on first editable field
+        const firstInput = form.querySelector('.form-input:not([readonly])');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    } else {
+        // Cancel edit mode
+        cancelEdit();
+    }
+}
+
+// Cancel edit mode
+function cancelEdit() {
+    isEditMode = false;
+    const editToggleText = document.getElementById('editToggleText');
+    const formActions = document.getElementById('formActions');
+    
+    // Restore original form data
+    restoreOriginalFormData();
+    
+    // Disable form fields
+    disableFormFields();
+    
+    // Update UI
+    editToggleText.textContent = 'Edit Profile';
+    formActions.style.display = 'none';
+}
+
+// Store original form data
+function storeOriginalFormData() {
+    const form = document.getElementById('profileForm');
+    const formData = new FormData(form);
+    
+    originalFormData = {};
+    for (let [key, value] of formData.entries()) {
+        originalFormData[key] = value;
+    }
+}
+
+// Restore original form data
+function restoreOriginalFormData() {
+    const form = document.getElementById('profileForm');
+    
+    Object.entries(originalFormData).forEach(([key, value]) => {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = value;
+        }
+    });
+}
+
+// Enable form fields for editing
+function enableFormFields() {
+    const form = document.getElementById('profileForm');
+    
+    // Enable text inputs and textareas
+    form.querySelectorAll('.form-input:not([name="emailAddress"])').forEach(input => {
+        input.removeAttribute('readonly');
+        input.classList.add('edit-mode');
+    });
+    
+    // Enable select fields
+    form.querySelectorAll('.form-select').forEach(select => {
+        select.removeAttribute('disabled');
+        select.classList.add('edit-mode');
+    });
+}
+
+// Disable form fields
+function disableFormFields() {
+    const form = document.getElementById('profileForm');
+    
+    // Disable text inputs and textareas
+    form.querySelectorAll('.form-input:not([name="emailAddress"])').forEach(input => {
+        input.setAttribute('readonly', true);
+        input.classList.remove('edit-mode');
+    });
+    
+    // Disable select fields
+    form.querySelectorAll('.form-select').forEach(select => {
+        select.setAttribute('disabled', true);
+        select.classList.remove('edit-mode');
+    });
+}
+
+// Calculate profile completion percentage
+function calculateProfileCompletion() {
+    const form = document.getElementById('profileForm');
+    const requiredFields = [
+        'fullName',
+        'specializations',
+        'experienceLevel',
+        'hourlyRate'
+    ];
+    
+    let filledFields = 0;
+    let totalFields = requiredFields.length;
+    
+    requiredFields.forEach(fieldName => {
+        const field = form.querySelector(`[name="${fieldName}"]`);
+        if (field && field.value.trim()) {
+            filledFields++;
+        }
+    });
+    
+    // Add portfolio check
+    const portfolioCount = {{ editor.portfolios|length }};
+    if (portfolioCount > 0) {
+        filledFields++;
+    }
+    totalFields++;
+    
+    const percentage = Math.round((filledFields / totalFields) * 100);
+    
+    // Update completion indicator
+    const completionBar = document.getElementById('completionBar');
+    const completionText = document.getElementById('completionText');
+    
+    if (completionBar && completionText) {
+        completionBar.style.width = `${percentage}%`;
+        completionText.textContent = `${percentage}% Complete`;
+        
+        // Add animation class
+        completionBar.classList.add('animate');
+    }
+    
+    return percentage;
+}
+
+// Handle form submission
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Add loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
+    // Validate form
+    if (!validateForm()) {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        return;
+    }
+    
+    // Submit form
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showSuccessMessage('Profile updated successfully!');
+            
+            // Exit edit mode
+            isEditMode = false;
+            disableFormFields();
+            document.getElementById('editToggleText').textContent = 'Edit Profile';
+            document.getElementById('formActions').style.display = 'none';
+            
+            // Recalculate completion
+            setTimeout(() => {
+                calculateProfileCompletion();
+            }, 500);
+            
+        } else {
+            throw new Error('Failed to update profile');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Failed to update profile. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+    });
+});
+
+// Form validation
+function validateForm() {
+    const form = document.getElementById('profileForm');
+    let isValid = true;
+    
+    // Clear previous errors
+    clearFormErrors();
+    
+    // Validate full name
+    const fullName = form.querySelector('[name="fullName"]');
+    if (!fullName.value.trim()) {
+        showFieldError(fullName, 'Full name is required');
+        isValid = false;
+    }
+    
+    // Validate hourly rate
+    const hourlyRate = form.querySelector('[name="hourlyRate"]');
+    if (hourlyRate.value && (parseFloat(hourlyRate.value) < 0)) {
+        showFieldError(hourlyRate, 'Hourly rate must be a positive number');
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+// Show field error
+function showFieldError(field, message) {
+    field.style.borderColor = '#ef4444';
+    
+    // Remove existing error message
+    const existingError = field.parentNode.querySelector('.field-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    errorDiv.style.cssText = `
+        color: #ef4444;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    `;
+    
+    field.parentNode.appendChild(errorDiv);
+}
+
+// Clear form errors
+function clearFormErrors() {
+    const form = document.getElementById('profileForm');
+    
+    // Reset border colors
+    form.querySelectorAll('.form-input, .form-select').forEach(field => {
+        field.style.borderColor = '';
+    });
+    
+    // Remove error messages
+    form.querySelectorAll('.field-error').forEach(error => {
+        error.remove();
+    });
+}
+
+// Show success/error messages
+function showSuccessMessage(message) {
+    showMessage(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showMessage(message, 'error');
+}
+
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-body">${message}</div>`;
+    
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // E to toggle edit mode
+        if (e.key === 'e' && !e.ctrlKey && !e.metaKey && !e.target.matches('input, textarea, select')) {
+            e.preventDefault();
+            toggleEditMode();
+        }
+        
+        // Escape to cancel edit
+        if (e.key === 'Escape' && isEditMode) {
+            e.preventDefault();
+            cancelEdit();
+        }
+        
+        // Ctrl/Cmd + S to save (when in edit mode)
+        if ((e.ctrlKey || e.metaKey) && e.key === 's' && isEditMode) {
+            e.preventDefault();
+            document.getElementById('profileForm').dispatchEvent(new Event('submit'));
+        }
+    });
+}
+
+// Profile picture upload simulation
+function initializeProfilePictureUpload() {
+    const profileAvatar = document.querySelector('.profile-avatar');
+    
+    profileAvatar.addEventListener('click', function() {
+        if (isEditMode) {
+            // In a real implementation, this would trigger file upload
+            showMessage('Profile picture upload is not implemented in this demo', 'info');
+        }
+    });
+}
+
+// Auto-save draft functionality
+function initializeAutoSave() {
+    const form = document.getElementById('profileForm');
+    let saveTimeout;
+    
+    form.addEventListener('input', function() {
+        if (!isEditMode) return;
+        
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            // Save draft to localStorage
+            const formData = new FormData(form);
+            const draftData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                draftData[key] = value;
+            }
+            
+            localStorage.setItem('profileDraft', JSON.stringify(draftData));
+        }, 1000);
+    });
+}
+
+// Load draft data
+function loadDraftData() {
+    const draftData = localStorage.getItem('profileDraft');
+    if (draftData && isEditMode) {
+        const data = JSON.parse(draftData);
+        const form = document.getElementById('profileForm');
+        
+        Object.entries(data).forEach(([key, value]) => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field && !field.value) {
+                field.value = value;
+            }
+        });
+    }
+}
+
+// Clear draft data
+function clearDraftData() {
+    localStorage.removeItem('profileDraft');
+}
+
+// Add CSS for toast notifications
+const toastStyles = `
+<style>
+.toast {
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.toast-success {
+    background: var(--success-green);
+    color: white;
+}
+
+.toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.toast-info {
+    background: var(--accent-blue);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .toast-container {
+        right: 1rem;
+        left: 1rem;
+    }
+    
+    .toast {
+        max-width: none;
+    }
+}
+</style>
+`;
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add toast styles
+    document.head.insertAdjacentHTML('beforeend', toastStyles);
+    
+    // Initialize all functionality
+    calculateProfileCompletion();
+    initializeKeyboardShortcuts();
+    initializeProfilePictureUpload();
+    initializeAutoSave();
+    
+    // Load draft data if in edit mode
+    if (isEditMode) {
+        loadDraftData();
+    }
+    
+    // Add hover effects to stat items
+    document.querySelectorAll('.stat-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px) scale(1.02)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+    
+    // Add click animations to action items
+    document.querySelectorAll('.action-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.transform = 'translateX(8px)';
+            
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    // Clear draft data on successful save
+    document.getElementById('profileForm').addEventListener('submit', function() {
+        clearDraftData();
+    });
+    
+    // Show keyboard shortcuts help
+    const helpText = document.createElement('div');
+    helpText.className = 'keyboard-help';
+    helpText.innerHTML = `
+        <div style="position: fixed; bottom: 1rem; left: 1rem; background: var(--primary-black); color: var(--white); padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8rem; z-index: 1000; opacity: 0; transition: opacity 0.3s ease;">
+            Press <kbd>E</kbd> to edit, <kbd>Esc</kbd> to cancel, <kbd>Ctrl+S</kbd> to save
+        </div>
+    `;
+    
+    // Show help on hover over edit button
+    const editButton = document.querySelector('.profile-actions .btn-secondary');
+    if (editButton) {
+        editButton.addEventListener('mouseenter', function() {
+            const help = document.querySelector('.keyboard-help div');
+            if (help) help.style.opacity = '1';
+        });
+        
+        editButton.addEventListener('mouseleave', function() {
+            const help = document.querySelector('.keyboard-help div');
+            if (help) help.style.opacity = '0';
+        });
+    }
+    
+    document.body.appendChild(helpText);
+});
+
+// Handle page unload with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+    if (isEditMode) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
+</script>
+{% endblock editor_content %}

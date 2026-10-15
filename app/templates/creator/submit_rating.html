@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Rating - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="rating-container">
+    <div class="rating-wrapper">
+        <!-- Header Section -->
+        <div class="rating-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.ratings') }}">Ratings</a>
+                    <span>/</span>
+                    <span>Submit Rating</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="rating-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Submit Rating</h1>
+                        <p>Rate your experience working with the editor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Form -->
+        <div class="rating-form-section">
+            <div class="form-content">
+                <form method="POST" class="rating-form">
+                    {{ form.hidden_tag() }}
+                    {{ form.jobId() }}
+                    {{ form.rateeId() }}
+
+                    <!-- Rating Selection -->
+                    <div class="rating-group">
+                        <h2>How would you rate this editor?</h2>
+                        <p class="rating-help">Select a rating from 1 to 5 stars</p>
+                        
+                        <div class="star-rating">
+                            <div class="stars-display" id="stars-display">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="ratingValue" value="{{ i }}" id="star{{ i }}" 
+                                       {% if form.ratingValue.data == i %}checked{% endif %}>
+                                <label for="star{{ i }}" class="star-label">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="rating-text" id="rating-text">
+                                <span class="rating-label">Select a rating</span>
+                            </div>
+                        </div>
+                        
+                        {% if form.ratingValue.errors %}
+                        <div class="field-errors">
+                            {% for error in form.ratingValue.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Review Text -->
+                    <div class="review-group">
+                        <h3>{{ form.reviewText.label() }}</h3>
+                        <p class="review-help">Share your experience working with this editor (optional)</p>
+                        
+                        {{ form.reviewText(class="review-textarea", placeholder="Tell other creators about your experience. Was the editor professional? Did they deliver quality work on time? Any specific strengths or areas for improvement?") }}
+                        
+                        {% if form.reviewText.errors %}
+                        <div class="field-errors">
+                            {% for error in form.reviewText.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="character-count">
+                            <span id="char-count">0</span> characters
+                        </div>
+                    </div>
+
+                    <!-- Guidelines -->
+                    <div class="guidelines-section">
+                        <h4><i class="fas fa-info-circle"></i> Rating Guidelines</h4>
+                        <div class="guidelines-grid">
+                            <div class="guideline-item">
+                                <span class="rating-star">5★</span>
+                                <div class="guideline-text">
+                                    <strong>Excellent</strong>
+                                    <p>Exceeded expectations, exceptional quality work</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-item">
+                                <span class="rating-star">4★</span>
+                                <div class="guideline-text">
+                                    <strong>Good</strong>
+                                    <p>Met expectations, quality work delivered</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-item">
+                                <span class="rating-star">3★</span>
+                                <div class="guideline-text">
+                                    <strong>Average</strong>
+                                    <p>Basic requirements met, some issues</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-item">
+                                <span class="rating-star">2★</span>
+                                <div class="guideline-text">
+                                    <strong>Poor</strong>
+                                    <p>Below expectations, significant issues</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-item">
+                                <span class="rating-star">1★</span>
+                                <div class="guideline-text">
+                                    <strong>Terrible</strong>
+                                    <p>Failed to meet basic requirements</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <a href="{{ url_for('creator.ratings') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary", id="submit-rating") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="help-section">
+            <div class="help-content">
+                <h3><i class="fas fa-question-circle"></i> Rating Tips</h3>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Be honest and fair in your rating</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Consider quality, communication, and timeliness</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-comments"></i>
+                        <span>Provide constructive feedback in your review</span>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-handshake"></i>
+                        <span>Help other creators make informed decisions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rating-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .rating-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .rating-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .rating-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+    }
+
+    .rating-form-section, .help-section {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        margin-bottom: 2rem;
+    }
+
+    .form-content, .help-content {
+        padding: 2.5rem;
+    }
+
+    .rating-form {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+    }
+
+    .rating-group h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    .rating-help {
+        color: var(--soft-gray);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.125rem;
+    }
+
+    .star-rating {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .stars-display {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        direction: rtl;
+    }
+
+    .stars-display input[type="radio"] {
+        display: none;
+    }
+
+    .star-label {
+        font-size: 3rem;
+        color: #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: block;
+    }
+
+    .star-label:hover,
+    .star-label:hover ~ .star-label,
+    .stars-display input[type="radio"]:checked ~ .star-label {
+        color: #f59e0b;
+        transform: scale(1.1);
+    }
+
+    .rating-text {
+        margin-top: 1rem;
+    }
+
+    .rating-label {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+    }
+
+    .review-group h3 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .review-help {
+        color: var(--soft-gray);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    .review-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        background: var(--white);
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+        line-height: 1.6;
+        transition: border-color 0.2s ease;
+    }
+
+    .review-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .character-count {
+        text-align: right;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+    }
+
+    .field-errors {
+        margin-top: 0.5rem;
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .guidelines-section {
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+    }
+
+    .guidelines-section h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .guidelines-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .guideline-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+    }
+
+    .rating-star {
+        font-size: 1.25rem;
+        color: #f59e0b;
+        font-weight: 700;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    .guideline-text strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .guideline-text p {
+        color: var(--soft-gray);
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .help-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tips-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-sm);
+    }
+
+    .tip-item i {
+        color: var(--accent-blue);
+        flex-shrink: 0;
+    }
+
+    .tip-item span {
+        color: var(--primary-black);
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .rating-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content, .form-content, .help-content {
+            padding: 2rem;
+        }
+
+        .header-main {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .star-label {
+            font-size: 2.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .guidelines-grid {
+            gap: 0.75rem;
+        }
+
+        .guideline-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .rating-container {
+            padding: 1rem 0;
+        }
+
+        .header-content, .form-content, .help-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .rating-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .star-label {
+            font-size: 2rem;
+        }
+
+        .guidelines-section {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.rating-form');
+        const submitBtn = document.getElementById('submit-rating');
+        const starInputs = document.querySelectorAll('input[name="ratingValue"]');
+        const ratingText = document.getElementById('rating-text');
+        const reviewTextarea = document.querySelector('.review-textarea');
+        const charCount = document.getElementById('char-count');
+
+        const ratingLabels = {
+            '5': 'Excellent - Exceeded expectations',
+            '4': 'Good - Met expectations', 
+            '3': 'Average - Basic requirements met',
+            '2': 'Poor - Below expectations',
+            '1': 'Terrible - Failed to meet requirements'
+        };
+
+        // Update rating text when stars are selected
+        starInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const value = this.value;
+                const label = ratingLabels[value] || 'Select a rating';
+                ratingText.querySelector('.rating-label').textContent = label;
+                
+                // Enable submit button
+                updateSubmitButton();
+            });
+        });
+
+        // Character counter for review
+        if (reviewTextarea && charCount) {
+            reviewTextarea.addEventListener('input', function() {
+                const count = this.value.length;
+                charCount.textContent = count;
+                
+                if (count > 400) {
+                    charCount.style.color = '#ef4444';
+                } else if (count > 300) {
+                    charCount.style.color = '#f59e0b';
+                } else {
+                    charCount.style.color = 'var(--soft-gray)';
+                }
+            });
+            
+            // Initial count
+            charCount.textContent = reviewTextarea.value.length;
+        }
+
+        // Form validation
+        function updateSubmitButton() {
+            const selectedRating = document.querySelector('input[name="ratingValue"]:checked');
+            submitBtn.disabled = !selectedRating;
+        }
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            const selectedRating = document.querySelector('input[name="ratingValue"]:checked');
+            
+            if (!selectedRating) {
+                e.preventDefault();
+                alert('Please select a rating before submitting.');
+                return false;
+            }
+
+            // Show loading state
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Rating...';
+            submitBtn.disabled = true;
+
+            // Prevent multiple submissions
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // Initialize
+        updateSubmitButton();
+
+        // Enhanced star interactions
+        const starLabels = document.querySelectorAll('.star-label');
+        starLabels.forEach((label, index) => {
+            label.addEventListener('mouseenter', function() {
+                const rating = 5 - index;
+                const tempLabel = ratingLabels[rating.toString()];
+                ratingText.querySelector('.rating-label').textContent = tempLabel;
+                ratingText.style.opacity = '0.7';
+            });
+
+            label.addEventListener('mouseleave', function() {
+                const selectedRating = document.querySelector('input[name="ratingValue"]:checked');
+                if (selectedRating) {
+                    const label = ratingLabels[selectedRating.value];
+                    ratingText.querySelector('.rating-label').textContent = label;
+                } else {
+                    ratingText.querySelector('.rating-label').textContent = 'Select a rating';
+                }
+                ratingText.style.opacity = '1';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

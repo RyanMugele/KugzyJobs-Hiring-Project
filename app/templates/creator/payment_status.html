@@ -1,0 +1,753 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Status - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="status-container">
+    <div class="status-wrapper">
+        <!-- Header Section -->
+        <div class="status-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.payments') }}">Payments</a>
+                    <span>/</span>
+                    <span>Payment Status</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="status-icon status-{{ payment.status }}">
+                        {% if payment.status == 'completed' %}
+                            <i class="fas fa-check-circle"></i>
+                        {% elif payment.status == 'paid' %}
+                            <i class="fas fa-credit-card"></i>
+                        {% else %}
+                            <i class="fas fa-clock"></i>
+                        {% endif %}
+                    </div>
+                    <div class="header-text">
+                        <h1>Payment Status</h1>
+                        <p>Track the progress of your payment for: <strong>{{ payment.job.title }}</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Overview -->
+        <div class="status-overview">
+            <div class="overview-content">
+                <div class="current-status">
+                    <h2>Current Status</h2>
+                    <div class="status-display">
+                        <span class="status-badge status-{{ payment.status }}">
+                            {{ payment.status.title() }}
+                        </span>
+                        <div class="status-description">
+                            {% if payment.status == 'agreed' %}
+                                Payment agreement created. Ready to process payment.
+                            {% elif payment.status == 'paid' %}
+                                Payment has been processed successfully.
+                            {% elif payment.status == 'completed' %}
+                                Payment completed and finalized.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-amount">
+                    <h2>Amount</h2>
+                    <div class="amount-display">
+                        <span class="currency">$</span>
+                        <span class="amount">{{ "%.2f"|format(payment.agreedAmount) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="payment-details">
+            <div class="details-content">
+                <h2><i class="fas fa-file-invoice"></i> Payment Details</h2>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="label">Job Title:</span>
+                        <span class="value">{{ payment.job.title }}</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="label">Editor:</span>
+                        <span class="value">
+                            {% if payment.job.selectedEditor %}
+                                {{ payment.job.selectedEditor.user.fullName }}
+                            {% else %}
+                                Not specified
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="label">Payment Created:</span>
+                        <span class="value">{{ moment(payment.dateCreated).format('MMMM Do, YYYY [at] h:mm A') }}</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="label">Last Updated:</span>
+                        <span class="value">{{ moment(payment.lastUpdated).fromNow() }}</span>
+                    </div>
+                    
+                    {% if payment.paymentMethod %}
+                    <div class="detail-item">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">{{ payment.paymentMethod }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.mpesaReference %}
+                    <div class="detail-item">
+                        <span class="label">Reference Number:</span>
+                        <span class="value reference">{{ payment.mpesaReference }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.invoiceNumber %}
+                    <div class="detail-item">
+                        <span class="label">Invoice Number:</span>
+                        <span class="value">{{ payment.invoiceNumber }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-section">
+            <div class="progress-content">
+                <h2><i class="fas fa-route"></i> Payment Progress</h2>
+                
+                <div class="progress-steps">
+                    <div class="step {% if payment.status in ['agreed', 'paid', 'completed'] %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="step-content">
+                            <h3>Agreement Created</h3>
+                            <p>Payment terms agreed upon</p>
+                            <span class="step-date">{{ moment(payment.dateCreated).format('MMM Do, YYYY') }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="step {% if payment.status in ['paid', 'completed'] %}completed{% elif payment.status == 'agreed' %}current{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="step-content">
+                            <h3>Payment Processed</h3>
+                            <p>Funds transferred securely</p>
+                            {% if payment.status in ['paid', 'completed'] %}
+                                <span class="step-date">{{ moment(payment.lastUpdated).format('MMM Do, YYYY') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="step {% if payment.status == 'completed' %}completed{% elif payment.status == 'paid' %}current{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="step-content">
+                            <h3>Payment Completed</h3>
+                            <p>Transaction finalized</p>
+                            {% if payment.status == 'completed' %}
+                                <span class="step-date">{{ moment(payment.lastUpdated).format('MMM Do, YYYY') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-section">
+            <div class="actions-content">
+                {% if payment.status == 'agreed' %}
+                    <a href="{{ url_for('creator.process_payment', payment_id=payment.paymentId) }}" class="btn btn-primary">
+                        <i class="fas fa-credit-card"></i>
+                        Process Payment
+                    </a>
+                {% elif payment.status in ['paid', 'completed'] and payment.invoiceNumber %}
+                    <a href="{{ url_for('creator.payment_invoice', payment_id=payment.paymentId) }}" class="btn btn-primary">
+                        <i class="fas fa-file-invoice"></i>
+                        Download Invoice
+                    </a>
+                {% endif %}
+                
+                <a href="{{ url_for('creator.payments') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Payments
+                </a>
+                
+                <a href="{{ url_for('creator.job_detail', job_id=payment.job.jobId) }}" class="btn btn-outline">
+                    <i class="fas fa-briefcase"></i>
+                    View Job
+                </a>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        {% if payment.status == 'agreed' %}
+        <div class="help-section">
+            <div class="help-content">
+                <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
+                <p>If you're experiencing issues with payment processing or have questions about this transaction, our support team is ready to assist you.</p>
+                
+                <div class="help-actions">
+                    <a href="mailto:support@kugzyjobs.com" class="help-link">
+                        <i class="fas fa-envelope"></i>
+                        Contact Support
+                    </a>
+                    <a href="#payment-help" class="help-link">
+                        <i class="fas fa-book"></i>
+                        Payment Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .status-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .status-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .status-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: var(--primary-black);
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .status-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-md);
+    }
+
+    .status-icon.status-agreed {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .status-icon.status-paid {
+        background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+    }
+
+    .status-icon.status-completed {
+        background: linear-gradient(135deg, var(--success-green), #059669);
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .status-overview, .payment-details, .progress-section, .actions-section, .help-section {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        margin-bottom: 2rem;
+    }
+
+    .overview-content {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .current-status h2, .payment-amount h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+        margin-bottom: 0.75rem;
+    }
+
+    .status-badge.status-agreed {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-badge.status-paid {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-badge.status-completed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-description {
+        color: var(--soft-gray);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .amount-display {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+    }
+
+    .currency {
+        font-size: 1.5rem;
+        color: var(--soft-gray);
+        font-weight: 600;
+    }
+
+    .amount {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+
+    .details-content, .progress-content, .actions-content, .help-content {
+        padding: 2rem;
+    }
+
+    .details-content h2, .progress-content h2 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .detail-item .label {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-item .value {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 1rem;
+    }
+
+    .detail-item .reference {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-sm);
+        color: var(--accent-blue);
+        font-weight: 700;
+    }
+
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+    }
+
+    .progress-steps::before {
+        content: '';
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        right: 2rem;
+        height: 2px;
+        background: var(--border-gray);
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--border-gray);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--soft-gray);
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        border: 4px solid var(--white);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .step.completed .step-icon {
+        background: var(--success-green);
+        color: var(--white);
+    }
+
+    .step.current .step-icon {
+        background: var(--accent-blue);
+        color: var(--white);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+    }
+
+    .step-content {
+        text-align: center;
+        max-width: 150px;
+    }
+
+    .step-content h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+
+    .step-date {
+        font-size: 0.8rem;
+        color: var(--soft-gray);
+        font-weight: 500;
+    }
+
+    .actions-content {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+    }
+
+    .btn-outline:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    .help-content h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .help-content p {
+        color: var(--soft-gray);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .help-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .help-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--accent-blue);
+        border-radius: var(--radius-sm);
+        transition: all 0.2s ease;
+    }
+
+    .help-link:hover {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .status-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            padding: 2rem;
+        }
+
+        .header-main {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .overview-content {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .progress-steps {
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .progress-steps::before {
+            display: none;
+        }
+
+        .step-content {
+            max-width: none;
+        }
+
+        .actions-content {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .help-actions {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .status-container {
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .amount {
+            font-size: 2.5rem;
+        }
+
+        .details-content, .progress-content, .actions-content, .help-content {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh status every 30 seconds if payment is in progress
+        const currentStatus = '{{ payment.status }}';
+        
+        if (currentStatus === 'agreed' || currentStatus === 'paid') {
+            setInterval(function() {
+                // Refresh page to check for status updates
+                window.location.reload();
+            }, 30000); // 30 seconds
+        }
+
+        // Copy reference number functionality
+        const referenceElement = document.querySelector('.reference');
+        if (referenceElement) {
+            referenceElement.style.cursor = 'pointer';
+            referenceElement.title = 'Click to copy reference number';
+            
+            referenceElement.addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent).then(function() {
+                    // Show temporary feedback
+                    const originalText = referenceElement.textContent;
+                    referenceElement.textContent = 'Copied!';
+                    referenceElement.style.background = '#dcfce7';
+                    referenceElement.style.color = '#166534';
+                    
+                    setTimeout(function() {
+                        referenceElement.textContent = originalText;
+                        referenceElement.style.background = '#f1f5f9';
+                        referenceElement.style.color = 'var(--accent-blue)';
+                    }, 2000);
+                });
+            });
+        }
+
+        // Enhanced button interactions
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px)';
+            });
+
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

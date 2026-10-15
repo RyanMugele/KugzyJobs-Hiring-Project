@@ -1,0 +1,1327 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Report - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="report-container">
+    <div class="report-wrapper">
+        <!-- Header Section -->
+        <div class="report-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <span>Submit Report</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="report-icon">
+                        <i class="fas fa-flag"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Submit a Report</h1>
+                        <p>Help us maintain a safe and professional platform by reporting inappropriate content or behavior</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-grid">
+            <!-- Report Form -->
+            <div class="form-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Report Details</h2>
+                    <p>Please provide detailed information about the issue you're reporting</p>
+                </div>
+                <div class="card-content">
+                    <form method="POST" class="report-form">
+                        {{ form.hidden_tag() }}
+                        {{ form.reportedUserId() }}
+                        {{ form.reportedPortfolioId() }}
+
+                        <!-- Report Type Indicator -->
+                        <div class="report-type-indicator">
+                            <div class="type-item" id="user-report-type" style="display: none;">
+                                <div class="type-icon">
+                                    <i class="fas fa-user-times"></i>
+                                </div>
+                                <div class="type-content">
+                                    <strong>User Behavior Report</strong>
+                                    <p>Reporting inappropriate behavior or conduct by a platform user</p>
+                                </div>
+                            </div>
+                            
+                            <div class="type-item" id="portfolio-report-type" style="display: none;">
+                                <div class="type-icon">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <div class="type-content">
+                                    <strong>Portfolio Content Report</strong>
+                                    <p>Reporting inappropriate or violating content in a portfolio item</p>
+                                </div>
+                            </div>
+                            
+                            <div class="type-item" id="general-report-type">
+                                <div class="type-icon">
+                                    <i class="fas fa-flag"></i>
+                                </div>
+                                <div class="type-content">
+                                    <strong>General Report</strong>
+                                    <p>Report any inappropriate content or behavior on the platform</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Report Reason Field -->
+                        <div class="form-group">
+                            {{ form.reportReason.label(class="form-label required") }}
+                            {{ form.reportReason(class="form-textarea", placeholder="Please describe the issue in detail. Include specific examples, dates, and any relevant context that will help our team understand and investigate the problem.") }}
+                            {% if form.reportReason.errors %}
+                            <div class="field-errors">
+                                {% for error in form.reportReason.errors %}
+                                <span class="error-message">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Provide as much detail as possible to help our moderation team investigate effectively
+                            </div>
+                        </div>
+
+                        <!-- Report Guidelines -->
+                        <div class="guidelines-section">
+                            <h4><i class="fas fa-list-check"></i> Reporting Guidelines</h4>
+                            <div class="guidelines-content">
+                                <div class="guideline-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="guideline-text">
+                                        <strong>Be Specific:</strong> Include specific details about what happened, when it occurred, and who was involved
+                                    </div>
+                                </div>
+                                
+                                <div class="guideline-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="guideline-text">
+                                        <strong>Stay Factual:</strong> Focus on facts and observable behavior rather than assumptions or interpretations
+                                    </div>
+                                </div>
+                                
+                                <div class="guideline-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="guideline-text">
+                                        <strong>Include Evidence:</strong> Mention any screenshots, messages, or other evidence you may have
+                                    </div>
+                                </div>
+                                
+                                <div class="guideline-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="guideline-text">
+                                        <strong>Professional Tone:</strong> Keep your report professional and avoid inflammatory language
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Common Report Categories -->
+                        <div class="categories-section">
+                            <h4><i class="fas fa-tags"></i> Common Report Categories</h4>
+                            <div class="category-grid">
+                                <div class="category-item" data-category="harassment">
+                                    <div class="category-icon">
+                                        <i class="fas fa-user-slash"></i>
+                                    </div>
+                                    <span>Harassment or Bullying</span>
+                                </div>
+                                
+                                <div class="category-item" data-category="inappropriate">
+                                    <div class="category-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <span>Inappropriate Content</span>
+                                </div>
+                                
+                                <div class="category-item" data-category="spam">
+                                    <div class="category-icon">
+                                        <i class="fas fa-envelope-open-text"></i>
+                                    </div>
+                                    <span>Spam or Scam</span>
+                                </div>
+                                
+                                <div class="category-item" data-category="copyright">
+                                    <div class="category-icon">
+                                        <i class="fas fa-copyright"></i>
+                                    </div>
+                                    <span>Copyright Violation</span>
+                                </div>
+                                
+                                <div class="category-item" data-category="fake">
+                                    <div class="category-icon">
+                                        <i class="fas fa-mask"></i>
+                                    </div>
+                                    <span>Fake Profile/Content</span>
+                                </div>
+                                
+                                <div class="category-item" data-category="unprofessional">
+                                    <div class="category-icon">
+                                        <i class="fas fa-briefcase"></i>
+                                    </div>
+                                    <span>Unprofessional Conduct</span>
+                                </div>
+                            </div>
+                            <div class="category-help">
+                                Click on a category above to add it to your report description
+                            </div>
+                        </div>
+
+                        <!-- Privacy Notice -->
+                        <div class="privacy-notice">
+                            <div class="notice-icon">
+                                <i class="fas fa-shield-check"></i>
+                            </div>
+                            <div class="notice-content">
+                                <h4>Privacy & Confidentiality</h4>
+                                <p>Your report will be handled confidentially by our moderation team. We take all reports seriously and will investigate according to our community guidelines. False or malicious reports may result in account restrictions.</p>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <a href="{{ url_for('creator.dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary btn-large", id="submit-report") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help and Information -->
+            <div class="info-section">
+                <!-- What Happens Next -->
+                <div class="info-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clock"></i> What Happens Next?</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="process-steps">
+                            <div class="process-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Report Received</strong>
+                                    <p>Your report is immediately logged in our moderation system</p>
+                                </div>
+                            </div>
+                            
+                            <div class="process-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Investigation</strong>
+                                    <p>Our team reviews the report and gathers additional information</p>
+                                </div>
+                            </div>
+                            
+                            <div class="process-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Action Taken</strong>
+                                    <p>Appropriate action is taken based on our community guidelines</p>
+                                </div>
+                            </div>
+                            
+                            <div class="process-step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <strong>Resolution</strong>
+                                    <p>You may receive updates on the resolution when appropriate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Community Guidelines -->
+                <div class="info-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-users"></i> Community Guidelines</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="guidelines-list">
+                            <div class="guideline-point">
+                                <i class="fas fa-handshake"></i>
+                                <div>
+                                    <strong>Respect & Professionalism</strong>
+                                    <p>All interactions must be respectful and professional</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-point">
+                                <i class="fas fa-shield-alt"></i>
+                                <div>
+                                    <strong>No Harassment</strong>
+                                    <p>Harassment, bullying, or discriminatory behavior is prohibited</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-point">
+                                <i class="fas fa-check-double"></i>
+                                <div>
+                                    <strong>Authentic Content</strong>
+                                    <p>All portfolio content must be original or properly attributed</p>
+                                </div>
+                            </div>
+                            
+                            <div class="guideline-point">
+                                <i class="fas fa-ban"></i>
+                                <div>
+                                    <strong>No Spam</strong>
+                                    <p>Spam, scams, or misleading content is not allowed</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <a href="#community-guidelines" class="guidelines-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            Read Full Community Guidelines
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Contact Support -->
+                <div class="info-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-headset"></i> Need Additional Help?</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>If you need immediate assistance or have questions about the reporting process, our support team is here to help.</p>
+                        
+                        <div class="contact-options">
+                            <a href="mailto:support@kugzyjobs.com" class="contact-option">
+                                <div class="contact-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="contact-text">
+                                    <strong>Email Support</strong>
+                                    <span>support@kugzyjobs.com</span>
+                                </div>
+                            </a>
+                            
+                            <a href="#help-center" class="contact-option">
+                                <div class="contact-icon">
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                                <div class="contact-text">
+                                    <strong>Help Center</strong>
+                                    <span>Browse FAQ and guides</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .report-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .report-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .report-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: var(--primary-black);
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .report-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-md);
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2.5rem;
+    }
+
+    .form-card, .info-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        overflow: hidden;
+    }
+
+    .info-card {
+        margin-bottom: 2rem;
+    }
+
+    .card-header {
+        padding: 2rem 2rem 0;
+        border-bottom: 1px solid var(--border-gray);
+        margin-bottom: 0;
+        background: var(--light-gray);
+    }
+
+    .card-header h2, .card-header h3 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .card-header h3 {
+        font-size: 1.125rem;
+    }
+
+    .card-header p {
+        color: var(--soft-gray);
+        margin: 0 0 2rem 0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .card-content {
+        padding: 2rem;
+    }
+
+    .report-form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .report-type-indicator {
+        margin-bottom: 1rem;
+    }
+
+    .type-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-md);
+        margin-bottom: 1rem;
+    }
+
+    .type-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--accent-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .type-content strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .type-content p {
+        color: var(--soft-gray);
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.95rem;
+    }
+
+    .form-label.required::after {
+        content: ' *';
+        color: #ef4444;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: var(--white);
+        resize: vertical;
+        min-height: 150px;
+        font-family: inherit;
+        line-height: 1.6;
+    }
+
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .field-errors {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .field-help {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .guidelines-section, .categories-section {
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .guidelines-section h4, .categories-section h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .guidelines-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .guideline-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .guideline-item i {
+        color: var(--success-green);
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .guideline-text strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .guideline-text {
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .category-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .category-item:hover {
+        border-color: var(--accent-blue);
+        background: #f0f9ff;
+        transform: translateY(-1px);
+    }
+
+    .category-item.selected {
+        border-color: var(--accent-blue);
+        background: #f0f9ff;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--light-gray);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        transition: all 0.2s ease;
+    }
+
+    .category-item:hover .category-icon,
+    .category-item.selected .category-icon {
+        background: var(--accent-blue);
+        color: var(--white);
+    }
+
+    .category-item span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--primary-black);
+    }
+
+    .category-help {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        text-align: center;
+        font-style: italic;
+    }
+
+    .privacy-notice {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .notice-icon {
+        width: 48px;
+        height: 48px;
+        background: #f59e0b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .notice-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .notice-content p {
+        color: #92400e;
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.05rem;
+        flex: 1;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .process-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .process-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .step-number {
+        width: 32px;
+        height: 32px;
+        background: var(--accent-blue);
+        color: var(--white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .step-content strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+
+    .step-content p {
+        color: var(--soft-gray);
+        margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .guidelines-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .guideline-point {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .guideline-point i {
+        color: var(--success-green);
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .guideline-point strong {
+        display: block;
+        color: var(--primary-black);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .guideline-point p {
+        color: var(--soft-gray);
+        margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    .guidelines-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .guidelines-link:hover {
+        color: var(--primary-black);
+    }
+
+    .contact-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .contact-option {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        color: var(--primary-black);
+        transition: all 0.2s ease;
+    }
+
+    .contact-option:hover {
+        background: var(--white);
+        border-color: var(--accent-blue);
+        transform: translateY(-1px);
+    }
+
+    .contact-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--accent-blue);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .contact-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .contact-text strong {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .contact-text span {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .report-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            padding: 2rem;
+        }
+
+        .header-main {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .category-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .process-steps {
+            gap: 1rem;
+        }
+
+        .privacy-notice {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .contact-options {
+            gap: 0.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .report-container {
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .report-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .category-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .guidelines-section,
+        .categories-section {
+            padding: 1rem;
+        }
+
+        .privacy-notice {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.report-form');
+        const submitBtn = document.getElementById('submit-report');
+        const reportTextarea = document.querySelector('textarea[name="reportReason"]');
+        const categoryItems = document.querySelectorAll('.category-item');
+        const userIdField = document.querySelector('input[name="reportedUserId"]');
+        const portfolioIdField = document.querySelector('input[name="reportedPortfolioId"]');
+        
+        // Update report type indicator based on hidden fields
+        function updateReportType() {
+            const userReportType = document.getElementById('user-report-type');
+            const portfolioReportType = document.getElementById('portfolio-report-type');
+            const generalReportType = document.getElementById('general-report-type');
+            
+            // Hide all types first
+            userReportType.style.display = 'none';
+            portfolioReportType.style.display = 'none';
+            generalReportType.style.display = 'none';
+            
+            if (userIdField && userIdField.value) {
+                userReportType.style.display = 'flex';
+            } else if (portfolioIdField && portfolioIdField.value) {
+                portfolioReportType.style.display = 'flex';
+            } else {
+                generalReportType.style.display = 'flex';
+            }
+        }
+
+        // Category selection functionality
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const categoryName = this.querySelector('span').textContent;
+                
+                // Toggle selection
+                this.classList.toggle('selected');
+                
+                // Add category to textarea
+                if (this.classList.contains('selected')) {
+                    addCategoryToReport(categoryName, category);
+                } else {
+                    removeCategoryFromReport(categoryName);
+                }
+            });
+        });
+
+        function addCategoryToReport(categoryName, categoryKey) {
+            const currentText = reportTextarea.value;
+            const categoryPrefix = `[${categoryName}] `;
+            
+            if (!currentText.includes(categoryPrefix)) {
+                if (currentText.trim()) {
+                    reportTextarea.value = categoryPrefix + currentText;
+                } else {
+                    reportTextarea.value = categoryPrefix;
+                }
+                
+                // Focus textarea for user to continue typing
+                reportTextarea.focus();
+                reportTextarea.setSelectionRange(reportTextarea.value.length, reportTextarea.value.length);
+            }
+        }
+
+        function removeCategoryFromReport(categoryName) {
+            const categoryPrefix = `[${categoryName}] `;
+            reportTextarea.value = reportTextarea.value.replace(categoryPrefix, '');
+        }
+
+        // Character count for textarea
+        function updateCharacterCount() {
+            const maxLength = 500;
+            const currentLength = reportTextarea.value.length;
+            
+            let countElement = document.getElementById('char-count');
+            if (!countElement) {
+                countElement = document.createElement('div');
+                countElement.id = 'char-count';
+                countElement.style.cssText = `
+                    font-size: 0.8rem;
+                    color: var(--soft-gray);
+                    text-align: right;
+                    margin-top: 0.5rem;
+                `;
+                reportTextarea.parentNode.appendChild(countElement);
+            }
+            
+            countElement.textContent = `${currentLength} characters`;
+            
+            if (currentLength > maxLength * 0.9) {
+                countElement.style.color = '#ef4444';
+            } else if (currentLength > maxLength * 0.7) {
+                countElement.style.color = '#f59e0b';
+            } else {
+                countElement.style.color = 'var(--soft-gray)';
+            }
+        }
+
+        // Form validation
+        function validateForm() {
+            const reason = reportTextarea.value.trim();
+            const minLength = 20;
+            
+            if (reason.length < minLength) {
+                submitBtn.disabled = true;
+                submitBtn.title = `Please provide at least ${minLength} characters describing the issue`;
+                return false;
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.title = 'Submit your report';
+            return true;
+        }
+
+        // Event listeners
+        if (reportTextarea) {
+            reportTextarea.addEventListener('input', function() {
+                updateCharacterCount();
+                validateForm();
+            });
+            
+            // Initial validation
+            updateCharacterCount();
+            validateForm();
+        }
+
+        // Form submission handling
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    alert('Please provide a detailed description of the issue (at least 20 characters).');
+                    reportTextarea.focus();
+                    return false;
+                }
+
+                // Confirm submission
+                const confirmed = confirm(
+                    'Are you sure you want to submit this report? ' +
+                    'Our moderation team will review it and take appropriate action.'
+                );
+
+                if (!confirmed) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Show loading state
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Report...';
+                submitBtn.disabled = true;
+
+                // Prevent multiple submissions
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                });
+
+                // Fallback to re-enable button after 15 seconds
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    validateForm();
+                }, 15000);
+            });
+        }
+
+        // Auto-expand textarea
+        if (reportTextarea) {
+            reportTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.max(150, this.scrollHeight) + 'px';
+            });
+        }
+
+        // Initialize report type
+        updateReportType();
+
+        // Enhanced interactions
+        const formControls = document.querySelectorAll('.form-textarea');
+        formControls.forEach(control => {
+            control.addEventListener('focus', function() {
+                this.style.transform = 'translateY(-1px)';
+                this.style.boxShadow = '0 4px 20px rgba(59, 130, 246, 0.15)';
+            });
+
+            control.addEventListener('blur', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
+            });
+        });
+
+        // Suggestion templates for common reports
+        const suggestionTemplates = {
+            harassment: "I am reporting harassment/bullying behavior. The incident occurred on [DATE] when [DESCRIPTION OF INCIDENT]. This behavior includes [SPECIFIC EXAMPLES]. I have [EVIDENCE/SCREENSHOTS] available if needed.",
+            inappropriate: "I am reporting inappropriate content. The content violates community guidelines because [REASON]. Specifically, [DETAILED DESCRIPTION]. This content was found at [LOCATION/URL].",
+            spam: "I am reporting spam/scam activity. The user/content is [DESCRIPTION OF SPAM BEHAVIOR]. This appears to be [TYPE OF SCAM/SPAM]. The activity occurred [WHEN/WHERE].",
+            copyright: "I am reporting copyright violation. The content infringes on [COPYRIGHT HOLDER'S] work. The original work can be found at [SOURCE]. The infringing content is [DESCRIPTION].",
+            fake: "I am reporting fake profile/content. The profile/content appears to be fake because [EVIDENCE]. The real [PERSON/CONTENT] can be verified at [SOURCE].",
+            unprofessional: "I am reporting unprofessional conduct. The behavior occurred during [PROJECT/INTERACTION] and included [SPECIFIC EXAMPLES]. This violates professional standards because [REASON]."
+        };
+
+        // Add template suggestions to categories
+        categoryItems.forEach(item => {
+            const category = item.dataset.category;
+            if (suggestionTemplates[category]) {
+                item.addEventListener('dblclick', function() {
+                    if (confirm('Would you like to use a template for this type of report?')) {
+                        reportTextarea.value = suggestionTemplates[category];
+                        reportTextarea.focus();
+                        updateCharacterCount();
+                        validateForm();
+                    }
+                });
+                
+                // Add tooltip
+                item.title = 'Double-click to use a template for this report type';
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to submit form (if valid)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                if (validateForm() && !submitBtn.disabled) {
+                    form.submit();
+                }
+            }
+            
+            // Escape to cancel
+            if (e.key === 'Escape') {
+                if (confirm('Are you sure you want to cancel this report?')) {
+                    window.location.href = document.querySelector('.btn-secondary').href;
+                }
+            }
+        });
+
+        // Auto-save draft to localStorage (with caution about the restriction)
+        let draftKey = 'report_draft_' + Date.now();
+        
+        function saveDraft() {
+            try {
+                const draftData = {
+                    reason: reportTextarea.value,
+                    timestamp: Date.now()
+                };
+                // Note: localStorage is not supported in Claude artifacts
+                // This would work in a real environment
+                console.log('Draft would be saved:', draftData);
+            } catch (e) {
+                console.log('Draft saving not available in this environment');
+            }
+        }
+
+        function loadDraft() {
+            try {
+                // Note: localStorage is not supported in Claude artifacts
+                // This would work in a real environment
+                console.log('Draft loading not available in this environment');
+            } catch (e) {
+                console.log('Draft loading not available in this environment');
+            }
+        }
+
+        // Save draft every 30 seconds
+        if (reportTextarea) {
+            setInterval(saveDraft, 30000);
+            
+            // Save on input with debounce
+            let draftTimeout;
+            reportTextarea.addEventListener('input', function() {
+                clearTimeout(draftTimeout);
+                draftTimeout = setTimeout(saveDraft, 2000);
+            });
+        }
+
+        // Load draft on page load
+        loadDraft();
+
+        // Smooth animations for info cards
+        const infoCards = document.querySelectorAll('.info-card');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        infoCards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+
+        // Contact option interactions
+        const contactOptions = document.querySelectorAll('.contact-option');
+        contactOptions.forEach(option => {
+            option.addEventListener('mouseenter', function() {
+                const icon = this.querySelector('.contact-icon');
+                icon.style.transform = 'scale(1.1)';
+            });
+
+            option.addEventListener('mouseleave', function() {
+                const icon = this.querySelector('.contact-icon');
+                icon.style.transform = 'scale(1)';
+            });
+        });
+
+        // Process steps animation
+        const processSteps = document.querySelectorAll('.process-step');
+        processSteps.forEach((step, index) => {
+            step.style.animationDelay = `${index * 0.2}s`;
+        });
+    });
+</script>
+{% endblock page_content %}

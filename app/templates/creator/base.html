@@ -1,0 +1,692 @@
+{% import "utilities.html" as utilities %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block seo %}
+    <meta name="description" content="KugzyJobs Creator Dashboard - Manage your video editing projects and collaborate with editors.">
+    <meta name="keywords" content="video editing, content creation, creator dashboard, project management">
+    {% endblock seo %}
+
+    <meta name="author" content="KugzyJobs Team">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+
+    <title>
+        {% block title %}Creator Dashboard - KugzyJobs{% endblock title %}
+    </title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
+
+    {% block scripts %}
+    {{ moment.include_moment() }}
+    {% endblock scripts %}
+
+    <style>
+        :root {
+            --primary-black: #0a0a0a;
+            --secondary-black: #1a1a1a;
+            --soft-gray: #6b7280;
+            --light-gray: #f8fafc;
+            --border-gray: #e5e7eb;
+            --white: #ffffff;
+            --accent-blue: #3b82f6;
+            --success-green: #10b981;
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 25px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 60px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-black);
+            overflow-x: hidden;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            background: var(--light-gray);
+        }
+
+        /* Creator Dashboard Layout */
+        .creator-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Top Header for Creator Dashboard */
+        .creator-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-gray);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .mobile-sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary-black);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s ease;
+        }
+
+        .mobile-sidebar-toggle:hover {
+            background: var(--light-gray);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: var(--primary-black);
+            text-decoration: none;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary-black);
+            color: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-black);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-black);
+            border: 1px solid var(--border-gray);
+        }
+
+        .btn-secondary:hover {
+            background: var(--light-gray);
+            border-color: var(--soft-gray);
+            transform: translateY(-1px);
+        }
+
+        /* Sidebar Styles */
+        .creator-sidebar {
+            width: 280px;
+            background: var(--white);
+            border-right: 1px solid var(--border-gray);
+            position: fixed;
+            left: 0;
+            top: 70px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+            z-index: 1000;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-gray);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-black);
+            margin-bottom: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--soft-gray);
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--primary-black);
+            font-size: 0.9rem;
+        }
+
+        .user-type {
+            font-size: 0.8rem;
+            color: var(--soft-gray);
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1.5rem;
+            color: var(--soft-gray);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            position: relative;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--light-gray);
+            color: var(--primary-black);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, var(--accent-blue), var(--success-green));
+            background-size: 3px 100%;
+            background-repeat: no-repeat;
+            background-position: left;
+            background-color: rgba(59, 130, 246, 0.05);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .badge {
+            background: var(--accent-blue);
+            color: var(--white);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .badge.warning {
+            background: #f59e0b;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 0;
+            border-top: 1px solid var(--border-gray);
+        }
+
+        /* Main Content Styles */
+        .creator-main {
+            flex: 1;
+            margin-left: 280px;
+            margin-top: 70px;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 70px);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        /* Mobile Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Flash Messages */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 2rem;
+            z-index: 1002;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        .toast-success {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .toast-error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .toast-info {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .toast-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .creator-sidebar {
+                transform: translateX(-100%);
+            }
+
+            .creator-sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .creator-main {
+                margin-left: 0;
+            }
+
+            .mobile-sidebar-toggle {
+                display: block;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .quick-actions {
+                gap: 0.5rem;
+            }
+
+            .header-right {
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .creator-header {
+                padding: 0 1rem;
+            }
+
+            .quick-actions {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .toast-container {
+                right: 1rem;
+                left: 1rem;
+            }
+
+            .toast {
+                max-width: none;
+            }
+        }
+
+        /* Enhanced focus states for accessibility */
+        .nav-item:focus,
+        .mobile-sidebar-toggle:focus,
+        .btn:focus {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        /* Smooth animations */
+        .creator-sidebar,
+        .nav-item,
+        .badge {
+            will-change: transform;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* NLP Analysis Card */
+.nlp-analysis-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    color: #1f2937;
+}
+
+.nlp-analysis-card .card-header h2 {
+    color: #111827;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.nlp-analysis-card h4 {
+    color: #374151;
+    margin-top: 18px;
+    margin-bottom: 10px;
+}
+
+.nlp-analysis-card .nlp-tag {
+    display: inline-block;
+    background: #e8f0ff;
+    color: #2563eb;
+    padding: 7px 12px;
+    margin: 4px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+
+
+
+
+
+    </style>
+</head>
+<body>
+    <div class="creator-layout">
+        <!-- Top Header -->
+        <header class="creator-header">
+            <div class="header-left">
+                <button class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle mobile menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="{{ url_for('main.index') }}" class="logo">
+                    KugzyJobs
+                </a>
+            </div>
+
+            <div class="header-right">
+                <div class="quick-actions">
+                    <a href="{{ url_for('creator.new_job') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Post Job
+                    </a>
+                    <a href="{{ url_for('creator.editors') }}" class="btn btn-secondary">
+                        <i class="fas fa-search"></i> Find Editors
+                    </a>
+                </div>
+
+                <a href="{{ url_for('creator.profile') }}" class="btn btn-secondary">Profile</a>
+                <a href="{{ url_for('authentication.logout') }}" class="btn btn-primary">Sign Out</a>
+            </div>
+        </header>
+
+        <!-- Creator Navigation Sidebar -->
+        <nav class="creator-sidebar">
+            <div class="sidebar-header">
+                <h2>Creator Dashboard</h2>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {% if current_user.profilePicture %}
+                        <img src="{{ current_user.profilePicture }}" alt="Profile" />
+                        {% else %}
+                        <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">{{ current_user.fullName }}</span>
+                        <span class="user-type">Content Creator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-nav">
+                <a href="{{ url_for('creator.dashboard') }}" class="nav-item {% if request.endpoint == 'creator.dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Overview</span>
+                </a>
+
+                <a href="{{ url_for('creator.jobs') }}" class="nav-item {% if request.endpoint in ['creator.jobs', 'creator.job_detail'] %}active{% endif %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>My Jobs</span>
+                    {% if data and data.active_jobs > 0 %}
+                    <span class="badge">{{ data.active_jobs }}</span>
+                    {% endif %}
+                </a>
+
+                <a href="{{ url_for('creator.new_job') }}" class="nav-item {% if request.endpoint == 'creator.new_job' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Post New Job</span>
+                </a>
+
+                <a href="{{ url_for('creator.editors') }}" class="nav-item {% if request.endpoint in ['creator.editors', 'creator.editor_profile'] %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Find Editors</span>
+                </a>
+
+                <a href="{{ url_for('creator.messages') }}" class="nav-item {% if request.endpoint in ['creator.messages', 'creator.send_message'] %}active{% endif %}">
+                    <i class="fas fa-envelope"></i>
+                    <span>Messages</span>
+                    {% if data and data.recent_messages and data.recent_messages|length > 0 %}
+                    <span class="badge">{{ data.recent_messages|length }}</span>
+                    {% endif %}
+                </a>
+
+                <a href="{{ url_for('creator.payments') }}" class="nav-item {% if request.endpoint in ['creator.payments', 'creator.initiate_payment'] %}active{% endif %}">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payments</span>
+                    {% if data and data.pending_payments > 0 %}
+                    <span class="badge warning">{{ data.pending_payments }}</span>
+                    {% endif %}
+                </a>
+
+                <a href="{{ url_for('creator.ratings') }}" class="nav-item {% if request.endpoint in ['creator.ratings', 'creator.submit_rating'] %}active{% endif %}">
+                    <i class="fas fa-star"></i>
+                    <span>Ratings & Reviews</span>
+                </a>
+
+                <a href="{{ url_for('creator.analytics') }}" class="nav-item {% if request.endpoint == 'creator.analytics' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+
+                <a href="{{ url_for('creator.profile') }}" class="nav-item {% if request.endpoint == 'creator.profile' %}active{% endif %}">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Profile Settings</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('main.index') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="creator-main">
+            <div class="main-content">
+                {% block creator_content %}
+                <!-- Creator-specific content goes here -->
+                {% endblock creator_content %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-container">
+        {% for category, message in messages %}
+        {% set category = utilities.category_mapping.get(category, 'info') %}
+        <div class="toast toast-{{ category }}" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body">{{ message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block custom_scripts %}
+    {% endblock custom_scripts %}
+
+    <script>
+        // Mobile sidebar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('.creator-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', closeSidebar);
+            }
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+                    closeSidebar();
+                }
+            });
+
+            // Close sidebar when clicking nav links on mobile
+            document.querySelectorAll('.nav-item').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 1024) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Toast notifications
+        document.addEventListener("DOMContentLoaded", function () {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach((toast) => {
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateY(-20px)";
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

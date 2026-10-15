@@ -1,0 +1,774 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Report #{{ data.report.reportId }} - Review{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1 class="admin-page-title">Report #{{ data.report.reportId }}</h1>
+            <p class="admin-page-subtitle">
+                {{ data.report_type.title() }} Report • 
+                <span class="admin-status-badge {{ data.report.reportStatus }}">
+                    {{ data.report.reportStatus.title() }}
+                </span>
+                • Submitted {{ moment(data.report.dateCreated).fromNow() }}
+            </p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Reports
+            </a>
+            {% if data.report.reportStatus in ['pending', 'reviewed'] %}
+            <a href="{{ url_for('admin.resolve_report', report_id=data.report.reportId) }}" class="btn admin-btn-success">
+                <i class="fas fa-gavel"></i> Resolve Report
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Report Priority Alert -->
+{% set days_old = (moment().diff(data.report.dateCreated, 'days')) %}
+{% if data.report.reportStatus == 'pending' and days_old > 7 %}
+<div class="admin-section" style="border-left: 4px solid #ef4444; margin-bottom: 2rem;">
+    <div class="admin-section-header" style="background: rgba(239, 68, 68, 0.1);">
+        <h3 class="admin-section-title" style="color: #dc2626;">
+            <i class="fas fa-exclamation-triangle"></i> High Priority Report
+        </h3>
+    </div>
+    <div class="admin-section-content">
+        <p style="color: #dc2626; margin: 0;">
+            This report has been pending for {{ days_old }} days and requires immediate attention.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Content Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- Left Column -->
+    <div>
+        <!-- Report Details -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Report Information</h3>
+                <span class="admin-status-badge rejected">{{ data.report_type.title() }} Report</span>
+            </div>
+            <div class="admin-section-content">
+                {% set report_details = data.report_details %}
+                
+                <div style="display: grid; gap: 2rem;">
+                    <div>
+                        <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Report Reason/Description</label>
+                        {% if report_details.description %}
+                        <div style="background: var(--light-gray); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-gray);">
+                            <div style="color: var(--primary-black); line-height: 1.7; white-space: pre-wrap;">{{ report_details.description }}</div>
+                        </div>
+                        {% else %}
+                        <div style="color: var(--soft-gray); font-style: italic;">No description provided</div>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Report Type</label>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ data.report_type.title() }}</div>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Status</label>
+                            <span class="admin-status-badge {{ data.report.reportStatus }}">
+                                {{ data.report.reportStatus.title() }}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Submitted</label>
+                            <div style="color: var(--primary-black);">{{ moment(data.report.dateCreated).format('MMMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Last Updated</label>
+                            <div style="color: var(--primary-black);">{{ moment(data.report.lastUpdated).format('MMMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporter Information -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Reporter Information</h3>
+                <a href="{{ url_for('admin.user_detail', user_id=data.report.reporter.userId) }}" class="btn btn-secondary">
+                    <i class="fas fa-user"></i> View Profile
+                </a>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+                    {% if data.report.reporter.profilePicture %}
+                    <img src="{{ data.report.reporter.profilePicture }}" alt="{{ data.report.reporter.fullName }}" 
+                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray);">
+                    {% else %}
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 2rem; border: 3px solid var(--border-gray);">
+                        {{ data.report.reporter.fullName[:2].upper() }}
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.report.reporter.fullName }}
+                        </div>
+                        <div style="color: var(--soft-gray); margin-bottom: 0.5rem;">{{ data.report.reporter.emailAddress }}</div>
+                        <span class="admin-status-badge {{ data.report.reporter.userType }}">
+                            {{ data.report.reporter.userType.title() }}
+                        </span>
+                        <span class="admin-status-badge {% if data.report.reporter.isActive %}active{% else %}suspended{% endif %}">
+                            {% if data.report.reporter.isActive %}Active{% else %}Suspended{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {% if data.report.reporter.totalRatings > 0 %}
+                                {{ "%.1f"|format(data.report.reporter.averageRating) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Average Rating</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ data.report.reporter.sentMessages|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Messages Sent</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ data.report.reporter.reports|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Reports Filed</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ moment(data.report.reporter.dateCreated).fromNow(true) }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Member Since</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reported Content/User -->
+        {% if data.report.reportedUser %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Reported User</h3>
+                <a href="{{ url_for('admin.user_detail', user_id=data.report.reportedUser.userId) }}" class="btn btn-secondary">
+                    <i class="fas fa-user"></i> View Profile
+                </a>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+                    {% if data.report.reportedUser.profilePicture %}
+                    <img src="{{ data.report.reportedUser.profilePicture }}" alt="{{ data.report.reportedUser.fullName }}" 
+                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray);">
+                    {% else %}
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--soft-gray); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 2rem; border: 3px solid var(--border-gray);">
+                        {{ data.report.reportedUser.fullName[:2].upper() }}
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.report.reportedUser.fullName }}
+                        </div>
+                        <div style="color: var(--soft-gray); margin-bottom: 0.5rem;">{{ data.report.reportedUser.emailAddress }}</div>
+                        <span class="admin-status-badge {{ data.report.reportedUser.userType }}">
+                            {{ data.report.reportedUser.userType.title() }}
+                        </span>
+                        <span class="admin-status-badge {% if data.report.reportedUser.isActive %}active{% else %}suspended{% endif %}">
+                            {% if data.report.reportedUser.isActive %}Active{% else %}Suspended{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {% if data.report.reportedUser.totalRatings > 0 %}
+                                {{ "%.1f"|format(data.report.reportedUser.averageRating) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Average Rating</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ data.report.reportedUser.reportedReports|length }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Reports Against</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {% if data.report.reportedUser.userType == 'creator' and data.report.reportedUser.creator %}
+                                {{ data.report.reportedUser.creator.jobs|length }}
+                            {% elif data.report.reportedUser.userType == 'editor' and data.report.reportedUser.editor %}
+                                {{ data.report.reportedUser.editor.portfolios|length }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">
+                            {% if data.report.reportedUser.userType == 'creator' %}Jobs Posted{% else %}Portfolios{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ moment(data.report.reportedUser.dateCreated).fromNow(true) }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Member Since</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if data.report.reportedPortfolio %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Reported Portfolio</h3>
+                <a href="{{ url_for('admin.portfolio_detail', portfolio_id=data.report.reportedPortfolio.portfolioId) }}" class="btn btn-secondary">
+                    <i class="fas fa-folder"></i> View Portfolio
+                </a>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+                    {% if data.report.reportedPortfolio.editor.user.profilePicture %}
+                    <img src="{{ data.report.reportedPortfolio.editor.user.profilePicture }}" alt="{{ data.report.reportedPortfolio.editor.user.fullName }}" 
+                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray);">
+                    {% else %}
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--success-green); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 2rem; border: 3px solid var(--border-gray);">
+                        {{ data.report.reportedPortfolio.editor.user.fullName[:2].upper() }}
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin-bottom: 0.5rem;">
+                            {{ data.report.reportedPortfolio.title }}
+                        </div>
+                        <div style="color: var(--soft-gray); margin-bottom: 0.5rem;">
+                            by {{ data.report.reportedPortfolio.editor.user.fullName }}
+                        </div>
+                        <span class="admin-status-badge {{ data.report.reportedPortfolio.verificationStatus }}">
+                            {{ data.report.reportedPortfolio.verificationStatus.title() }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if data.report.reportedPortfolio.description %}
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Portfolio Description</label>
+                    <div style="background: var(--light-gray); padding: 1rem; border-radius: var(--radius-md); color: var(--primary-black);">
+                        {{ data.report.reportedPortfolio.description }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if data.report.reportedPortfolio.skillTags %}
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Skills & Tags</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        {% for skill in data.report.reportedPortfolio.getSkillTagsList() %}
+                        <span style="background: var(--light-gray); padding: 0.375rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--soft-gray);">
+                            {{ skill }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {{ moment(data.report.reportedPortfolio.dateCreated).format('MMM DD') }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Submitted</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            {% if data.report.reportedPortfolio.videoUrl %}Yes{% else %}No{% endif %}
+                        </div>
+                        <div style="color: var(--soft-gray); font-weight: 600; font-size: 0.875rem;">Has Video</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Resolution Information (if resolved) -->
+        {% if data.report.reportStatus == 'resolved' %}
+        <div class="admin-section" style="border-left: 4px solid var(--success-green);">
+            <div class="admin-section-header" style="background: rgba(16, 185, 129, 0.1);">
+                <h3 class="admin-section-title" style="color: var(--success-green);">
+                    <i class="fas fa-check-circle"></i> Resolution Details
+                </h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Resolution</label>
+                    <div style="font-weight: 600; color: var(--primary-black);">Report Resolved</div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.5rem; font-size: 0.875rem;">Resolved Date</label>
+                    <div style="color: var(--primary-black);">{{ moment(data.report.lastUpdated).format('MMMM DD, YYYY HH:mm') }}</div>
+                </div>
+                
+                <!-- Admin notes would go here if your model has them -->
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Sidebar -->
+    <div>
+        <!-- Quick Actions -->
+        {% if data.report.reportStatus in ['pending', 'reviewed'] %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Quick Actions</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="btn admin-btn-success" style="width: 100%;" onclick="quickResolve('resolved')">
+                        <i class="fas fa-check"></i> Mark Resolved
+                    </button>
+                    <button class="btn admin-btn-warning" style="width: 100%;" onclick="quickResolve('dismissed')">
+                        <i class="fas fa-times"></i> Dismiss Report
+                    </button>
+                    <a href="{{ url_for('admin.resolve_report', report_id=data.report.reportId) }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-gavel"></i> Full Resolution
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Report Timeline -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Report Timeline</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid var(--accent-blue); background: rgba(59, 130, 246, 0.05);">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">Report Submitted</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.report.dateCreated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if data.report.reportStatus != 'pending' %}
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">Status Updated</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.report.lastUpdated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if data.report.reportStatus == 'resolved' %}
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid var(--success-green); background: rgba(16, 185, 129, 0.05);">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--success-green); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">Report Resolved</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.report.lastUpdated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Reports -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Related Reports</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <a href="{{ url_for('admin.reports') }}?search={{ data.report.reporter.emailAddress }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-user"></i> Reports by {{ data.report.reporter.fullName.split()[0] }}
+                    </a>
+                    
+                    {% if data.report.reportedUser %}
+                    <a href="{{ url_for('admin.reports') }}?search={{ data.report.reportedUser.emailAddress }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-flag"></i> Reports against {{ data.report.reportedUser.fullName.split()[0] }}
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('admin.reports') }}?status=pending" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-clock"></i> All Pending Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Statistics -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Report Stats</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Report Age</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">{{ moment(data.report.dateCreated).fromNow() }}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Priority Level</span>
+                        <span class="admin-status-badge {% if days_old > 7 %}rejected{% elif days_old > 3 %}pending{% else %}approved{% endif %}">
+                            {% if days_old > 7 %}High{% elif days_old > 3 %}Medium{% else %}Low{% endif %}
+                        </span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding:0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Report Type</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">{{ data.report_type.title() }}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Current Status</span>
+                        <span class="admin-status-badge {{ data.report.reportStatus }}">{{ data.report.reportStatus.title() }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Actions -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Additional Actions</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% if data.report.reportedUser %}
+                    <a href="{{ url_for('admin.suspend_user', user_id=data.report.reportedUser.userId) }}" class="btn admin-btn-warning" style="width: 100%; text-align: center;">
+                        <i class="fas fa-ban"></i> Suspend Reported User
+                    </a>
+                    {% endif %}
+                    
+                    {% if data.report.reportedPortfolio %}
+                    <form method="POST" action="{{ url_for('admin.remove_portfolio_content', portfolio_id=data.report.reportedPortfolio.portfolioId) }}" 
+                          style="width: 100%;" onsubmit="return confirm('Are you sure you want to remove this portfolio content?')">
+                        <input type="hidden" name="reason" value="Content reported as inappropriate">
+                        <button type="submit" class="btn admin-btn-danger" style="width: 100%;">
+                            <i class="fas fa-trash"></i> Remove Portfolio
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('admin.search') }}?q=report {{ data.report.reportId }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-search"></i> Search Platform
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning Signs -->
+        {% if data.report.reporter.reports|length > 5 %}
+        <div class="admin-section" style="border-left: 4px solid #f59e0b;">
+            <div class="admin-section-header" style="background: rgba(245, 158, 11, 0.1);">
+                <h3 class="admin-section-title" style="color: #d97706;">
+                    <i class="fas fa-exclamation-triangle"></i> Warning
+                </h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="color: #d97706; font-weight: 600; margin-bottom: 0.5rem;">Frequent Reporter</div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    This user has filed {{ data.report.reporter.reports|length }} reports. Consider reviewing their reporting pattern.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if data.report.reportedUser and data.report.reportedUser.reportedReports|length > 3 %}
+        <div class="admin-section" style="border-left: 4px solid #ef4444;">
+            <div class="admin-section-header" style="background: rgba(239, 68, 68, 0.1);">
+                <h3 class="admin-section-title" style="color: #dc2626;">
+                    <i class="fas fa-exclamation-circle"></i> Alert
+                </h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="color: #dc2626; font-weight: 600; margin-bottom: 0.5rem;">Multiple Reports</div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    This user has {{ data.report.reportedUser.reportedReports|length }} reports filed against them. Immediate review recommended.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Quick resolution functions
+function quickResolve(resolution) {
+    let confirmMessage = '';
+    let successMessage = '';
+    
+    if (resolution === 'resolved') {
+        confirmMessage = 'Are you sure you want to mark this report as resolved?';
+        successMessage = 'Report marked as resolved';
+    } else if (resolution === 'dismissed') {
+        confirmMessage = 'Are you sure you want to dismiss this report?';
+        successMessage = 'Report dismissed';
+    }
+    
+    if (confirm(confirmMessage)) {
+        // Use AJAX to update report status
+        fetch('{{ url_for("admin.ajax_quick_action") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'resolve_report',
+                target_id: {{ data.report.reportId }},
+                resolution: resolution
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(successMessage);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+}
+
+// Mark as reviewed function
+function markAsReviewed() {
+    if (confirm('Mark this report as under review?')) {
+        fetch('{{ url_for("admin.ajax_quick_action") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'review_report',
+                target_id: {{ data.report.reportId }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Report marked as under review');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+}
+
+// Auto-scroll to priority alert if present
+document.addEventListener('DOMContentLoaded', function() {
+    const priorityAlert = document.querySelector('.admin-section[style*="border-left: 4px solid #ef4444"]');
+    if (priorityAlert && window.location.hash === '') {
+        priorityAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Highlight key information based on report age
+    const reportAge = {{ days_old }};
+    if (reportAge > 7) {
+        // Add visual indicators for high priority reports
+        const title = document.querySelector('.admin-page-title');
+        if (title) {
+            title.style.color = '#dc2626';
+        }
+    }
+});
+
+// Print report functionality
+function printReport() {
+    window.print();
+}
+
+// Export report data
+function exportReport() {
+    const reportData = {
+        reportId: {{ data.report.reportId }},
+        reporter: '{{ data.report.reporter.fullName }}',
+        reportedUser: '{% if data.report.reportedUser %}{{ data.report.reportedUser.fullName }}{% else %}N/A{% endif %}',
+        reportedPortfolio: '{% if data.report.reportedPortfolio %}{{ data.report.reportedPortfolio.title }}{% else %}N/A{% endif %}',
+        type: '{{ data.report_type }}',
+        status: '{{ data.report.reportStatus }}',
+        dateCreated: '{{ data.report.dateCreated }}',
+        description: '{{ data.report_details.description or "" }}'
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `report_{{ data.report.reportId }}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + R for quick resolve
+    if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault();
+        {% if data.report.reportStatus in ['pending', 'reviewed'] %}
+        quickResolve('resolved');
+        {% endif %}
+    }
+    
+    // Ctrl/Cmd + D for dismiss
+    if ((event.ctrlKey || event.metaKey) && event.key === 'd') {
+        event.preventDefault();
+        {% if data.report.reportStatus in ['pending', 'reviewed'] %}
+        quickResolve('dismissed');
+        {% endif %}
+    }
+    
+    // Escape to go back
+    if (event.key === 'Escape') {
+        window.location.href = '{{ url_for("admin.reports") }}';
+    }
+});
+
+// Auto-refresh for pending reports (every 2 minutes)
+{% if data.report.reportStatus == 'pending' %}
+setInterval(function() {
+    // Check if report status has changed
+    fetch('{{ url_for("admin.ajax_system_stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            // Could check if this specific report needs updating
+            console.log('Status check completed');
+        })
+        .catch(error => console.error('Status check failed:', error));
+}, 120000); // 2 minutes
+{% endif %}
+</script>
+
+<style>
+/* Print styles */
+@media print {
+    .admin-sidebar,
+    .btn,
+    .admin-section-header .btn {
+        display: none !important;
+    }
+    
+    .admin-layout {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .admin-section {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+    
+    .admin-page-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+}
+
+/* Enhanced responsive design */
+@media (max-width: 1024px) {
+    .admin-layout > div {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-page-header > div {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .admin-page-header .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .admin-section-content > div[style*="display: flex"] {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .admin-section-content > div[style*="display: grid"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.admin-section:focus-within {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock admin_content %}

@@ -1,0 +1,804 @@
+{% extends "editor/base.html" %}
+
+{% block title %}{{ data.job.title }} - Project Details{% endblock title %}
+
+{% block editor_content %}
+<div class="project-detail-container">
+    <!-- Page Header -->
+    <div class="project-header">
+        <div class="header-content">
+            <h1>{{ data.job.title }}</h1>
+            <div class="project-status">
+                <span class="status-badge status-{{ data.job.status }}">
+                    <i class="fas fa-{% if data.job.status == 'in_progress' %}play{% elif data.job.status == 'completed' %}check{% else %}clock{% endif %}"></i>
+                    {{ data.job.status.replace('_', ' ').title() }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.projects') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <!-- Project Overview -->
+    <div class="project-overview">
+        <div class="overview-grid">
+            <!-- Project Info -->
+            <div class="project-info-card">
+                <div class="card-header">
+                    <h3>Project Information</h3>
+                </div>
+                <div class="card-content">
+                    <div class="info-item">
+                        <div class="info-label">Client</div>
+                        <div class="info-value">{{ data.creator.user.fullName }}</div>
+                    </div>
+                    {% if data.job.deadline %}
+                    <div class="info-item">
+                        <div class="info-label">Deadline</div>
+                        <div class="info-value">{{ moment(data.job.deadline).format('MMM D, YYYY') }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <div class="info-label">Started</div>
+                        <div class="info-value">{{ moment(data.job.dateCreated).fromNow() }}</div>
+                    </div>
+                    {% if data.job.budgetMin or data.job.budgetMax %}
+                    <div class="info-item">
+                        <div class="info-label">Budget</div>
+                        <div class="info-value">{{ data.job.getBudgetRange() }}</div>
+                    </div>
+                    {% endif %}
+                    {% if data.is_completed %}
+                    <div class="info-item">
+                        <div class="info-label">Completed</div>
+                        <div class="info-value">{{ moment(data.job.completedDate).fromNow() }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-card">
+                <div class="card-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                <div class="card-content">
+                    <div class="actions-grid">
+                        {% if data.can_upload_deliverable %}
+                        <a href="{{ url_for('editor.upload_deliverable', job_id=data.job.jobId) }}" class="action-btn primary">
+                            <i class="fas fa-upload"></i>
+                            Upload Final
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('editor.send_message', receiver_id=data.creator.user.userId, job_id=data.job.jobId) }}" class="action-btn">
+                            <i class="fas fa-envelope"></i>
+                            Message Client
+                        </a>
+                        
+                        {% if data.has_deliverable %}
+                        <button class="action-btn" onclick="viewDeliverable('{{ data.job.deliverableUrl }}')">
+                            <i class="fas fa-eye"></i>
+                            View Deliverable
+                        </button>
+                        {% endif %}
+                        
+                        {% if data.is_completed %}
+                        <a href="{{ url_for('editor.submit_rating', job_id=data.job.jobId, creator_id=data.creator.user.userId) }}" class="action-btn">
+                            <i class="fas fa-star"></i>
+                            Rate Experience
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Description -->
+    <div class="project-description-card">
+        <div class="card-header">
+            <h3>Project Description</h3>
+        </div>
+        <div class="card-content">
+            <p>{{ data.job.description }}</p>
+            
+            {% if data.job.requiredSkills %}
+            <div class="required-skills">
+                <h4>Required Skills</h4>
+                <div class="skills-list">
+                    {% for skill in data.job.getRequiredSkillsList() %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Project Messages -->
+    {% if data.messages %}
+    <div class="project-messages-card">
+        <div class="card-header">
+            <h3>Project Messages</h3>
+            <span class="message-count">{{ data.messages|length }} message{{ "s" if data.messages|length != 1 else "" }}</span>
+        </div>
+        <div class="card-content">
+            <div class="messages-list">
+                {% for message in data.messages %}
+                <div class="message-item {% if message.senderId == current_user.userId %}sent{% else %}received{% endif %}">
+                    <div class="message-header">
+                        <div class="message-sender">
+                            {% if message.senderId == current_user.userId %}
+                            You
+                            {% else %}
+                            {{ message.sender.fullName }}
+                            {% endif %}
+                        </div>
+                        <div class="message-time">{{ moment(message.dateCreated).fromNow() }}</div>
+                    </div>
+                    
+                    {% if message.subject %}
+                    <div class="message-subject">{{ message.subject }}</div>
+                    {% endif %}
+                    
+                    <div class="message-content">{{ message.messageContent }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="messages-actions">
+                <a href="{{ url_for('editor.send_message', receiver_id=data.creator.user.userId, job_id=data.job.jobId) }}" class="btn btn-primary">
+                    <i class="fas fa-reply"></i>
+                    Send Message
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Project Timeline -->
+    <div class="project-timeline-card">
+        <div class="card-header">
+            <h3>Project Timeline</h3>
+        </div>
+        <div class="card-content">
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Project Started</div>
+                        <div class="timeline-date">{{ moment(data.job.dateCreated).format('MMM D, YYYY') }}</div>
+                    </div>
+                </div>
+                
+                {% if data.job.status == 'in_progress' %}
+                <div class="timeline-item current">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Work in Progress</div>
+                        <div class="timeline-date">Current status</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if data.has_deliverable %}
+                <div class="timeline-item completed">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Deliverable Uploaded</div>
+                        <div class="timeline-date">Awaiting client review</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if data.is_completed %}
+                <div class="timeline-item completed">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Project Completed</div>
+                        <div class="timeline-date">{{ moment(data.job.completedDate).format('MMM D, YYYY') }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Project Detail Page Styles */
+.project-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.project-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.project-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-in_progress {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-posted {
+    background: #fef3cd;
+    color: #92400e;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Project Overview */
+.project-overview {
+    margin-bottom: 2rem;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+/* Card Base Styles */
+.project-info-card,
+.quick-actions-card,
+.project-description-card,
+.project-messages-card,
+.project-timeline-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+/* Project Info */
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--soft-gray);
+}
+
+.info-value {
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+/* Quick Actions */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--soft-gray);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: var(--primary-black);
+    color: var(--white);
+    border-color: var(--primary-black);
+}
+
+.action-btn.primary:hover {
+    background: var(--secondary-black);
+    border-color: var(--secondary-black);
+    color: var(--white);
+}
+
+.action-btn i {
+    font-size: 1.25rem;
+}
+
+/* Project Description */
+.project-description-card .card-content p {
+    color: var(--primary-black);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.required-skills h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skill-tag {
+    background: var(--accent-blue);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Messages */
+.message-count {
+    background: var(--light-gray);
+    color: var(--soft-gray);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.message-item {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+}
+
+.message-item.sent {
+    border-left: 3px solid var(--accent-blue);
+    background: #f8fafc;
+}
+
+.message-item.received {
+    border-left: 3px solid var(--success-green);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.message-sender {
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.message-time {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.message-subject {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.message-content {
+    color: var(--primary-black);
+    line-height: 1.5;
+}
+
+.messages-actions {
+    text-align: center;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-gray);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--border-gray);
+    border: 3px solid var(--white);
+    z-index: 1;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: var(--success-green);
+}
+
+.timeline-item.current .timeline-marker {
+    background: var(--accent-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.timeline-date {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .project-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .card-content {
+        padding: 1rem;
+    }
+    
+    .messages-list {
+        max-height: 300px;
+    }
+    
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-marker {
+        left: -1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-btn {
+        flex-direction: row;
+        justify-content: center;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+</style>
+
+<script>
+// View deliverable functionality
+function viewDeliverable(deliverableUrl) {
+    if (deliverableUrl) {
+        window.open(deliverableUrl, '_blank');
+    } else {
+        showNotification('Deliverable not available', 'error');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading states to action buttons
+    const actionButtons = document.querySelectorAll('.action-btn, .btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            if (this.href && !this.href.includes('#')) {
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    this.style.opacity = '1';
+                    this.style.pointerEvents = 'auto';
+                }, 2000);
+            }
+        });
+    });
+    
+    // Auto-scroll messages to bottom
+    const messagesList = document.querySelector('.messages-list');
+    if (messagesList) {
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
+});
+
+// Additional CSS for notifications
+const additionalStyles = `
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-info .notification-content i {
+    color: var(--accent-blue);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+@media (max-width: 480px) {
+    .notification {
+        width: calc(100% - 2rem);
+        margin: 1rem;
+        right: 0;
+    }
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock editor_content %}

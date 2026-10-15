@@ -1,0 +1,531 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}{{ data.portfolio.title }} - Portfolio Review{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1 class="admin-page-title">{{ data.portfolio.title }}</h1>
+            <p class="admin-page-subtitle">
+                Portfolio by {{ data.editor_user.fullName }} • 
+                <span class="admin-status-badge {{ data.portfolio.verificationStatus }}">
+                    {{ data.portfolio.verificationStatus.title() }}
+                </span>
+            </p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('admin.portfolios') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Portfolios
+            </a>
+            {% if data.portfolio.verificationStatus == 'pending' %}
+            <a href="{{ url_for('admin.verify_portfolio', portfolio_id=data.portfolio.portfolioId) }}" class="btn admin-btn-success">
+                <i class="fas fa-check"></i> Review Portfolio
+            </a>
+            {% elif data.portfolio.verificationStatus == 'approved' %}
+            <form method="POST" action="{{ url_for('admin.remove_portfolio_content', portfolio_id=data.portfolio.portfolioId) }}" 
+                  style="display: inline;" onsubmit="return confirm('Are you sure you want to remove this portfolio content?')">
+                <input type="hidden" name="reason" value="Administrative content removal">
+                <button type="submit" class="btn admin-btn-warning">
+                    <i class="fas fa-trash"></i> Remove Content
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Overview -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- Main Content -->
+    <div>
+        <!-- Video Section -->
+        {% if data.portfolio.videoUrl %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Portfolio Video</h3>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="openVideoFullscreen()">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                    <a href="{{ data.portfolio.videoUrl }}" target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-external-link-alt"></i> Open Original
+                    </a>
+                </div>
+            </div>
+            <div class="admin-section-content">
+                <div style="position: relative; width: 100%; padding-bottom: 56.25%; /* 16:9 aspect ratio */ background: var(--primary-black); border-radius: var(--radius-md); overflow: hidden;">
+                    {% if data.portfolio.videoUrl.endswith(('.mp4', '.webm', '.ogg')) %}
+                    <!-- HTML5 Video -->
+                    <video id="portfolioVideo" controls style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                        <source src="{{ data.portfolio.videoUrl }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    {% elif 'youtube.com' in data.portfolio.videoUrl or 'youtu.be' in data.portfolio.videoUrl %}
+                    <!-- YouTube Embed -->
+                    {% set video_id = data.portfolio.videoUrl.split('v=')[-1].split('&')[0] if 'v=' in data.portfolio.videoUrl else data.portfolio.videoUrl.split('/')[-1] %}
+                    <iframe src="https://www.youtube.com/embed/{{ video_id }}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                            allowfullscreen>
+                    </iframe>
+                    {% elif 'vimeo.com' in data.portfolio.videoUrl %}
+                    <!-- Vimeo Embed -->
+                    {% set video_id = data.portfolio.videoUrl.split('/')[-1] %}
+                    <iframe src="https://player.vimeo.com/video/{{ video_id }}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                            allowfullscreen>
+                    </iframe>
+                    {% else %}
+                    <!-- Generic Video Placeholder -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; color: white;">
+                        <i class="fas fa-play-circle" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.7;"></i>
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Video Portfolio</div>
+                        <div style="font-size: 0.875rem; opacity: 0.8;">{{ data.portfolio.videoUrl }}</div>
+                        <a href="{{ data.portfolio.videoUrl }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-external-link-alt"></i> Open Video
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Portfolio Description -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Description</h3>
+            </div>
+            <div class="admin-section-content">
+                {% if data.portfolio.description %}
+                <div style="color: var(--primary-black); line-height: 1.7; white-space: pre-wrap;">{{ data.portfolio.description }}</div>
+                {% else %}
+                <div class="admin-empty-state" style="padding: 2rem;">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>No Description</h3>
+                    <p>This portfolio doesn't have a description.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Skills & Tags -->
+        {% if data.portfolio.skillTags %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Skills & Tags</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    {% for skill in data.skill_tags %}
+                    <span style="background: linear-gradient(135deg, var(--accent-blue), var(--success-green)); color: white; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.875rem;">
+                        {{ skill }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Other Portfolios by This Editor -->
+        {% if data.other_portfolios %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Other Portfolios by {{ data.editor_user.fullName }}</h3>
+                <a href="{{ url_for('admin.portfolios') }}?search={{ data.editor_user.emailAddress }}" class="btn btn-secondary">
+                    View All
+                </a>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: grid; gap: 1rem;">
+                    {% for other_portfolio in data.other_portfolios[:3] %}
+                    <div style="border: 1px solid var(--border-gray); border-radius: var(--radius-md); padding: 1rem; background: var(--white);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">
+                                    <a href="{{ url_for('admin.portfolio_detail', portfolio_id=other_portfolio.portfolioId) }}" 
+                                       style="text-decoration: none; color: inherit;">
+                                        {{ other_portfolio.title }}
+                                    </a>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                                    {{ moment(other_portfolio.dateCreated).format('MMM DD, YYYY') }}
+                                </div>
+                            </div>
+                            <span class="admin-status-badge {{ other_portfolio.verificationStatus }}">
+                                {{ other_portfolio.verificationStatus.title() }}
+                            </span>
+                        </div>
+                        {% if other_portfolio.description %}
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            {{ other_portfolio.description[:100] }}{% if other_portfolio.description|length > 100 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Rejection Information -->
+        {% if data.portfolio.verificationStatus == 'rejected' and data.portfolio.rejectionReason %}
+        <div class="admin-section" style="border-left: 4px solid #ef4444;">
+            <div class="admin-section-header" style="background: rgba(239, 68, 68, 0.1);">
+                <h3 class="admin-section-title" style="color: #dc2626;">
+                    <i class="fas fa-exclamation-triangle"></i> Rejection Details
+                </h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="color: #dc2626; font-weight: 600; margin-bottom: 0.5rem;">Reason for Rejection:</div>
+                <div style="color: var(--primary-black); background: rgba(239, 68, 68, 0.05); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2);">
+                    {{ data.portfolio.rejectionReason }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Sidebar -->
+    <div>
+        <!-- Editor Information -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Editor Information</h3>
+            </div>
+            <div class="admin-section-content" style="text-align: center;">
+                <!-- Profile Picture -->
+                {% if data.editor_user.profilePicture %}
+                <img src="{{ data.editor_user.profilePicture }}" alt="{{ data.editor_user.fullName }}" 
+                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-gray); margin-bottom: 1rem;">
+                {% else %}
+                <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 2.5rem; margin: 0 auto 1rem; border: 3px solid var(--border-gray);">
+                    {{ data.editor_user.fullName[:2].upper() }}
+                </div>
+                {% endif %}
+
+                <!-- Editor Details -->
+                <div style="text-align: left;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.25rem; font-size: 0.875rem;">Full Name</label>
+                        <div style="font-weight: 600; color: var(--primary-black);">{{ data.editor_user.fullName }}</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.25rem; font-size: 0.875rem;">Email</label>
+                        <div style="color: var(--primary-black);">{{ data.editor_user.emailAddress }}</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.25rem; font-size: 0.875rem;">Rating</label>
+                        {% if data.editor_user.totalRatings > 0 %}
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: #f59e0b;">
+                                {% for i in range(5) %}
+                                    {% if i < data.editor_user.averageRating|round %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                            <span style="font-weight: 600;">{{ "%.1f"|format(data.editor_user.averageRating) }}</span>
+                            <span style="font-size: 0.875rem; color: var(--soft-gray);">({{ data.editor_user.totalRatings }})</span>
+                        </div>
+                        {% else %}
+                        <span style="color: var(--soft-gray);">No ratings yet</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: var(--soft-gray); margin-bottom: 0.25rem; font-size: 0.875rem;">Member Since</label>
+                        <div style="color: var(--primary-black);">{{ moment(data.editor_user.dateCreated).format('MMMM YYYY') }}</div>
+                    </div>
+                </div>
+
+                <!-- Editor Actions -->
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <a href="{{ url_for('admin.user_detail', user_id=data.editor_user.userId) }}" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-user"></i> View Profile
+                    </a>
+                    <a href="{{ url_for('admin.portfolios') }}?search={{ data.editor_user.emailAddress }}" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-folder"></i> All Portfolios
+                    </a>
+                    <a href="{{ url_for('admin.reports') }}?search={{ data.editor_user.emailAddress }}" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-flag"></i> Check Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Statistics -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Portfolio Stats</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Total Portfolios</span>
+                        <span style="font-weight: 600; color: var(--primary-black);">{{ data.editor.portfolios|length }}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Approved</span>
+                        <span style="font-weight: 600; color: var(--success-green);">
+                            {% set approved_count = 0 %}
+                            {% for portfolio in data.editor.portfolios %}
+                                {% if portfolio.verificationStatus == 'approved' %}
+                                    {% set approved_count = approved_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ approved_count }}
+                        </span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Pending</span>
+                        <span style="font-weight: 600; color: #f59e0b;">
+                            {% set pending_count = 0 %}
+                            {% for portfolio in data.editor.portfolios %}
+                                {% if portfolio.verificationStatus == 'pending' %}
+                                    {% set pending_count = pending_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ pending_count }}
+                        </span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600;">Rejected</span>
+                        <span style="font-weight: 600; color: #ef4444;">
+                            {% set rejected_count = 0 %}
+                            {% for portfolio in data.editor.portfolios %}
+                                {% if portfolio.verificationStatus == 'rejected' %}
+                                    {% set rejected_count = rejected_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ rejected_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Timeline -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Timeline</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid var(--accent-blue); background: rgba(59, 130, 246, 0.05);">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">Portfolio Submitted</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.portfolio.dateCreated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if data.portfolio.lastUpdated != data.portfolio.dateCreated %}
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">Last Updated</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.portfolio.lastUpdated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if data.portfolio.verificationStatus != 'pending' %}
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-left: 3px solid {% if data.portfolio.verificationStatus == 'approved' %}var(--success-green){% else %}#ef4444{% endif %}; background: {% if data.portfolio.verificationStatus == 'approved' %}rgba(16, 185, 129, 0.05){% else %}rgba(239, 68, 68, 0.05){% endif %};">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: {% if data.portfolio.verificationStatus == 'approved' %}var(--success-green){% else %}#ef4444{% endif %}; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                            <i class="fas {% if data.portfolio.verificationStatus == 'approved' %}fa-check{% else %}fa-times{% endif %}"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">
+                                {% if data.portfolio.verificationStatus == 'approved' %}
+                                    Portfolio Approved
+                                {% else %}
+                                    Portfolio Rejected
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ moment(data.portfolio.lastUpdated).format('MMM DD, YYYY HH:mm') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        {% if data.portfolio.verificationStatus == 'pending' %}
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <h3 class="admin-section-title">Quick Actions</h3>
+            </div>
+            <div class="admin-section-content">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="btn admin-btn-success" style="width: 100%;" onclick="quickApprove()">
+                        <i class="fas fa-check"></i> Quick Approve
+                    </button>
+                    <button class="btn admin-btn-danger" style="width: 100%;" onclick="quickReject()">
+                        <i class="fas fa-times"></i> Quick Reject
+                    </button>
+                    <a href="{{ url_for('admin.verify_portfolio', portfolio_id=data.portfolio.portfolioId) }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-clipboard-check"></i> Full Review
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Video fullscreen styles */
+.video-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-fullscreen video,
+.video-fullscreen iframe {
+    max-width: 95%;
+    max-height: 95%;
+}
+
+.video-fullscreen .close-fullscreen {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+
+<script>
+// Video fullscreen functionality
+function openVideoFullscreen() {
+    const video = document.getElementById('portfolioVideo');
+    if (video) {
+        const fullscreenDiv = document.createElement('div');
+        fullscreenDiv.className = 'video-fullscreen';
+        fullscreenDiv.innerHTML = `
+            <button class="close-fullscreen" onclick="closeVideoFullscreen()">&times;</button>
+            ${video.outerHTML}
+        `;
+        document.body.appendChild(fullscreenDiv);
+        
+        // Play video if it was paused
+        const fullscreenVideo = fullscreenDiv.querySelector('video');
+        if (fullscreenVideo && video.paused) {
+            fullscreenVideo.play();
+        }
+    }
+}
+
+function closeVideoFullscreen() {
+    const fullscreenDiv = document.querySelector('.video-fullscreen');
+    if (fullscreenDiv) {
+        fullscreenDiv.remove();
+    }
+}
+
+// ESC key to close fullscreen
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeVideoFullscreen();
+    }
+});
+
+// Quick approve/reject functions
+function quickApprove() {
+    if (confirm('Are you sure you want to approve this portfolio?')) {
+        // Use AJAX quick action
+        fetch('{{ url_for("admin.ajax_quick_action") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'approve_portfolio',
+                target_id: {{ data.portfolio.portfolioId }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+}
+
+function quickReject() {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason && reason.trim()) {
+        fetch('{{ url_for("admin.ajax_quick_action") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'reject_portfolio',
+                target_id: {{ data.portfolio.portfolioId }},
+                reason: reason.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+}
+
+// Auto-play video when page loads (muted for autoplay policy compliance)
+document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('portfolioVideo');
+    if (video) {
+        video.muted = true; // Required for autoplay in most browsers
+        video.play().catch(e => {
+            console.log('Autoplay prevented:', e);
+        });
+    }
+});
+</script>
+{% endblock admin_content %}

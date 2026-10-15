@@ -1,0 +1,429 @@
+{% extends "creator/base.html" %}
+
+{% block content %}
+<div class="creator-layout">
+    <!-- Creator Navigation Sidebar -->
+    <nav class="creator-sidebar">
+        <div class="sidebar-header">
+            <h2>Creator Dashboard</h2>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {% if current_user.profilePicture %}
+                    <img src="{{ current_user.profilePicture }}" alt="Profile" />
+                    {% else %}
+                    <i class="fas fa-user"></i>
+                    {% endif %}
+                </div>
+                <div class="user-details">
+                    <span class="user-name">{{ current_user.fullName }}</span>
+                    <span class="user-type">Content Creator</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="{{ url_for('creator.dashboard') }}" class="nav-item {% if request.endpoint == 'creator.dashboard' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Overview</span>
+            </a>
+            
+            <a href="{{ url_for('creator.jobs') }}" class="nav-item {% if request.endpoint in ['creator.jobs', 'creator.job_detail'] %}active{% endif %}">
+                <i class="fas fa-briefcase"></i>
+                <span>My Jobs</span>
+                {% if data and data.get('active_jobs', 0) > 0 %}
+                <span class="badge">{{ data.active_jobs }}</span>
+                {% endif %}
+            </a>
+            
+            <a href="{{ url_for('creator.new_job') }}" class="nav-item {% if request.endpoint == 'creator.new_job' %}active{% endif %}">
+                <i class="fas fa-plus-circle"></i>
+                <span>Post New Job</span>
+            </a>
+            
+            <a href="{{ url_for('creator.editors') }}" class="nav-item {% if request.endpoint in ['creator.editors', 'creator.editor_profile'] %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Find Editors</span>
+            </a>
+            
+            <a href="{{ url_for('creator.messages') }}" class="nav-item {% if request.endpoint in ['creator.messages', 'creator.send_message'] %}active{% endif %}">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                {% if data and data.get('recent_messages') and data.recent_messages|length > 0 %}
+                <span class="badge">{{ data.recent_messages|length }}</span>
+                {% endif %}
+            </a>
+            
+            <a href="{{ url_for('creator.payments') }}" class="nav-item {% if request.endpoint in ['creator.payments', 'creator.initiate_payment'] %}active{% endif %}">
+                <i class="fas fa-credit-card"></i>
+                <span>Payments</span>
+                {% if data and data.get('pending_payments', 0) > 0 %}
+                <span class="badge warning">{{ data.pending_payments }}</span>
+                {% endif %}
+            </a>
+            
+            <a href="{{ url_for('creator.ratings') }}" class="nav-item {% if request.endpoint in ['creator.ratings', 'creator.submit_rating'] %}active{% endif %}">
+                <i class="fas fa-star"></i>
+                <span>Ratings & Reviews</span>
+            </a>
+            
+            <a href="{{ url_for('creator.analytics') }}" class="nav-item {% if request.endpoint == 'creator.analytics' %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+            
+            <a href="{{ url_for('creator.profile') }}" class="nav-item {% if request.endpoint == 'creator.profile' %}active{% endif %}">
+                <i class="fas fa-user-cog"></i>
+                <span>Profile Settings</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('main.index') }}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="creator-main">
+        <div class="main-header">
+            <div class="header-actions">
+                <button class="mobile-sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="quick-actions">
+                    <a href="{{ url_for('creator.new_job') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Post Job
+                    </a>
+                    <a href="{{ url_for('creator.editors') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-search"></i> Find Editors
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            {% block creator_content %}
+            <!-- Creator-specific content goes here -->
+            {% endblock creator_content %}
+        </div>
+    </main>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<style>
+    .creator-layout {
+        display: flex;
+        min-height: 100vh;
+        background: var(--light-gray);
+    }
+
+    /* Sidebar Styles */
+    .creator-sidebar {
+        width: 280px;
+        background: var(--white);
+        border-right: 1px solid var(--border-gray);
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 1000;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+        padding: 2rem 1.5rem;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .sidebar-header h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--light-gray);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--soft-gray);
+        overflow: hidden;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.9rem;
+    }
+
+    .user-type {
+        font-size: 0.8rem;
+        color: var(--soft-gray);
+    }
+
+    .sidebar-nav {
+        padding: 1rem 0;
+        flex: 1;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.5rem;
+        color: var(--soft-gray);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .nav-item:hover {
+        background: var(--light-gray);
+        color: var(--primary-black);
+    }
+
+    .nav-item.active {
+        background: linear-gradient(90deg, var(--accent-blue), var(--success-green));
+        background-size: 3px 100%;
+        background-repeat: no-repeat;
+        background-position: left;
+        background-color: rgba(59, 130, 246, 0.05);
+        color: var(--accent-blue);
+        font-weight: 600;
+    }
+
+    .nav-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .badge {
+        background: var(--accent-blue);
+        color: var(--white);
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    .badge.warning {
+        background: #f59e0b;
+    }
+
+    .sidebar-footer {
+        padding: 1rem 0;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    /* Main Content Styles */
+    .creator-main {
+        flex: 1;
+        margin-left: 280px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-header {
+        background: var(--white);
+        border-bottom: 1px solid var(--border-gray);
+        padding: 1.5rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .mobile-sidebar-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--primary-black);
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        transition: background 0.2s ease;
+    }
+
+    .mobile-sidebar-toggle:hover {
+        background: var(--light-gray);
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .btn-sm {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.875rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+
+    /* Mobile Sidebar Overlay */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 1024px) {
+        .creator-sidebar {
+            transform: translateX(-100%);
+        }
+
+        .creator-sidebar.mobile-open {
+            transform: translateX(0);
+        }
+
+        .creator-main {
+            margin-left: 0;
+        }
+
+        .mobile-sidebar-toggle {
+            display: block;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .main-content {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .quick-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .btn-sm {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .main-content {
+            padding: 1rem;
+        }
+    }
+
+    /* Enhanced focus states for accessibility */
+    .nav-item:focus,
+    .mobile-sidebar-toggle:focus {
+        outline: 2px solid var(--accent-blue);
+        outline-offset: 2px;
+    }
+
+    /* Smooth animations */
+    .creator-sidebar,
+    .nav-item,
+    .badge {
+        will-change: transform;
+    }
+</style>
+
+<script>
+    // Mobile sidebar functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.querySelector('.creator-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', toggleSidebar);
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', closeSidebar);
+        }
+
+        // Close sidebar on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+                closeSidebar();
+            }
+        });
+
+        // Close sidebar when clicking nav links on mobile
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 1024) {
+                closeSidebar();
+            }
+        });
+    });
+</script>
+{% endblock content %}

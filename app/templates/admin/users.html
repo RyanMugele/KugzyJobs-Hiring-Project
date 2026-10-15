@@ -1,0 +1,422 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}User Management{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h1 class="admin-page-title">User Management</h1>
+    <p class="admin-page-subtitle">Manage all registered users, their status, and account settings</p>
+</div>
+
+<!-- Filter Controls -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Filter Users</h3>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span style="color: var(--soft-gray); font-size: 0.875rem;">
+                Showing {{ users|length }} user(s)
+            </span>
+        </div>
+    </div>
+    <div class="admin-section-content">
+        <form method="GET" action="{{ url_for('admin.users') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">User Type</label>
+                <select name="type" class="btn btn-secondary" style="width: 100%;" onchange="this.form.submit()">
+                    <option value="all" {% if user_type == 'all' %}selected{% endif %}>All Users</option>
+                    <option value="creator" {% if user_type == 'creator' %}selected{% endif %}>Content Creators</option>
+                    <option value="editor" {% if user_type == 'editor' %}selected{% endif %}>Video Editors</option>
+                    <option value="admin" {% if user_type == 'admin' %}selected{% endif %}>Administrators</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Status</label>
+                <select name="status" class="btn btn-secondary" style="width: 100%;" onchange="this.form.submit()">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>All Statuses</option>
+                    <option value="active" {% if status == 'active' %}selected{% endif %}>Active Users</option>
+                    <option value="suspended" {% if status == 'suspended' %}selected{% endif %}>Suspended Users</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Search</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email..." 
+                           style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary" style="width: 100%;">
+                    <i class="fas fa-undo"></i> Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="admin-stats-grid" style="margin-bottom: 2rem;">
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon users">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set creator_count = 0 %}
+            {% for user in users %}
+                {% if user.userType == 'creator' %}
+                    {% set creator_count = creator_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ creator_count }}
+        </div>
+        <div class="admin-stat-label">Content Creators</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon portfolios">
+                <i class="fas fa-video"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set editor_count = 0 %}
+            {% for user in users %}
+                {% if user.userType == 'editor' %}
+                    {% set editor_count = editor_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ editor_count }}
+        </div>
+        <div class="admin-stat-label">Video Editors</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon jobs">
+                <i class="fas fa-user-check"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set active_count = 0 %}
+            {% for user in users %}
+                {% if user.isActive %}
+                    {% set active_count = active_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ active_count }}
+        </div>
+        <div class="admin-stat-label">Active Users</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon reports">
+                <i class="fas fa-user-times"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set suspended_count = 0 %}
+            {% for user in users %}
+                {% if not user.isActive %}
+                    {% set suspended_count = suspended_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ suspended_count }}
+        </div>
+        <div class="admin-stat-label">Suspended Users</div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">User Directory</h3>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('admin.search') }}" class="btn btn-secondary">
+                <i class="fas fa-search"></i> Advanced Search
+            </a>
+        </div>
+    </div>
+    <div class="admin-section-content">
+        {% if users %}
+        <div style="overflow-x: auto;">
+            <table id="usersTable" class="admin-data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Join Date</th>
+                        <th>Rating</th>
+                        <th>Activity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                {% if user.profilePicture %}
+                                <img src="{{ user.profilePicture }}" alt="{{ user.fullName }}" 
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">
+                                    {{ user.fullName[:2].upper() }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ user.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ user.emailAddress }}</div>
+                                    {% if user.phoneNumber %}
+                                    <div style="font-size: 0.75rem; color: var(--soft-gray);">{{ user.phoneNumber }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="admin-status-badge {{ user.userType }}">
+                                {% if user.userType == 'creator' %}
+                                    <i class="fas fa-video"></i> Creator
+                                {% elif user.userType == 'editor' %}
+                                    <i class="fas fa-cut"></i> Editor
+                                {% elif user.userType == 'admin' %}
+                                    <i class="fas fa-shield-alt"></i> Admin
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user.isActive %}
+                                <span class="admin-status-badge active">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                            {% else %}
+                                <span class="admin-status-badge suspended">
+                                    <i class="fas fa-ban"></i> Suspended
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--primary-black);">
+                                {{ moment(user.dateCreated).format('MMM DD, YYYY') }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                {{ moment(user.dateCreated).fromNow() }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if user.totalRatings > 0 %}
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #f59e0b; font-size: 0.875rem;">
+                                    {% for i in range(5) %}
+                                        {% if i < user.averageRating|round %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span style="font-weight: 600; color: var(--primary-black);">{{ "%.1f"|format(user.averageRating) }}</span>
+                                <span style="font-size: 0.75rem; color: var(--soft-gray);">({{ user.totalRatings }})</span>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--soft-gray); font-size: 0.875rem;">No ratings yet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.userType == 'creator' and user.creator %}
+                                <div style="font-size: 0.875rem;">
+                                    <div style="color: var(--primary-black); font-weight: 600;">{{ user.creator.jobs|length }} jobs posted</div>
+                                    <div style="color: var(--soft-gray);">{{ user.sentMessages|length }} messages sent</div>
+                                </div>
+                            {% elif user.userType == 'editor' and user.editor %}
+                                <div style="font-size: 0.875rem;">
+                                    <div style="color: var(--primary-black); font-weight: 600;">{{ user.editor.portfolios|length }} portfolios</div>
+                                    <div style="color: var(--soft-gray);">{{ user.editor.applications|length }} applications</div>
+                                </div>
+                            {% elif user.userType == 'admin' %}
+                                <span style="color: var(--soft-gray); font-size: 0.875rem;">Admin account</span>
+                            {% else %}
+                                <span style="color: var(--soft-gray); font-size: 0.875rem;">No activity data</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-action-buttons">
+                                <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" 
+                                   class="btn admin-btn-sm btn-secondary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if user.isActive %}
+                                    <button class="btn admin-btn-sm admin-btn-warning" 
+                                            onclick="suspendUser({{ user.userId }})" title="Suspend User">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                {% else %}
+                                    <button class="btn admin-btn-sm admin-btn-success" 
+                                            onclick="reactivateUser({{ user.userId }})" title="Reactivate User">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                {% endif %}
+                                
+                                <!--button class="btn admin-btn-sm admin-btn-danger" 
+                                        onclick="resetPassword({{ user.userId }})" title="Reset Password">
+                                    <i class="fas fa-key"></i>
+                                </button-->
+                                
+                                <div class="dropdown" style="position: relative; display: inline-block;">
+                                    <button class="btn admin-btn-sm btn-secondary" onclick="toggleDropdown({{ user.userId }})">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div id="dropdown-{{ user.userId }}" class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 1000; min-width: 150px;">
+                                        <a href="{{ url_for('admin.user_detail', user_id=user.userId) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-user"></i> View Profile
+                                        </a>
+                                        {% if user.userType == 'editor' %}
+                                        <a href="{{ url_for('admin.portfolios') }}?editor={{ user.userId }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-folder"></i> View Portfolios
+                                        </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('admin.reports') }}?user={{ user.userId }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-flag"></i> View Reports
+                                        </a>
+                                        <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--border-gray);">
+                                        <a href="{{ url_for('admin.search') }}?q={{ user.emailAddress }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-search"></i> Search User
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No Users Found</h3>
+            <p>No users match your current filters. Try adjusting your search criteria.</p>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-primary">View All Users</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+
+<style>
+/* Custom DataTables Styling */
+.dataTables_wrapper {
+    font-family: 'Inter', sans-serif;
+}
+
+.dataTables_filter input {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.dataTables_length select {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem;
+    margin: 0 0.5rem;
+}
+
+.dataTables_info {
+    color: var(--soft-gray);
+    font-size: 0.875rem;
+}
+
+.dataTables_paginate .paginate_button {
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--primary-black);
+    text-decoration: none;
+}
+
+.dataTables_paginate .paginate_button:hover {
+    background: var(--light-gray);
+    border-color: var(--soft-gray);
+}
+
+.dataTables_paginate .paginate_button.current {
+    background: var(--primary-black);
+    color: var(--white);
+    border-color: var(--primary-black);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+.dropdown-menu a:hover {
+    background: var(--light-gray);
+}
+</style>
+
+<!-- DataTables JavaScript -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#usersTable').DataTable({
+        responsive: true,
+        pageLength: 25,
+        order: [[4, 'desc']], // Order by join date descending
+        columnDefs: [
+            { orderable: false, targets: [6] }, // Disable sorting for actions column
+            { searchable: false, targets: [6] }
+        ],
+        language: {
+            search: "Search users:",
+            lengthMenu: "Show _MENU_ users per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ users",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+</script>
+{% endblock admin_content %}

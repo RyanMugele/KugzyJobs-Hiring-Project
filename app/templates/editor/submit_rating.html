@@ -1,0 +1,1792 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Rate Experience - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="submit-rating-container">
+    <!-- Page Header -->
+    <div class="rating-header">
+        <div class="header-content">
+            <h1>Rate Your Experience</h1>
+            <p>Share your feedback about working with this content creator</p>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.ratings') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Ratings
+            </a>
+        </div>
+    </div>
+
+    <!-- Rating Form -->
+    <div class="rating-form-container">
+        <form method="POST" class="rating-form" id="ratingForm">
+            {{ form.hidden_tag() }}
+            
+            <!-- Project Information -->
+            {% if form.jobId.data %}
+            <div class="project-info-card">
+                <div class="project-header">
+                    <div class="project-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="project-details">
+                        <h3>Project Information</h3>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <strong>Job ID:</strong> {{ form.jobId.data }}
+                            </div>
+                            {% if form.rateeId.data %}
+                            <div class="meta-item">
+                                <strong>Creator ID:</strong> {{ form.rateeId.data }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="project-context">
+                    <p>Rate your experience working on this project with the content creator.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Hidden Fields -->
+            {{ form.jobId(type="hidden") }}
+            {{ form.rateeId(type="hidden") }}
+
+            <!-- Rating Value -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-star"></i>
+                    Overall Rating
+                </label>
+                <div class="rating-input-container">
+                    <div class="star-rating" id="starRating">
+                        {% for i in range(1, 6) %}
+                        <input type="radio" id="star{{ i }}" name="ratingValue" value="{{ i }}" {% if form.ratingValue.data == i %}checked{% endif %}>
+                        <label for="star{{ i }}" class="star-label" data-rating="{{ i }}">
+                            <i class="fas fa-star"></i>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="rating-description" id="ratingDescription">
+                        Click stars to rate your experience
+                    </div>
+                </div>
+                {% if form.ratingValue.errors %}
+                <div class="form-errors">
+                    {% for error in form.ratingValue.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Rating Categories -->
+            <div class="rating-categories">
+                <h3>Rate Specific Aspects</h3>
+                <p>Help others understand what this creator excels at</p>
+                
+                <div class="categories-grid">
+                    <div class="category-item">
+                        <div class="category-header">
+                            <i class="fas fa-comments"></i>
+                            <span>Communication</span>
+                        </div>
+                        <div class="category-rating">
+                            <div class="mini-star-rating" data-category="communication">
+                                {% for i in range(1, 6) %}
+                                <label class="mini-star" data-value="{{ i }}">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-item">
+                        <div class="category-header">
+                            <i class="fas fa-clock"></i>
+                            <span>Timeliness</span>
+                        </div>
+                        <div class="category-rating">
+                            <div class="mini-star-rating" data-category="timeliness">
+                                {% for i in range(1, 6) %}
+                                <label class="mini-star" data-value="{{ i }}">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-item">
+                        <div class="category-header">
+                            <i class="fas fa-handshake"></i>
+                            <span>Professionalism</span>
+                        </div>
+                        <div class="category-rating">
+                            <div class="mini-star-rating" data-category="professionalism">
+                                {% for i in range(1, 6) %}
+                                <label class="mini-star" data-value="{{ i }}">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-item">
+                        <div class="category-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Creativity</span>
+                        </div>
+                        <div class="category-rating">
+                            <div class="mini-star-rating" data-category="creativity">
+                                {% for i in range(1, 6) %}
+                                <label class="mini-star" data-value="{{ i }}">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Text -->
+            <div class="form-group">
+                <label for="{{ form.reviewText.id }}" class="form-label">
+                    <i class="fas fa-comment-dots"></i>
+                    Written Review
+                </label>
+                {{ form.reviewText(class="form-textarea", rows="6", placeholder="Share details about your experience working with this creator...", id="reviewText") }}
+                {% if form.reviewText.errors %}
+                <div class="form-errors">
+                    {% for error in form.reviewText.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-footer">
+                    <div class="character-count">
+                        <span id="charCount">0</span> characters
+                    </div>
+                    <div class="form-help">
+                        Be specific and constructive in your feedback
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Templates -->
+            <div class="review-templates">
+                <div class="templates-header">
+                    <h3>Review Templates</h3>
+                    <p>Use these as starting points for your review</p>
+                </div>
+                
+                <div class="templates-grid">
+                    <div class="template-card" onclick="useTemplate('excellent')">
+                        <div class="template-rating">
+                            {% for i in range(1, 6) %}
+                            <i class="fas fa-star active"></i>
+                            {% endfor %}
+                        </div>
+                        <div class="template-content">
+                            <h4>Excellent Experience</h4>
+                            <p>Outstanding collaboration and results</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('good')">
+                        <div class="template-rating">
+                            {% for i in range(1, 5) %}
+                            <i class="fas fa-star active"></i>
+                            {% endfor %}
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="template-content">
+                            <h4>Good Experience</h4>
+                            <p>Solid work with minor areas for improvement</p>
+                        </div>
+                    </div>
+
+                    <div class="template-card" onclick="useTemplate('average')">
+                        <div class="template-rating">
+                            {% for i in range(1, 4) %}
+                            <i class="fas fa-star active"></i>
+                            {% endfor %}
+                            {% for i in range(4, 6) %}
+                            <i class="fas fa-star"></i>
+                            {% endfor %}
+                        </div>
+                        <div class="template-content">
+                            <h4>Average Experience</h4>
+                            <p>Met basic requirements with room for growth</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="previewRating()">
+                    <i class="fas fa-eye"></i>
+                    Preview Rating
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-star"></i>
+                    Submit Rating
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Rating Guidelines -->
+    <div class="rating-guidelines">
+        <div class="guidelines-header">
+            <h3>Rating Guidelines</h3>
+            <p>Help maintain a fair and helpful rating system</p>
+        </div>
+        
+        <div class="guidelines-grid">
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Be Fair & Objective</h4>
+                    <p>Rate based on the actual work quality, communication, and professionalism demonstrated.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Provide Constructive Feedback</h4>
+                    <p>Include specific examples of what worked well and areas for potential improvement.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Stay Respectful</h4>
+                    <p>Maintain a professional tone even when addressing challenges or disappointments.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Rate Promptly</h4>
+                    <p>Submit ratings within 30 days while the experience is still fresh in your memory.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Preview Modal -->
+<div id="ratingPreviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rating Preview</h3>
+            <button class="modal-close" onclick="closeRatingPreview()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="preview-content">
+                <div class="preview-rating">
+                    <div class="preview-stars" id="previewStars">
+                        {% for i in range(1, 6) %}
+                        <i class="fas fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <div class="preview-rating-text" id="previewRatingText">No rating selected</div>
+                </div>
+                
+                <div class="preview-categories" id="previewCategories">
+                    <h4>Category Ratings</h4>
+                    <div class="category-preview-grid">
+                        <!-- Categories will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="preview-review">
+                    <h4>Written Review</h4>
+                    <div class="review-preview-text" id="previewReviewText">No review written</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeRatingPreview()">Edit Rating</button>
+            <button class="btn btn-primary" onclick="submitFromPreview()">Submit Rating</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Submit Rating Page Styles */
+.submit-rating-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.rating-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Project Info Card */
+.project-info-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.project-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+}
+
+.project-details h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.project-meta {
+    display: flex;
+    gap: 2rem;
+}
+
+.meta-item {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.meta-item strong {
+    color: var(--primary-black);
+}
+
+.project-context p {
+    color: var(--soft-gray);
+    line-height: 1.5;
+}
+
+/* Rating Form */
+.rating-form-container {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.rating-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    font-size: 1.1rem;
+}
+
+.form-label i {
+    width: 18px;
+    color: var(--soft-gray);
+}
+
+/* Star Rating */
+.rating-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.star-rating {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-label {
+    font-size: 2.5rem;
+    color: var(--border-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+}
+
+.star-label:hover,
+.star-label.hovered {
+    color: #fbbf24;
+    transform: scale(1.1);
+}
+
+.star-rating input[type="radio"]:checked ~ .star-label,
+.star-rating .star-label.active {
+    color: #fbbf24;
+}
+
+.rating-description {
+    font-size: 1.1rem;
+    color: var(--soft-gray);
+    font-weight: 500;
+    text-align: center;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+/* Rating Categories */
+.rating-categories {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.rating-categories h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.rating-categories p {
+    color: var(--soft-gray);
+    margin-bottom: 2rem;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.category-item {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-header i {
+    width: 20px;
+    color: var(--accent-blue);
+    font-size: 1.1rem;
+}
+
+.category-header span {
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.mini-star-rating {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.mini-star {
+    font-size: 1.25rem;
+    color: var(--border-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mini-star:hover,
+.mini-star.active {
+    color: #fbbf24;
+}
+
+/* Form Elements */
+.form-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 150px;
+    transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.character-count {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    font-weight: 500;
+}
+
+.form-help {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    line-height: 1.4;
+}
+
+.form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Review Templates */
+.review-templates {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.templates-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.templates-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.templates-header p {
+    color: var(--soft-gray);
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.template-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-blue);
+}
+
+.template-rating {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.template-rating i {
+    font-size: 1.25rem;
+    color: var(--border-gray);
+}
+
+.template-rating i.active {
+    color: #fbbf24;
+}
+
+.template-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.template-content p {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Rating Guidelines */
+.rating-guidelines {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.guidelines-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.guidelines-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guidelines-header p {
+    color: var(--soft-gray);
+}
+
+.guidelines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.guideline-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.guideline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.guideline-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guideline-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1rem 2rem 2rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Preview Styles */
+.preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.preview-rating {
+    text-align: center;
+}
+
+.preview-stars {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.preview-stars i {
+    font-size: 2rem;
+    color: var(--border-gray);
+}
+
+.preview-stars i.active {
+    color: #fbbf24;
+}
+
+.preview-rating-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-black);
+}
+
+.preview-categories h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.category-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.category-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.category-preview-name {
+    font-weight: 500;
+    color: var(--primary-black);
+}
+
+.category-preview-stars {
+    display: flex;
+    gap: 0.125rem;
+}
+
+.category-preview-stars i {
+    font-size: 0.9rem;
+    color: var(--border-gray);
+}
+
+.category-preview-stars i.active {
+    color: #fbbf24;
+}
+
+.preview-review h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.review-preview-text {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #fbbf24;
+    line-height: 1.6;
+    color: var(--primary-black);
+    white-space: pre-wrap;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rating-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .project-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .project-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .rating-form-container {
+        padding: 1.5rem;
+    }
+    
+    .star-rating {
+        justify-content: center;
+    }
+    
+    .star-label {
+        font-size: 2rem;
+    }
+    
+    .categories-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .category-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .templates-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .guidelines-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .guideline-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .form-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .category-preview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .star-label {
+        font-size: 1.75rem;
+        padding: 0.125rem;
+    }
+
+    .rating-form {
+        gap: 2rem;
+    }
+
+    .form-textarea {
+        min-height: 120px;
+        padding: 0.75rem;
+    }
+
+    .mini-star {
+        font-size: 1rem;
+    }
+
+    .preview-stars i {
+        font-size: 1.5rem;
+    }
+
+    .templates-header h3,
+    .guidelines-header h3 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Animation Styles */
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.star-label.pulse {
+    animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+</style>
+
+<script>
+// Rating descriptions
+const ratingDescriptions = {
+    1: "Poor - Significant issues with the experience",
+    2: "Below Average - Some problems that affected the project",
+    3: "Average - Met basic expectations with room for improvement",
+    4: "Good - Solid work with minor areas for enhancement",
+    5: "Excellent - Outstanding experience, exceeded expectations"
+};
+
+// Review templates
+const reviewTemplates = {
+    excellent: {
+        rating: 5,
+        text: `Working with this creator was an outstanding experience. They demonstrated exceptional professionalism, clear communication, and delivered results that exceeded my expectations.
+
+Key highlights:
+• Excellent communication throughout the project
+• Met all deadlines with high-quality work
+• Responsive to feedback and willing to make adjustments
+• Professional and courteous in all interactions
+
+I would definitely recommend this creator and look forward to working with them again in the future.`
+    },
+    good: {
+        rating: 4,
+        text: `This creator provided solid work and maintained good communication throughout our project. The final deliverable met the requirements and was completed within the agreed timeframe.
+
+Positive aspects:
+• Good technical skills and attention to detail
+• Responsive communication
+• Met project deadlines
+• Professional approach to work
+
+There's room for minor improvements, but overall it was a positive collaboration.`
+    },
+    average: {
+        rating: 3,
+        text: `The creator completed the project as requested and met the basic requirements. Communication was adequate, though there were some areas where improvements could be made.
+
+Areas that went well:
+• Project was completed on time
+• Basic requirements were met
+• Willing to address feedback
+
+Areas for improvement:
+• Communication could be more proactive
+• Some aspects of the work could benefit from more attention to detail
+
+Overall, a satisfactory working relationship with potential for growth.`
+    }
+};
+
+// Star rating functionality
+function initializeStarRating() {
+    const starRating = document.getElementById('starRating');
+    const ratingDescription = document.getElementById('ratingDescription');
+    const starLabels = starRating.querySelectorAll('.star-label');
+
+    starLabels.forEach((star, index) => {
+        const rating = index + 1;
+
+        star.addEventListener('mouseenter', function() {
+            updateStarDisplay(rating, true);
+            updateRatingDescription(rating);
+        });
+
+        star.addEventListener('mouseleave', function() {
+            const checkedRating = getCheckedRating();
+            updateStarDisplay(checkedRating, false);
+            updateRatingDescription(checkedRating);
+        });
+
+        star.addEventListener('click', function() {
+            const input = document.getElementById(`star${rating}`);
+            input.checked = true;
+            updateStarDisplay(rating, false);
+            updateRatingDescription(rating);
+
+            // Add pulse animation
+            star.classList.add('pulse');
+            setTimeout(() => star.classList.remove('pulse'), 300);
+        });
+    });
+}
+
+// Update star display
+function updateStarDisplay(rating, isHover) {
+    const starLabels = document.querySelectorAll('#starRating .star-label');
+
+    starLabels.forEach((star, index) => {
+        const starRating = index + 1;
+
+        if (starRating <= rating) {
+            star.classList.add(isHover ? 'hovered' : 'active');
+            if (!isHover) star.classList.remove('hovered');
+        } else {
+            star.classList.remove('active', 'hovered');
+        }
+    });
+}
+
+// Get currently checked rating
+function getCheckedRating() {
+    const checkedInput = document.querySelector('#starRating input[type="radio"]:checked');
+    return checkedInput ? parseInt(checkedInput.value) : 0;
+}
+
+// Update rating description
+function updateRatingDescription(rating) {
+    const ratingDescription = document.getElementById('ratingDescription');
+    if (rating > 0 && ratingDescriptions[rating]) {
+        ratingDescription.textContent = ratingDescriptions[rating];
+        ratingDescription.style.color = getRatingColor(rating);
+    } else {
+        ratingDescription.textContent = 'Click stars to rate your experience';
+        ratingDescription.style.color = 'var(--soft-gray)';
+    }
+}
+
+// Get rating color
+function getRatingColor(rating) {
+    const colors = {
+        1: '#ef4444',
+        2: '#f97316',
+        3: '#f59e0b',
+        4: '#10b981',
+        5: '#059669'
+    };
+    return colors[rating] || 'var(--soft-gray)';
+}
+
+// Mini star rating functionality
+function initializeMiniStarRatings() {
+    const miniRatings = document.querySelectorAll('.mini-star-rating');
+
+    miniRatings.forEach(rating => {
+        const stars = rating.querySelectorAll('.mini-star');
+        const category = rating.dataset.category;
+
+        stars.forEach((star, index) => {
+            const value = index + 1;
+
+            star.addEventListener('mouseenter', function() {
+                updateMiniStarDisplay(rating, value, true);
+            });
+
+            star.addEventListener('mouseleave', function() {
+                const currentValue = getMiniStarValue(rating);
+                updateMiniStarDisplay(rating, currentValue, false);
+            });
+
+            star.addEventListener('click', function() {
+                setMiniStarValue(rating, value);
+                updateMiniStarDisplay(rating, value, false);
+            });
+        });
+    });
+}
+
+// Update mini star display
+function updateMiniStarDisplay(ratingElement, value, isHover) {
+    const stars = ratingElement.querySelectorAll('.mini-star');
+
+    stars.forEach((star, index) => {
+        const starValue = index + 1;
+
+        if (starValue <= value) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+// Get mini star value
+function getMiniStarValue(ratingElement) {
+    return parseInt(ratingElement.dataset.value) || 0;
+}
+
+// Set mini star value
+function setMiniStarValue(ratingElement, value) {
+    ratingElement.dataset.value = value;
+}
+
+// Use review template
+function useTemplate(templateKey) {
+    const template = reviewTemplates[templateKey];
+    if (!template) return;
+
+    const reviewTextarea = document.getElementById('reviewText');
+
+    if (reviewTextarea.value.trim() === '' || confirm('This will replace your current review. Continue?')) {
+        // Set rating
+        const ratingInput = document.getElementById(`star${template.rating}`);
+        if (ratingInput) {
+            ratingInput.checked = true;
+            updateStarDisplay(template.rating, false);
+            updateRatingDescription(template.rating);
+        }
+
+        // Set review text
+        reviewTextarea.value = template.text;
+        updateCharacterCount();
+
+        // Set category ratings based on overall rating
+        const categoryRatings = document.querySelectorAll('.mini-star-rating');
+        categoryRatings.forEach(rating => {
+            const categoryValue = template.rating === 5 ? 5 : template.rating === 4 ? 4 : 3;
+            setMiniStarValue(rating, categoryValue);
+            updateMiniStarDisplay(rating, categoryValue, false);
+        });
+
+        showNotification('Template applied successfully!', 'success');
+        reviewTextarea.focus();
+    }
+}
+
+// Update character count
+function updateCharacterCount() {
+    const reviewTextarea = document.getElementById('reviewText');
+    const charCount = document.getElementById('charCount');
+
+    if (reviewTextarea && charCount) {
+        const count = reviewTextarea.value.length;
+        charCount.textContent = count;
+
+        // Change color based on length
+        if (count > 1000) {
+            charCount.style.color = '#dc2626';
+            charCount.classList.add('error');
+        } else if (count > 800) {
+            charCount.style.color = '#f59e0b';
+            charCount.classList.add('warning');
+        } else {
+            charCount.style.color = 'var(--soft-gray)';
+            charCount.classList.remove('error', 'warning');
+        }
+    }
+}
+
+// Preview rating functionality
+function previewRating() {
+    const rating = getCheckedRating();
+    const reviewText = document.getElementById('reviewText').value.trim();
+
+    if (rating === 0) {
+        showNotification('Please select a rating before previewing', 'error');
+        return;
+    }
+
+    // Update preview content
+    updatePreviewStars(rating);
+    updatePreviewText(rating);
+    updatePreviewCategories();
+    updatePreviewReview(reviewText);
+
+    // Show modal
+    document.getElementById('ratingPreviewModal').classList.add('active');
+}
+
+// Update preview stars
+function updatePreviewStars(rating) {
+    const previewStars = document.querySelectorAll('#previewStars i');
+    const previewText = document.getElementById('previewRatingText');
+
+    previewStars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+
+    previewText.textContent = `${rating} out of 5 stars - ${ratingDescriptions[rating]}`;
+}
+
+// Update preview text
+function updatePreviewText(rating) {
+    const previewRatingText = document.getElementById('previewRatingText');
+    previewRatingText.textContent = `${rating} out of 5 stars`;
+    previewRatingText.style.color = getRatingColor(rating);
+}
+
+// Update preview categories
+function updatePreviewCategories() {
+    const categoriesContainer = document.querySelector('#previewCategories .category-preview-grid');
+    const categoryRatings = document.querySelectorAll('.mini-star-rating');
+
+    categoriesContainer.innerHTML = '';
+
+    categoryRatings.forEach(rating => {
+        const category = rating.dataset.category;
+        const value = getMiniStarValue(rating);
+
+        if (value > 0) {
+            const categoryItem = document.createElement('div');
+            categoryItem.className = 'category-preview-item';
+
+            const starsHtml = Array.from({length: 5}, (_, i) =>
+                `<i class="fas fa-star ${i < value ? 'active' : ''}"></i>`
+            ).join('');
+
+            categoryItem.innerHTML = `
+                <span class="category-preview-name">${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                <div class="category-preview-stars">${starsHtml}</div>
+            `;
+
+            categoriesContainer.appendChild(categoryItem);
+        }
+    });
+
+    if (categoriesContainer.children.length === 0) {
+        categoriesContainer.innerHTML = '<p style="color: var(--soft-gray); grid-column: 1 / -1; text-align: center;">No category ratings selected</p>';
+    }
+}
+
+// Update preview review
+function updatePreviewReview(reviewText) {
+    const previewReviewText = document.getElementById('previewReviewText');
+
+    if (reviewText) {
+        previewReviewText.textContent = reviewText;
+    } else {
+        previewReviewText.textContent = 'No review written';
+        previewReviewText.style.fontStyle = 'italic';
+        previewReviewText.style.color = 'var(--soft-gray)';
+    }
+}
+
+// Close rating preview
+function closeRatingPreview() {
+    document.getElementById('ratingPreviewModal').classList.remove('active');
+}
+
+// Submit from preview
+function submitFromPreview() {
+    closeRatingPreview();
+    document.getElementById('ratingForm').submit();
+}
+
+// Form validation
+function validateForm() {
+    const rating = getCheckedRating();
+    let isValid = true;
+    let errors = [];
+
+    if (rating === 0) {
+        errors.push('Please select a rating');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        showNotification(errors.join('. '), 'error');
+    }
+
+    return isValid;
+}
+
+// Form submission handling
+function handleFormSubmission() {
+    const form = document.getElementById('ratingForm');
+
+    form.addEventListener('submit', function(event) {
+        if (!validateForm()) {
+            event.preventDefault();
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+
+        // Note: Form will submit normally, this is just for UI feedback
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        // Number keys 1-5 for rating
+        if (event.key >= '1' && event.key <= '5') {
+            const rating = parseInt(event.key);
+            const ratingInput = document.getElementById(`star${rating}`);
+            if (ratingInput) {
+                ratingInput.checked = true;
+                updateStarDisplay(rating, false);
+                updateRatingDescription(rating);
+                event.preventDefault();
+            }
+        }
+
+        // Ctrl/Cmd + Enter to submit
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (validateForm()) {
+                document.getElementById('ratingForm').submit();
+            }
+        }
+
+        // Ctrl/Cmd + P to preview
+        if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+            event.preventDefault();
+            previewRating();
+        }
+
+        // Escape to close modal
+        if (event.key === 'Escape') {
+            closeRatingPreview();
+        }
+    });
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Core functionality
+    initializeStarRating();
+    initializeMiniStarRatings();
+    updateCharacterCount();
+    handleFormSubmission();
+    initializeKeyboardShortcuts();
+
+    // Add character count listener
+    const reviewTextarea = document.getElementById('reviewText');
+    if (reviewTextarea) {
+        reviewTextarea.addEventListener('input', updateCharacterCount);
+    }
+
+    // Add animations to template cards
+    const templateCards = document.querySelectorAll('.template-card');
+    templateCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+
+    // Add animations to guideline cards
+    const guidelineCards = document.querySelectorAll('.guideline-card');
+    guidelineCards.forEach((card, index) => {
+        card.style.animationDelay = `${(index + 3) * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+
+    // Modal click outside to close
+    const modal = document.getElementById('ratingPreviewModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeRatingPreview();
+        }
+    });
+
+    // Initialize existing rating if present
+    const existingRating = getCheckedRating();
+    if (existingRating > 0) {
+        updateStarDisplay(existingRating, false);
+        updateRatingDescription(existingRating);
+    }
+
+    // Focus on first interactive element
+    const firstStar = document.querySelector('.star-label');
+    if (firstStar) {
+        firstStar.focus();
+    }
+});
+
+// Additional CSS for notifications and enhancements
+const additionalStyles = `
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-info .notification-content i {
+    color: var(--accent-blue);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.template-card.selected {
+    border-color: var(--accent-blue);
+    background: #eff6ff;
+    transform: translateY(-2px);
+}
+
+.template-card:focus {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+.star-label:focus {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+.mini-star:focus {
+    outline: 1px solid var(--accent-blue);
+    outline-offset: 1px;
+}
+
+.character-count.warning {
+    color: #f59e0b !important;
+    font-weight: 600;
+}
+
+.character-count.error {
+    color: #ef4444 !important;
+    font-weight: 600;
+}
+
+.rating-input-container.has-rating .rating-description {
+    background: #eff6ff;
+    border-left: 3px solid var(--accent-blue);
+}
+
+@media (max-width: 480px) {
+    .notification {
+        width: calc(100% - 2rem);
+        margin: 1rem;
+        right: 0;
+    }
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
+// Rating analytics (optional enhancement)
+function trackRatingInteraction(action, rating = null) {
+    // This could be used to track user interactions for analytics
+    console.log(`Rating interaction: ${action}`, rating ? `Rating: ${rating}` : '');
+}
+
+// Add rating interaction tracking
+document.addEventListener('DOMContentLoaded', function() {
+    const starLabels = document.querySelectorAll('.star-label');
+    starLabels.forEach((star, index) => {
+        star.addEventListener('click', function() {
+            trackRatingInteraction('star_selected', index + 1);
+        });
+    });
+
+    const templateCards = document.querySelectorAll('.template-card');
+    templateCards.forEach(card => {
+        card.addEventListener('click', function() {
+            trackRatingInteraction('template_used', card.onclick.toString().match(/useTemplate\('(\w+)'\)/)?.[1]);
+        });
+    });
+});
+</script>
+{% endblock editor_content %}

@@ -1,0 +1,969 @@
+{% extends "editor/base.html" %}
+
+{% block title %}Upload Deliverable - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="upload-deliverable-container">
+    <!-- Page Header -->
+    <div class="upload-header">
+        <div class="header-content">
+            <h1>Upload Final Deliverable</h1>
+            <p>Submit your completed work for client review</p>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.project_detail', job_id=job.jobId) }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Project
+            </a>
+        </div>
+    </div>
+
+    <!-- Project Info Card -->
+    <div class="project-info-card">
+        <div class="project-header">
+            <div class="project-icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="project-details">
+                <h3>{{ job.title }}</h3>
+                <div class="project-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-user"></i>
+                        <span>{{ job.creator.user.fullName }}</span>
+                    </div>
+                    {% if job.deadline %}
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Due {{ moment(job.deadline).format('MMM D, YYYY') }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Started {{ moment(job.dateCreated).fromNow() }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="project-description">
+            <p>{{ job.description }}</p>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="upload-form-container">
+        <form method="POST" class="upload-form" id="uploadForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                <label for="{{ form.deliverableUrl.id }}" class="form-label">
+                    <i class="fas fa-link"></i>
+                    Deliverable URL/Link
+                </label>
+                {{ form.deliverableUrl(class="form-input", placeholder="https://drive.google.com/..., https://dropbox.com/..., etc.", id="deliverableUrl") }}
+                {% if form.deliverableUrl.errors %}
+                <div class="form-errors">
+                    {% for error in form.deliverableUrl.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="form-help">
+                    Provide a shareable link to your completed video file(s)
+                </div>
+            </div>
+
+            <!-- Upload Instructions -->
+            <div class="upload-instructions">
+                <h3>Supported Platforms</h3>
+                <div class="platforms-grid">
+                    <div class="platform-item">
+                        <div class="platform-icon">
+                            <i class="fab fa-google-drive"></i>
+                        </div>
+                        <div class="platform-content">
+                            <h4>Google Drive</h4>
+                            <p>Share with "Anyone with the link can view"</p>
+                        </div>
+                    </div>
+
+                    <div class="platform-item">
+                        <div class="platform-icon">
+                            <i class="fab fa-dropbox"></i>
+                        </div>
+                        <div class="platform-content">
+                            <h4>Dropbox</h4>
+                            <p>Create a shareable link for the file</p>
+                        </div>
+                    </div>
+
+                    <div class="platform-item">
+                        <div class="platform-icon">
+                            <i class="fab fa-youtube"></i>
+                        </div>
+                        <div class="platform-content">
+                            <h4>YouTube</h4>
+                            <p>Upload as unlisted and share the link</p>
+                        </div>
+                    </div>
+
+                    <div class="platform-item">
+                        <div class="platform-icon">
+                            <i class="fab fa-vimeo"></i>
+                        </div>
+                        <div class="platform-content">
+                            <h4>Vimeo</h4>
+                            <p>Share with appropriate privacy settings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Checklist -->
+            <div class="delivery-checklist">
+                <h3>Pre-Delivery Checklist</h3>
+                <div class="checklist-items">
+                    <label class="checklist-item">
+                        <input type="checkbox" class="checklist-checkbox">
+                        <span class="checkmark"></span>
+                        Video meets all specified requirements
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" class="checklist-checkbox">
+                        <span class="checkmark"></span>
+                        Quality check completed (audio, video, sync)
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" class="checklist-checkbox">
+                        <span class="checkmark"></span>
+                        File is in the requested format and resolution
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" class="checklist-checkbox">
+                        <span class="checkmark"></span>
+                        Sharing permissions are set correctly
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" class="checklist-checkbox">
+                        <span class="checkmark"></span>
+                        Link has been tested and works properly
+                    </label>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="testLink()">
+                    <i class="fas fa-external-link-alt"></i>
+                    Test Link
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload"></i>
+                    Submit Deliverable
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Delivery Guidelines -->
+    <div class="delivery-guidelines">
+        <div class="guidelines-header">
+            <h3>Delivery Best Practices</h3>
+            <p>Ensure smooth project completion</p>
+        </div>
+        
+        <div class="guidelines-grid">
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-quality"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Quality First</h4>
+                    <p>Review your work thoroughly before submitting. Check for any technical issues or errors.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Proper Sharing</h4>
+                    <p>Ensure the client can access your files. Test the link before submitting.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Timely Delivery</h4>
+                    <p>Submit on or before the agreed deadline. Communicate early if you need more time.</p>
+                </div>
+            </div>
+
+            <div class="guideline-card">
+                <div class="guideline-icon">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <div class="guideline-content">
+                    <h4>Clear Communication</h4>
+                    <p>Include any necessary instructions or notes for the client with your delivery.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Upload Deliverable Page Styles */
+.upload-deliverable-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.upload-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Project Info Card */
+.project-info-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.project-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.project-details h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.75rem;
+}
+
+.project-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+}
+
+.meta-item i {
+    color: var(--accent-blue);
+}
+
+.project-description p {
+    color: var(--primary-black);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Upload Form */
+.upload-form-container {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    font-size: 1.1rem;
+}
+
+.form-label i {
+    width: 18px;
+    color: var(--soft-gray);
+}
+
+.form-input {
+    padding: 1rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background: var(--white);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-help {
+    font-size: 0.85rem;
+    color: var(--soft-gray);
+    line-height: 1.4;
+}
+
+.form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Upload Instructions */
+.upload-instructions {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+}
+
+.upload-instructions h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.platform-item {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.platform-item:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.platform-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--accent-blue);
+    flex-shrink: 0;
+}
+
+.platform-content h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.25rem;
+}
+
+.platform-content p {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Delivery Checklist */
+.delivery-checklist {
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+}
+
+.delivery-checklist h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+}
+
+.checklist-item:hover {
+    background: #f8fafc;
+}
+
+.checklist-checkbox {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-gray);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.checklist-checkbox:checked + .checkmark {
+    background: var(--success-green);
+    border-color: var(--success-green);
+    color: var(--white);
+}
+
+.checklist-checkbox:checked + .checkmark::after {
+    content: '✓';
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.checklist-item span:not(.checkmark) {
+    font-size: 0.95rem;
+    color: var(--primary-black);
+    line-height: 1.4;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-gray);
+}
+
+/* Delivery Guidelines */
+.delivery-guidelines {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+}
+
+.guidelines-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.guidelines-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guidelines-header p {
+    color: var(--soft-gray);
+}
+
+.guidelines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.guideline-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.guideline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.guideline-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.guideline-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .upload-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .project-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .project-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .upload-form-container {
+        padding: 1.5rem;
+    }
+    
+    .platforms-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .platform-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .guidelines-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .guideline-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .project-details h3 {
+        font-size: 1.25rem;
+    }
+    
+    .upload-form {
+        gap: 1.5rem;
+    }
+    
+    .form-input {
+        padding: 0.75rem;
+    }
+    
+    .delivery-checklist h3,
+    .upload-instructions h3,
+    .guidelines-header h3 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+
+<script>
+// Test link functionality
+function testLink() {
+    const linkInput = document.getElementById('deliverableUrl');
+    const url = linkInput.value.trim();
+    
+    if (!url) {
+        showNotification('Please enter a URL first', 'error');
+        return;
+    }
+    
+    // Basic URL validation
+    try {
+        new URL(url);
+    } catch (e) {
+        showNotification('Please enter a valid URL', 'error');
+        return;
+    }
+    
+    // Open link in new tab
+    window.open(url, '_blank');
+    showNotification('Link opened in new tab for testing', 'info');
+}
+
+// Form validation
+function validateForm() {
+    const linkInput = document.getElementById('deliverableUrl');
+    const url = linkInput.value.trim();
+    
+    if (!url) {
+        showNotification('Please provide a deliverable URL', 'error');
+        return false;
+    }
+    
+    // Basic URL validation
+    try {
+        new URL(url);
+    } catch (e) {
+        showNotification('Please enter a valid URL', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Form submission handling
+function handleFormSubmission() {
+    const form = document.getElementById('uploadForm');
+    
+    form.addEventListener('submit', function(event) {
+        if (!validateForm()) {
+            event.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        submitBtn.disabled = true;
+        
+        // Note: Form will submit normally, this is just for UI feedback
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Check if all checklist items are completed
+function updateSubmitButton() {
+    const checkboxes = document.querySelectorAll('.checklist-checkbox');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    
+    if (allChecked) {
+        submitBtn.classList.add('all-checks-complete');
+        submitBtn.style.background = 'var(--success-green)';
+    } else {
+        submitBtn.classList.remove('all-checks-complete');
+        submitBtn.style.background = '';
+    }
+}
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Core functionality
+    handleFormSubmission();
+    
+    // Add checklist functionality
+    const checkboxes = document.querySelectorAll('.checklist-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSubmitButton);
+    });
+    
+    // Focus on URL input
+    const urlInput = document.getElementById('deliverableUrl');
+    if (urlInput) {
+        urlInput.focus();
+    }
+    
+    // Add animations to platform items
+    const platformItems = document.querySelectorAll('.platform-item');
+    platformItems.forEach((item, index) => {
+        item.style.animationDelay = `${index * 0.1}s`;
+        item.style.animation = 'fadeInUp 0.6s ease-out forwards';
+    });
+    
+    // Add animations to guideline cards
+    const guidelineCards = document.querySelectorAll('.guideline-card');
+    guidelineCards.forEach((card, index) => {
+        card.style.animationDelay = `${(index + 4) * 0.1}s`;
+        card.style.animation = 'fadeInUp 0.6s ease-out forwards';
+    });
+});
+
+// Additional CSS for notifications and animations
+const additionalStyles = `
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-info .notification-content i {
+    color: var(--accent-blue);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .notification {
+        width: calc(100% - 2rem);
+        margin: 1rem;
+        right: 0;
+    }
+}
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock editor_content %}

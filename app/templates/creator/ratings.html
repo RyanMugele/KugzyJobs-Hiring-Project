@@ -1,0 +1,1596 @@
+{% extends "creator/base.html" %}
+
+{% block title %}Ratings & Reviews - KugzyJobs{% endblock title %}
+
+{% block creator_content %}
+<!-- Ratings Header -->
+<div class="ratings-header">
+  <div class="header-content">
+    <h1>Ratings & Reviews</h1>
+    <p>Manage your feedback and view ratings from completed projects</p>
+  </div>
+  <div class="header-stats">
+    <div class="stat-item">
+      <span class="stat-number">{{ "%.1f"|format(current_user.averageRating|float) }}</span>
+      <span class="stat-label">Your Average Rating</span>
+      <div class="star-display">
+        {% for i in range(1, 6) %}
+        {% if i <= current_user.averageRating %}
+        <i class="fas fa-star"></i>
+        {% elif i - 0.5 <= current_user.averageRating %}
+        <i class="fas fa-star-half-alt"></i>
+        {% else %}
+        <i class="far fa-star"></i>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number">{{ current_user.totalRatings }}</span>
+      <span class="stat-label">Total Reviews</span>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Tabs -->
+<div class="rating-tabs">
+  <button class="tab-btn active" data-tab="received">
+    <i class="fas fa-star"></i>
+    <span>Reviews Received ({{ received_ratings|length }})</span>
+  </button>
+  <button class="tab-btn" data-tab="given">
+    <i class="fas fa-edit"></i>
+    <span>Reviews Given ({{ given_ratings|length }})</span>
+  </button>
+</div>
+
+<!-- Ratings Content -->
+<div class="ratings-content">
+  <!-- Received Ratings Tab -->
+  <div class="tab-content active" id="received-tab">
+    {% if received_ratings %}
+    <div class="ratings-summary">
+      <h3>Rating Breakdown</h3>
+      <div class="rating-breakdown">
+        {% set rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0} %}
+        {% for rating in received_ratings %}
+        {% set _ = rating_counts.update({rating.ratingValue: rating_counts[rating.ratingValue] + 1}) %}
+        {% endfor %}
+
+        {% for stars in [5, 4, 3, 2, 1] %}
+        <div class="breakdown-row">
+          <div class="stars-label">
+            {% for i in range(stars) %}
+            <i class="fas fa-star"></i>
+            {% endfor %}
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ (rating_counts[stars] / received_ratings|length * 100) if received_ratings|length > 0 else 0 }}%"></div>
+          </div>
+          <span class="count">{{ rating_counts[stars] }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="ratings-list">
+      {% for rating in received_ratings %}
+      <div class="rating-card received">
+        <div class="rating-header">
+          <div class="rater-info">
+            <div class="rater-avatar">
+              {% if rating.rater.profilePicture %}
+              <img src="{{ rating.rater.profilePicture }}" alt="{{ rating.rater.fullName }}" />
+              {% else %}
+              <i class="fas fa-user"></i>
+              {% endif %}
+            </div>
+            <div class="rater-details">
+              <h4>{{ rating.rater.fullName }}</h4>
+              <p class="rating-date">{{ moment(rating.dateCreated).fromNow() }}</p>
+            </div>
+          </div>
+          <div class="rating-value">
+            <div class="stars">
+              {% for i in range(1, 6) %}
+              {% if i <= rating.ratingValue %}
+              <i class="fas fa-star"></i>
+              {% else %}
+              <i class="far fa-star"></i>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <span class="rating-number">{{ rating.ratingValue }}/5</span>
+          </div>
+        </div>
+
+        <div class="rating-content">
+          <div class="project-info">
+            <h5>Project: {{ rating.job.title }}</h5>
+            <span class="project-date">Completed {{ moment(rating.job.completedDate).format('MMM DD, YYYY') if rating.job.completedDate else 'Recently' }}</span>
+          </div>
+
+          {% if rating.reviewText %}
+          <div class="review-text">
+            <p>{{ rating.reviewText }}</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="rating-actions">
+          <a href="{{ url_for('creator.job_detail', job_id=rating.job.jobId) }}" class="btn btn-sm btn-outline">
+            <i class="fas fa-eye"></i> View Project
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-star"></i>
+      </div>
+      <h3>No Reviews Yet</h3>
+      <p>Complete some projects to start receiving ratings and reviews from editors.</p>
+      <a href="{{ url_for('creator.new_job') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Post Your First Job
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Given Ratings Tab -->
+  <div class="tab-content" id="given-tab">
+    {% if given_ratings %}
+    <div class="ratings-list">
+      {% for rating in given_ratings %}
+      <div class="rating-card given">
+        <div class="rating-header">
+          <div class="ratee-info">
+            <div class="ratee-avatar">
+              {% if rating.ratee.profilePicture %}
+              <img src="{{ rating.ratee.profilePicture }}" alt="{{ rating.ratee.fullName }}" />
+              {% else %}
+              <i class="fas fa-user"></i>
+              {% endif %}
+            </div>
+            <div class="ratee-details">
+              <h4>{{ rating.ratee.fullName }}</h4>
+              <p class="rating-date">Rated {{ moment(rating.dateCreated).fromNow() }}</p>
+            </div>
+          </div>
+          <div class="rating-value">
+            <div class="stars">
+              {% for i in range(1, 6) %}
+              {% if i <= rating.ratingValue %}
+              <i class="fas fa-star"></i>
+              {% else %}
+              <i class="far fa-star"></i>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <span class="rating-number">{{ rating.ratingValue }}/5</span>
+          </div>
+        </div>
+
+        <div class="rating-content">
+          <div class="project-info">
+            <h5>Project: {{ rating.job.title }}</h5>
+            <span class="project-date">Completed {{ moment(rating.job.completedDate).format('MMM DD, YYYY') if rating.job.completedDate else 'Recently' }}</span>
+          </div>
+
+          {% if rating.reviewText %}
+          <div class="review-text">
+            <p>"{{ rating.reviewText }}"</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="rating-actions">
+          <a href="{{ url_for('creator.job_detail', job_id=rating.job.jobId) }}" class="btn btn-sm btn-outline">
+            <i class="fas fa-eye"></i> View Project
+          </a>
+          {% if rating.ratee.userType == 'editor' %}
+          <a href="{{ url_for('creator.editor_profile', editor_id=rating.ratee.editor.editorId) }}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-user"></i> View Editor
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-edit"></i>
+      </div>
+      <h3>No Reviews Given</h3>
+      <p>Rate your editors after completing projects to help other creators find great collaborators.</p>
+      <a href="{{ url_for('creator.jobs') }}" class="btn btn-primary">
+        <i class="fas fa-briefcase"></i> View Your Jobs
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Pending Ratings Section -->
+{% set pending_jobs = [] %}
+{% for job in current_user.creator.jobs if job.creator %}
+{% if job.status == 'completed' and job.selectedEditor %}
+{% set has_rating = false %}
+{% for rating in given_ratings %}
+{% if rating.job.jobId == job.jobId %}
+{% set has_rating = true %}
+{% endif %}
+{% endfor %}
+{% if not has_rating %}
+{% set _ = pending_jobs.append(job) %}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% if pending_jobs %}
+<div class="pending-ratings-section">
+  <div class="section-header">
+    <h2>Pending Reviews</h2>
+    <p>Rate these completed projects to help other creators</p>
+  </div>
+
+  <div class="pending-ratings-grid">
+    {% for job in pending_jobs %}
+    <div class="pending-rating-card">
+      <div class="job-info">
+        <h4>{{ job.title }}</h4>
+        <p>Completed with {{ job.selectedEditor.user.fullName }}</p>
+        <span class="completion-date">{{ moment(job.completedDate).fromNow() if job.completedDate else 'Recently' }}</span>
+      </div>
+
+      <div class="pending-actions">
+        <a href="{{ url_for('creator.submit_rating') }}?job_id={{ job.jobId }}&editor_id={{ job.selectedEditor.editorId }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-star"></i> Rate Editor
+        </a>
+        <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-outline btn-sm">
+          <i class="fas fa-eye"></i> View Project
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<style>
+/* Ratings Header */
+.ratings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-gray);
+}
+
+    .header-content h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-black);
+      margin-bottom: 0.5rem;
+    }
+
+    .header-content p {
+      color: var(--soft-gray);
+      margin: 0;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 2rem;
+      text-align: center;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--soft-gray);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .star-display {
+      display: flex;
+      gap: 0.125rem;
+    }
+
+    .star-display i {
+      color: #fbbf24;
+      font-size: 1rem;
+    }
+
+    /* Rating Tabs */
+    .rating-tabs {
+      display: flex;
+      background: var(--white);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-gray);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--soft-gray);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-right: 1px solid var(--border-gray);
+    }
+
+    .tab-btn:last-child {
+      border-right: none;
+    }
+
+    .tab-btn:hover {
+      background: var(--light-gray);
+      color: var(--primary-black);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: var(--white);
+    }
+
+    /* Tab Content */
+    .ratings-content {
+      position: relative;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Rating Summary */
+    .ratings-summary {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-gray);
+    }
+
+    .ratings-summary h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary-black);
+      margin-bottom: 1.5rem;
+    }
+
+    .rating-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stars-label {
+      display: flex;
+      gap: 0.125rem;
+      min-width: 100px;
+    }
+
+    .stars-label i {
+      color: #fbbf24;
+      font-size: 0.875rem;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--light-gray);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-blue);
+      transition: width 0.3s ease;
+    }
+
+    .breakdown-row .count {
+      min-width: 30px;
+      text-align: right;
+      font-weight: 600;
+      color: var(--primary-black);
+      font-size: 0.875rem;
+    }
+
+    /* Rating Cards */
+    .ratings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .rating-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border-gray);
+      transition: all 0.3s ease;
+    }
+
+    .rating-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .rating-card.received {
+      border-left: 4px solid var(--success-green);
+    }
+
+    .rating-card.given {
+      border-left: 4px solid var(--accent-blue);
+    }
+
+    .rating-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .rater-info,
+    .ratee-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .rater-avatar,
+    .ratee-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--light-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--soft-gray);
+    }
+
+    .rater-avatar img,
+    .ratee-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .rater-details h4,
+    .ratee-details h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary-black);
+    }
+
+    .rating-date {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--soft-gray);
+    }
+
+    .rating-value {
+      text-align: right;
+    }
+
+    .stars {
+      display: flex;
+      gap: 0.125rem;
+      margin-bottom: 0.25rem;
+      justify-content: flex-end;
+    }
+
+    .stars i {
+      color: #fbbf24;
+      font-size: 1rem;
+    }
+
+    .rating-number {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary-black);
+    }
+
+    /* Rating Content */
+    .rating-content {
+      margin-bottom: 1rem;
+    }
+
+    .project-info {
+      margin-bottom: 1rem;
+    }
+
+    .project-info h5 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--primary-black);
+    }
+
+    .project-date {
+      font-size: 0.8rem;
+      color: var(--soft-gray);
+    }
+
+    .review-text {
+      padding: 1rem;
+      background: var(--light-gray);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .review-text p {
+      margin: 0;
+      font-style: italic;
+      color: var(--primary-black);
+      line-height: 1.5;
+    }
+
+    /* Rating Actions */
+    .rating-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent-blue);
+      border: 1px solid var(--accent-blue);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent-blue);
+      color: var(--white);
+    }
+
+    .btn-secondary {
+      background: var(--soft-gray);
+      color: var(--white);
+      border: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary-black);
+    }
+
+    /* Pending Ratings */
+    .pending-ratings-section {
+      margin-top: 3rem;
+    }
+
+    .section-header {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-gray);
+      text-align: center;
+    }
+
+    .section-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-black);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-header p {
+      color: var(--soft-gray);
+      margin: 0;
+    }
+
+    .pending-ratings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .pending-rating-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border-gray);
+      border-left: 4px solid #f59e0b;
+      transition: all 0.3s ease;
+    }
+
+    .pending-rating-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .job-info {
+      margin-bottom: 1.5rem;
+    }
+
+    .job-info h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary-black);
+    }
+
+    .job-info p {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.875rem;
+      color: var(--soft-gray);
+    }
+
+    .completion-date {
+      font-size: 0.8rem;
+      color: var(--soft-gray);
+      font-style: italic;
+    }
+
+    .pending-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--soft-gray);
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-gray);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--primary-black);
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .ratings-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+      }
+
+      .header-stats {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+      }
+
+      .rating-tabs {
+        flex-direction: column;
+      }
+
+      .tab-btn {
+        border-right: none;
+        border-bottom: 1px solid var(--border-gray);
+      }
+
+      .tab-btn:last-child {
+        border-bottom: none;
+      }
+
+      .rating-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .rating-value {
+        text-align: left;
+        align-self: flex-start;
+      }
+
+      .stars {
+        justify-content: flex-start;
+      }
+
+      .rating-actions {
+        flex-direction: column;
+      }
+
+      .rating-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .pending-ratings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .breakdown-row {
+        gap: 0.5rem;
+      }
+
+      .stars-label {
+        min-width: 80px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .ratings-header,
+      .ratings-summary,
+      .section-header {
+        padding: 1rem;
+      }
+
+      .rating-card,
+      .pending-rating-card {
+        padding: 1rem;
+      }
+
+      .header-content h1 {
+        font-size: 1.5rem;
+      }
+
+      .stat-number {
+        font-size: 2rem;
+      }
+
+      .empty-state {
+        padding: 3rem 1rem;
+      }
+
+      .empty-icon {
+        font-size: 3rem;
+      }
+    }
+
+    /* Animation for rating breakdown */
+    .progress-fill {
+      animation: fillProgress 1s ease-out;
+    }
+
+    @keyframes fillProgress {
+      from { width: 0%; }
+    }
+
+    /* Enhanced hover effects */
+    .rating-card {
+      will-change: transform;
+    }
+
+    .pending-rating-card {
+      will-change: transform;
+    }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tab functionality
+    setupTabs();
+
+    // Setup rating interactions
+    setupRatingInteractions();
+
+    // Animate progress bars
+    animateProgressBars();
+  });
+
+  function setupTabs() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const targetTab = this.dataset.tab;
+
+        // Remove active class from all buttons and contents
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // Add active class to clicked button
+        this.classList.add('active');
+
+        // Show corresponding tab content
+        const targetContent = document.getElementById(targetTab + '-tab');
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+
+        // Re-animate progress bars if switching to received tab
+        if (targetTab === 'received') {
+          setTimeout(animateProgressBars, 100);
+        }
+      });
+    });
+  }
+
+  function setupRatingInteractions() {
+    // Rating card hover effects
+    document.querySelectorAll('.rating-card, .pending-rating-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-4px)';
+        this.style.boxShadow = 'var(--shadow-lg)';
+      });
+
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = 'var(--shadow-md)';
+      });
+    });
+
+    // Star rating hover effects
+    document.querySelectorAll('.stars').forEach(starContainer => {
+      starContainer.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.1)';
+      });
+
+      starContainer.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+      });
+    });
+
+    // Review text expansion
+    document.querySelectorAll('.review-text p').forEach(reviewText => {
+      const fullText = reviewText.textContent;
+      if (fullText.length > 150) {
+        const truncatedText = fullText.substring(0, 150) + '...';
+        reviewText.textContent = truncatedText;
+        reviewText.style.cursor = 'pointer';
+        reviewText.title = 'Click to expand';
+
+        reviewText.addEventListener('click', function() {
+          if (this.textContent.includes('...')) {
+            this.textContent = fullText;
+            this.title = 'Click to collapse';
+          } else {
+            this.textContent = truncatedText;
+            this.title = 'Click to expand';
+          }
+        });
+      }
+    });
+  }
+
+  function animateProgressBars() {
+    const progressBars = document.querySelectorAll('.progress-fill');
+    progressBars.forEach((bar, index) => {
+      const finalWidth = bar.style.width;
+      bar.style.width = '0%';
+
+      setTimeout(() => {
+        bar.style.width = finalWidth;
+      }, index * 100);
+    });
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // 1 for received ratings
+    if (e.key === '1' && !e.ctrlKey && !e.metaKey) {
+      if (!document.activeElement.matches('input, textarea')) {
+        const receivedTab = document.querySelector('[data-tab="received"]');
+        if (receivedTab) receivedTab.click();
+      }
+    }
+
+    // 2 for given ratings
+    if (e.key === '2' && !e.ctrlKey && !e.metaKey) {
+      if (!document.activeElement.matches('input, textarea')) {
+        const givenTab = document.querySelector('[data-tab="given"]');
+        if (givenTab) givenTab.click();
+      }
+    }
+  });
+
+  // Enhanced interactions
+  function setupAdvancedFeatures() {
+    // Sort ratings by date, rating, or project name
+    addSortingFeature();
+
+    // Filter ratings by rating value
+    addRatingFilter();
+
+    // Search through reviews
+    addReviewSearch();
+  }
+
+  function addSortingFeature() {
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabContents.forEach(tabContent => {
+      if (tabContent.querySelector('.ratings-list')) {
+        const sortContainer = document.createElement('div');
+        sortContainer.className = 'sort-container';
+        sortContainer.innerHTML = `
+          <label class="sort-label">Sort by:</label>
+          <select class="sort-select">
+          <option value="date">Date (Newest)</option>
+          <option value="date-old">Date (Oldest)</option>
+          <option value="rating-high">Rating (Highest)</option>
+          <option value="rating-low">Rating (Lowest)</option>
+          </select>
+          `;
+
+        const style = `
+          .sort-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: var(--radius-md);
+          }
+          .sort-label {
+            font-weight: 600;
+            color: var(--primary-black);
+            font-size: 0.9rem;
+          }
+          .sort-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            font-size: 0.9rem;
+          }
+        `;
+
+        if (!document.querySelector('#sort-styles')) {
+          const styleElement = document.createElement('style');
+          styleElement.id = 'sort-styles';
+          styleElement.textContent = style;
+          document.head.appendChild(styleElement);
+        }
+
+        const ratingsList = tabContent.querySelector('.ratings-list');
+        ratingsList.parentNode.insertBefore(sortContainer, ratingsList);
+
+        // Add sort functionality
+        const sortSelect = sortContainer.querySelector('.sort-select');
+        sortSelect.addEventListener('change', function() {
+          sortRatings(ratingsList, this.value);
+        });
+      }
+    });
+  }
+
+  function sortRatings(container, sortType) {
+    const ratings = Array.from(container.children);
+
+    ratings.sort((a, b) => {
+      switch (sortType) {
+        case 'date':
+          // Extract date from rating card (this is a simplified approach)
+          const dateA = a.querySelector('.rating-date').textContent;
+          const dateB = b.querySelector('.rating-date').textContent;
+          return new Date(dateB) - new Date(dateA);
+        case 'date-old':
+          const dateAOld = a.querySelector('.rating-date').textContent;
+          const dateBOld = b.querySelector('.rating-date').textContent;
+          return new Date(dateAOld) - new Date(dateBOld);
+        case 'rating-high':
+          const ratingA = parseInt(a.querySelector('.rating-number').textContent);
+          const ratingB = parseInt(b.querySelector('.rating-number').textContent);
+          return ratingB - ratingA;
+        case 'rating-low':
+          const ratingALow = parseInt(a.querySelector('.rating-number').textContent);
+          const ratingBLow = parseInt(b.querySelector('.rating-number').textContent);
+          return ratingALow - ratingBLow;
+        default:
+          return 0;
+      }
+    });
+
+    // Re-append sorted elements with animation
+    ratings.forEach((rating, index) => {
+      rating.style.opacity = '0';
+      rating.style.transform = 'translateY(20px)';
+      container.appendChild(rating);
+
+      setTimeout(() => {
+        rating.style.opacity = '1';
+        rating.style.transform = 'translateY(0)';
+        rating.style.transition = 'all 0.3s ease';
+      }, index * 50);
+    });
+
+  }
+
+  // Enhanced rating card interactions
+  function enhanceRatingCards() {
+    document.querySelectorAll('.rating-card').forEach(card => {
+      // Add click-to-expand functionality for full rating details
+      card.addEventListener('click', function(e) {
+        if (!e.target.closest('button, a')) {
+          this.classList.toggle('expanded');
+
+          // Add expanded state styles
+          if (this.classList.contains('expanded')) {
+            this.style.transform = 'scale(1.02)';
+            this.style.zIndex = '10';
+            this.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.15)';
+          } else {
+            this.style.transform = '';
+            this.style.zIndex = '';
+            this.style.boxShadow = '';
+          }
+        }
+      });
+
+      // Double-click to navigate to job details
+      card.addEventListener('dblclick', function() {
+        const jobLink = this.querySelector('a[href*="job_detail"]');
+        if (jobLink) {
+          window.location.href = jobLink.href;
+        }
+      });
+    });
+  }
+
+  // Rating analytics and insights
+  function generateRatingInsights() {
+    const receivedRatings = document.querySelectorAll('#received-tab .rating-card');
+    if (receivedRatings.length === 0) return;
+
+    let insights = [];
+    let ratings = [];
+    let recentRatings = [];
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    receivedRatings.forEach(card => {
+      const rating = parseInt(card.querySelector('.rating-number').textContent);
+      const dateText = card.querySelector('.rating-date').textContent;
+      ratings.push(rating);
+
+      // Check if rating is recent (simplified date check)
+      if (dateText.includes('day') || dateText.includes('week')) {
+        recentRatings.push(rating);
+      }
+    });
+
+    const averageRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    const highRatings = ratings.filter(r => r >= 4).length;
+    const lowRatings = ratings.filter(r => r <= 2).length;
+
+                  // Generate insights
+                  if (averageRating >= 4.5) {
+                    insights.push({
+                      type: 'success',
+                      icon: 'fas fa-trophy',
+                      title: 'Excellent Performance!',
+                      message: `You maintain an outstanding ${averageRating.toFixed(1)}-star average rating.`
+                    });
+                  }
+
+    if (highRatings / ratings.length >= 0.8) {
+      insights.push({
+        type: 'success',
+        icon: 'fas fa-thumbs-up',
+        title: 'Consistently High Quality',
+        message: `${Math.round((highRatings / ratings.length) * 100)}% of your ratings are 4+ stars.`
+      });
+    }
+
+    if (recentRatings.length > 0) {
+      const recentAverage = recentRatings.reduce((a, b) => a + b, 0) / recentRatings.length;
+      if (recentAverage > averageRating) {
+        insights.push({
+          type: 'info',
+          icon: 'fas fa-trending-up',
+          title: 'Improving Trend',
+          message: 'Your recent ratings are above your overall average!'
+        });
+      }
+    }
+
+    if (lowRatings > 0) {
+      insights.push({
+        type: 'warning',
+        icon: 'fas fa-exclamation-triangle',
+        title: 'Areas for Improvement',
+        message: `Consider reviewing feedback from ${lowRatings} lower-rated projects.`
+      });
+    }
+
+    displayInsights(insights);
+  }
+
+  function displayInsights(insights) {
+    const receivedTab = document.getElementById('received-tab');
+    if (!receivedTab || insights.length === 0) return;
+
+    let insightsContainer = receivedTab.querySelector('.insights-container');
+    if (!insightsContainer) {
+      insightsContainer = document.createElement('div');
+      insightsContainer.className = 'insights-container';
+
+      const ratingsListElement = receivedTab.querySelector('.ratings-list');
+      if (ratingsListElement) {
+        receivedTab.insertBefore(insightsContainer, ratingsListElement);
+      }
+    }
+
+    insightsContainer.innerHTML = `
+      <h3>Your Rating Insights</h3>
+      <div class="insights-grid">
+    ${insights.map(insight => `
+      <div class="insight-card ${insight.type}">
+      <div class="insight-icon">
+      <i class="${insight.icon}"></i>
+      </div>
+      <div class="insight-content">
+      <h4>${insight.title}</h4>
+      <p>${insight.message}</p>
+      </div>
+      </div>
+      `).join('')}
+      </div>
+    `;
+
+    // Add insights styles
+    const insightsStyle = `
+      .insights-container {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-gray);
+      }
+      .insights-container h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-black);
+        margin-bottom: 1.5rem;
+      }
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+      .insight-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        border-left: 4px solid;
+      }
+      .insight-card.success {
+        background: #f0fdf4;
+        border-left-color: var(--success-green);
+      }
+      .insight-card.info {
+        background: #eff6ff;
+        border-left-color: var(--accent-blue);
+      }
+      .insight-card.warning {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+      }
+      .insight-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+      }
+      .insight-card.success .insight-icon {
+        background: var(--success-green);
+      }
+      .insight-card.info .insight-icon {
+        background: var(--accent-blue);
+      }
+      .insight-card.warning .insight-icon {
+        background: #f59e0b;
+      }
+      .insight-content h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--primary-black);
+      }
+      .insight-content p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--soft-gray);
+        line-height: 1.4;
+      }
+    `;
+
+    if (!document.querySelector('#insights-styles')) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'insights-styles';
+      styleElement.textContent = insightsStyle;
+      document.head.appendChild(styleElement);
+    }
+  }
+
+  // Initialize insights
+  generateRatingInsights();
+
+  // Rating comparison feature
+  function addRatingComparison() {
+    const givenTab = document.getElementById('given-tab');
+    const receivedTab = document.getElementById('received-tab');
+
+    if (!givenTab || !receivedTab) return;
+
+    const givenRatings = givenTab.querySelectorAll('.rating-card');
+    const receivedRatings = receivedTab.querySelectorAll('.rating-card');
+
+    if (givenRatings.length === 0 || receivedRatings.length === 0) return;
+
+    // Calculate averages
+    let givenTotal = 0;
+    let receivedTotal = 0;
+
+    givenRatings.forEach(card => {
+      givenTotal += parseInt(card.querySelector('.rating-number').textContent);
+    });
+
+    receivedRatings.forEach(card => {
+      receivedTotal += parseInt(card.querySelector('.rating-number').textContent);
+    });
+
+    const givenAverage = (givenTotal / givenRatings.length).toFixed(1);
+    const receivedAverage = (receivedTotal / receivedRatings.length).toFixed(1);
+
+    // Add comparison widget
+    const comparisonWidget = document.createElement('div');
+    comparisonWidget.className = 'rating-comparison';
+    comparisonWidget.innerHTML = `
+      <h3>Rating Comparison</h3>
+      <div class="comparison-stats">
+      <div class="comparison-item">
+      <span class="comparison-label">You Rate Others</span>
+      <span class="comparison-value">${givenAverage} ★</span>
+      </div>
+      <div class="comparison-divider">vs</div>
+      <div class="comparison-item">
+      <span class="comparison-label">Others Rate You</span>
+      <span class="comparison-value">${receivedAverage} ★</span>
+      </div>
+      </div>
+      <div class="comparison-insight">
+    ${parseFloat(givenAverage) > parseFloat(receivedAverage)
+        ? `<p><i class="fas fa-heart"></i> You tend to be more generous with ratings than others!</p>`
+        : parseFloat(receivedAverage) > parseFloat(givenAverage)
+        ? `<p><i class="fas fa-star"></i> Others rate you higher than you rate them - great work!</p>`
+        : `<p><i class="fas fa-balance-scale"></i> Your rating patterns are well balanced.</p>`
+    }
+      </div>
+    `;
+
+    const ratingsHeader = document.querySelector('.ratings-header');
+    ratingsHeader.parentNode.insertBefore(comparisonWidget, ratingsHeader.nextSibling);
+
+    // Add comparison styles
+    const comparisonStyle = `
+      .rating-comparison {
+        background: linear-gradient(135deg, var(--accent-blue), var(--success-green));
+        color: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+      }
+      .rating-comparison h3 {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      .comparison-stats {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .comparison-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .comparison-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+      }
+      .comparison-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+      }
+      .comparison-divider {
+        font-size: 1.25rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .comparison-insight {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        backdrop-filter: blur(10px);
+      }
+      .comparison-insight p {
+        margin: 0;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+    `;
+
+    if (!document.querySelector('#comparison-styles')) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'comparison-styles';
+      styleElement.textContent = comparisonStyle;
+      document.head.appendChild(styleElement);
+    }
+  }
+
+  addRatingComparison();
+
+  // Performance optimizations
+  function optimizePerformance() {
+    // Lazy load rating cards not currently visible
+    if ('IntersectionObserver' in window) {
+      const cardObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            cardObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      // Observe all rating cards
+      document.querySelectorAll('.rating-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.6s ease';
+        cardObserver.observe(card);
+      });
+
+      // Add visible styles
+      const visibilityStyle = `
+        .rating-card.visible {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+        }
+      `;
+
+      if (!document.querySelector('#visibility-styles')) {
+        const styleElement = document.createElement('style');
+        styleElement.id = 'visibility-styles';
+        styleElement.textContent = visibilityStyle;
+        document.head.appendChild(styleElement);
+      }
+    }
+
+    // Debounce resize events
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        // Recalculate any dynamic layouts
+        animateProgressBars();
+      }, 250);
+    });
+  }
+
+  optimizePerformance();
+
+  // Accessibility enhancements
+  function enhanceAccessibility() {
+    // Add ARIA labels to star ratings
+    document.querySelectorAll('.stars').forEach(starContainer => {
+      const rating = starContainer.parentNode.querySelector('.rating-number').textContent;
+      starContainer.setAttribute('aria-label', `Rating: ${rating}`);
+      starContainer.setAttribute('role', 'img');
+    });
+
+    // Add skip links for keyboard navigation
+    const skipLink = document.createElement('a');
+    skipLink.href = '#ratings-content';
+    skipLink.className = 'skip-link';
+    skipLink.textContent = 'Skip to ratings content';
+    skipLink.style.cssText = `
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--primary-black);
+    color: var(--white);
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    transition: top 0.3s;
+    `;
+
+    skipLink.addEventListener('focus', function() {
+      this.style.top = '6px';
+    });
+
+    skipLink.addEventListener('blur', function() {
+      this.style.top = '-40px';
+    });
+
+    document.body.insertBefore(skipLink, document.body.firstChild);
+
+    // Improve focus management for modals and tabs
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+      tab.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+  }
+
+  enhanceAccessibility();
+
+  // Final initialization and cleanup
+  function finalizeRatingsPage() {
+    // Add enhanced card interactions
+    enhanceRatingCards();
+
+    // Set initial focus for accessibility
+    const firstTab = document.querySelector('.tab-btn.active');
+    if (firstTab) {
+      firstTab.focus();
+    }
+
+    // Add print styles
+    const printStyle = `
+    @media print {
+      .rating-tabs,
+        .rating-actions,
+        .pending-actions,
+        .header-actions,
+        .export-btn {
+          display: none !important;
+        }
+        .rating-card {
+          break-inside: avoid;
+          margin-bottom: 1rem;
+          box-shadow: none;
+          border: 1px solid #ccc;
+        }
+        .ratings-header {
+          page-break-after: avoid;
+        }
+        .tab-content:not(.active) {
+          display: block !important;
+        }
+    }
+    `;
+
+    if (!document.querySelector('#print-styles')) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'print-styles';
+      styleElement.textContent = printStyle;
+      document.head.appendChild(styleElement);
+    }
+
+    console.log('Ratings page initialized successfully');
+  }
+
+  // Call final initialization
+  finalizeRatingsPage();
+
+  // Error handling and fallbacks
+  window.addEventListener('error', function(e) {
+    console.warn('Ratings page error:', e.message);
+    // Fallback for missing Chart.js or other dependencies
+    if (e.message.includes('Chart') || e.message.includes('moment')) {
+      document.querySelectorAll('.chart-container').forEach(container => {
+        container.innerHTML = '<p style="text-align: center; color: var(--soft-gray);">Visualization unavailable</p>';
+      });
+    }
+  });
+
+  // Add helpful keyboard shortcuts info
+  function addKeyboardShortcutsInfo() {
+    const helpButton = document.createElement('button');
+    helpButton.className = 'help-btn';
+    helpButton.innerHTML = '<i class="fas fa-question-circle"></i>';
+    helpButton.title = 'Keyboard shortcuts: 1 (Received), 2 (Given), / (Search)';
+    helpButton.style.cssText = `
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    color: var(--white);
+    border: none;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    `;
+
+    helpButton.addEventListener('mouseenter', function() {
+      this.style.transform = 'scale(1.1)';
+    });
+
+    helpButton.addEventListener('mouseleave', function() {
+      this.style.transform = 'scale(1)';
+    });
+
+    helpButton.addEventListener('click', function() {
+      showToast('Shortcuts: 1=Received, 2=Given, /=Search, Esc=Clear', 'info');
+    });
+
+    document.body.appendChild(helpButton);
+  }
+
+  addKeyboardShortcutsInfo();
+</script>
+{% endblock %}

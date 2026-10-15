@@ -1,0 +1,234 @@
+{% extends "editor/base.html" %}
+
+{% block editor_content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+                <h1 style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    Edit Portfolio Item
+                </h1>
+                <p style="color: var(--soft-gray); font-size: 1.125rem;">
+                    Update your portfolio details and resubmit for verification
+                </p>
+            </div>
+            <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Portfolio
+            </a>
+        </div>
+
+        <!-- Current Status Alert -->
+        {% if portfolio.verificationStatus == 'rejected' %}
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                <strong style="color: #ef4444;">Portfolio Rejected</strong>
+            </div>
+            <p style="color: #7f1d1d; margin: 0; font-size: 0.875rem;">
+                This portfolio was rejected during verification. Make your changes and it will be automatically resubmitted for review.
+            </p>
+            {% if portfolio.rejectionReason %}
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.05); border-radius: var(--radius-sm);">
+                <strong style="color: #ef4444; font-size: 0.875rem;">Rejection Reason:</strong>
+                <p style="color: #7f1d1d; margin: 0.5rem 0 0 0; font-size: 0.875rem;">{{ portfolio.rejectionReason }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% elif portfolio.verificationStatus == 'pending' %}
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-clock" style="color: #f59e0b;"></i>
+                <strong style="color: #f59e0b;">Pending Verification</strong>
+            </div>
+            <p style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                This portfolio is currently under review. You can still make changes before it's approved.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Edit Form -->
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 2rem;">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <!-- Portfolio Title -->
+            <div style="margin-bottom: 2rem;">
+                <label for="{{ form.title.id }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                    {{ form.title.label.text }}
+                </label>
+                {{ form.title(
+                    class="form-control",
+                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); font-size: 0.875rem;"
+                ) }}
+                {% for error in form.title.errors %}
+                    <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-top: 0.5rem;">
+                    Choose a clear, descriptive title that highlights your work
+                </div>
+            </div>
+
+            <!-- Video URL -->
+            <div style="margin-bottom: 2rem;">
+                <label for="{{ form.videoUrl.id }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                    {{ form.videoUrl.label.text }}
+                </label>
+                {{ form.videoUrl(
+                    class="form-control",
+                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); font-size: 0.875rem;"
+                ) }}
+                {% for error in form.videoUrl.errors %}
+                    <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-top: 0.5rem;">
+                    Supported platforms: YouTube, Vimeo, Google Drive, Dropbox, etc.
+                </div>
+                
+                <!-- Video Preview -->
+                {% if portfolio.videoUrl %}
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-video" style="color: var(--accent-blue); font-size: 1.5rem;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black); font-size: 0.875rem;">Current Video</div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray);">{{ portfolio.videoUrl }}</div>
+                        </div>
+                        <a href="{{ portfolio.videoUrl }}" target="_blank" class="btn btn-sm btn-primary" style="margin-left: auto;">
+                            <i class="fas fa-external-link-alt"></i> View
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div style="margin-bottom: 2rem;">
+                <label for="{{ form.description.id }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                    {{ form.description.label.text }}
+                </label>
+                {{ form.description(
+                    class="form-control",
+                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); font-size: 0.875rem; min-height: 120px; resize: vertical;"
+                ) }}
+                {% for error in form.description.errors %}
+                    <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-top: 0.5rem;">
+                    Describe your work process, techniques used, challenges overcome, and results achieved
+                </div>
+            </div>
+
+            <!-- Skill Tags -->
+            <div style="margin-bottom: 2rem;">
+                <label for="{{ form.skillTags.id }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">
+                    {{ form.skillTags.label.text }}
+                </label>
+                {{ form.skillTags(
+                    class="form-control",
+                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md); font-size: 0.875rem; min-height: 60px; resize: vertical;"
+                ) }}
+                {% for error in form.skillTags.errors %}
+                    <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-top: 0.5rem;">
+                    Separate skills with commas (e.g., Color Grading, Motion Graphics, Audio Sync)
+                </div>
+
+                <!-- Current Skills Preview -->
+                {% if portfolio.skillTags %}
+                <div style="margin-top: 1rem;">
+                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-black);">Current Skills:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        {% for skill in portfolio.getSkillTagsList() %}
+                        <span style="background: var(--accent-blue); color: var(--white); padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">
+                            {{ skill }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Submit Actions -->
+            <div style="display: flex; gap: 1rem; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border-gray);">
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                    <i class="fas fa-save"></i> Update Portfolio
+                </button>
+                <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+                    Cancel
+                </a>
+                <div style="margin-left: auto; font-size: 0.75rem; color: var(--soft-gray); text-align: right;">
+                    {% if portfolio.verificationStatus == 'rejected' %}
+                    Portfolio will be resubmitted for verification
+                    {% else %}
+                    Changes will be reviewed by admin
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div style="background: var(--light-gray); border-radius: var(--radius-lg); padding: 2rem; margin-top: 2rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin-bottom: 1rem;">
+            <i class="fas fa-lightbulb" style="color: #f59e0b; margin-right: 0.5rem;"></i>
+            Portfolio Tips
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div>
+                <h4 style="font-size: 1rem; font-weight: 600; color: var(--primary-black); margin-bottom: 0.5rem;">Video Quality</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin: 0; padding-left: 1.25rem;">
+                    <li>Use high-quality, representative samples</li>
+                    <li>Keep videos between 30 seconds to 3 minutes</li>
+                    <li>Ensure videos are publicly accessible</li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-size: 1rem; font-weight: 600; color: var(--primary-black); margin-bottom: 0.5rem;">Description</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin: 0; padding-left: 1.25rem;">
+                    <li>Explain your role in the project</li>
+                    <li>Mention specific techniques used</li>
+                    <li>Include project timeline and results</li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-size: 1rem; font-weight: 600; color: var(--primary-black); margin-bottom: 0.5rem;">Skills</h4>
+                <ul style="color: var(--soft-gray); font-size: 0.875rem; line-height: 1.5; margin: 0; padding-left: 1.25rem;">
+                    <li>Be specific about skills demonstrated</li>
+                    <li>Use industry-standard terminology</li>
+                    <li>Focus on skills shown in this video</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Information -->
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 2rem; margin-top: 2rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin-bottom: 1rem;">
+            Portfolio Information
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div>
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Created</div>
+                <div style="font-weight: 600; color: var(--primary-black);">{{ portfolio.dateCreated.strftime('%B %d, %Y') }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Last Updated</div>
+                <div style="font-weight: 600; color: var(--primary-black);">{{ portfolio.lastUpdated.strftime('%B %d, %Y') }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Status</div>
+                <span style="background: {% if portfolio.verificationStatus == 'approved' %}rgba(16, 185, 129, 0.1); color: var(--success-green){% elif portfolio.verificationStatus == 'pending' %}rgba(245, 158, 11, 0.1); color: #f59e0b{% else %}rgba(239, 68, 68, 0.1); color: #ef4444{% endif %}; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">
+                    {{ portfolio.verificationStatus.title() }}
+                </span>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Portfolio ID</div>
+                <div style="font-weight: 600; color: var(--primary-black);">#{{ portfolio.portfolioId }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock editor_content %}

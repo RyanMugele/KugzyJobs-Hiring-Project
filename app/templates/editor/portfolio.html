@@ -1,0 +1,1843 @@
+{% extends "editor/base.html" %}
+
+{% block title %}My Portfolio - KugzyJobs{% endblock title %}
+
+{% block editor_content %}
+<div class="portfolio-container">
+    <!-- Portfolio Header -->
+    <div class="portfolio-header">
+        <div class="header-content">
+            <div class="header-main">
+                <h1>My Portfolio</h1>
+                <p>Showcase your best video editing work to attract potential clients</p>
+            </div>
+            
+            <div class="portfolio-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ portfolios|length }}</span>
+                    <span class="stat-label">Total Items</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ portfolios|selectattr('verificationStatus', 'equalto', 'approved')|list|length }}</span>
+                    <span class="stat-label">Approved</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ portfolios|selectattr('verificationStatus', 'equalto', 'pending')|list|length }}</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('editor.new_portfolio') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Portfolio Item
+            </a>
+        </div>
+    </div>
+
+    <!-- Verification Alert -->
+    {% if not verification_status %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <div class="alert-content">
+            <h4>Portfolio Verification Required</h4>
+            <p>Your portfolio items need to be verified by our team before they become visible to clients. This ensures quality and authenticity across our platform.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <div class="tabs-nav">
+            <a href="{{ url_for('editor.portfolio') }}" class="tab-link {% if not status_filter or status_filter == 'all' %}active{% endif %}">
+                <span>All Items</span>
+                <span class="tab-count">{{ portfolios|length }}</span>
+            </a>
+            <a href="{{ url_for('editor.portfolio', status='approved') }}" class="tab-link {% if status_filter == 'approved' %}active{% endif %}">
+                <span>Approved</span>
+                <span class="tab-count">{{ portfolios|selectattr('verificationStatus', 'equalto', 'approved')|list|length }}</span>
+            </a>
+            <a href="{{ url_for('editor.portfolio', status='pending') }}" class="tab-link {% if status_filter == 'pending' %}active{% endif %}">
+                <span>Pending</span>
+                <span class="tab-count">{{ portfolios|selectattr('verificationStatus', 'equalto', 'pending')|list|length }}</span>
+            </a>
+            <a href="{{ url_for('editor.portfolio', status='rejected') }}" class="tab-link {% if status_filter == 'rejected' %}active{% endif %}">
+                <span>Rejected</span>
+                <span class="tab-count">{{ portfolios|selectattr('verificationStatus', 'equalto', 'rejected')|list|length }}</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Portfolio Grid -->
+    <div class="portfolio-grid">
+        {% if portfolios %}
+        {% for portfolio in portfolios %}
+        <div class="portfolio-card" data-portfolio-id="{{ portfolio.portfolioId }}">
+            <!-- Video Thumbnail -->
+            <div class="portfolio-media">
+                {% if portfolio.videoUrl %}
+                <div class="video-thumbnail">
+                    <div class="video-overlay">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div class="video-placeholder">
+                        <i class="fas fa-video"></i>
+                        <span>Video Content</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="media-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>No Media</span>
+                </div>
+                {% endif %}
+                
+                <!-- Status Badge -->
+                <div class="status-badge status-{{ portfolio.verificationStatus }}">
+                    {% if portfolio.verificationStatus == 'approved' %}
+                    <i class="fas fa-check-circle"></i>
+                    {% elif portfolio.verificationStatus == 'pending' %}
+                    <i class="fas fa-clock"></i>
+                    {% elif portfolio.verificationStatus == 'rejected' %}
+                    <i class="fas fa-times-circle"></i>
+                    {% endif %}
+                    {{ portfolio.verificationStatus.title() }}
+                </div>
+            </div>
+
+            <!-- Portfolio Content -->
+            <div class="portfolio-content">
+                <div class="portfolio-header-card">
+                    <h3 class="portfolio-title">
+                        <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}">
+                            {{ portfolio.title }}
+                        </a>
+                    </h3>
+                    <div class="portfolio-date">
+                        <i class="fas fa-calendar"></i>
+                        {{ moment(portfolio.dateCreated).fromNow() }}
+                    </div>
+                </div>
+
+                {% if portfolio.description %}
+                <div class="portfolio-description">
+                    <p>{{ portfolio.description[:150] }}{% if portfolio.description|length > 150 %}...{% endif %}</p>
+                </div>
+                {% endif %}
+
+                {% if portfolio.skillTags %}
+                <div class="portfolio-tags">
+                    {% for tag in portfolio.getSkillTagsList()[:3] %}
+                    <span class="skill-tag">{{ tag.strip() }}</span>
+                    {% endfor %}
+                    {% if portfolio.getSkillTagsList()|length > 3 %}
+                    <span class="skill-tag more">+{{ portfolio.getSkillTagsList()|length - 3 }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Rejection Reason (if applicable) -->
+                {% if portfolio.verificationStatus == 'rejected' and portfolio.rejectionReason %}
+                <div class="rejection-reason">
+                    <div class="rejection-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Rejection Reason</span>
+                    </div>
+                    <p>{{ portfolio.rejectionReason }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Portfolio Actions -->
+            <div class="portfolio-actions">
+                <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-eye"></i>
+                    View
+                </a>
+
+                {% if portfolio.verificationStatus in ['pending', 'rejected'] %}
+                <a href="{{ url_for('editor.edit_portfolio', portfolio_id=portfolio.portfolioId) }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-edit"></i>
+                    Edit
+                </a>
+                {% endif %}
+
+                {% if portfolio.videoUrl %}
+                <button class="btn btn-primary btn-sm" onclick="openVideoModal('{{ portfolio.videoUrl }}', '{{ portfolio.title }}')">
+                    <i class="fas fa-play"></i>
+                    Preview
+                </button>
+                {% endif %}
+
+                <div class="dropdown">
+                    <button class="btn btn-ghost btn-sm dropdown-toggle" onclick="toggleDropdown(this)">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        {% if portfolio.verificationStatus != 'approved' %}
+                        <button class="dropdown-item" onclick="showDeleteModal('{{ portfolio.portfolioId }}', '{{ portfolio.title }}')">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                        {% endif %}
+                        
+                        {% if portfolio.videoUrl %}
+                        <button class="dropdown-item" onclick="copyVideoLink('{{ portfolio.videoUrl }}')">
+                            <i class="fas fa-link"></i>
+                            Copy Link
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('editor.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="dropdown-item">
+                            <i class="fas fa-share"></i>
+                            Share
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Stats -->
+            <div class="portfolio-stats-card">
+                <div class="stat-item-small">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Added {{ moment(portfolio.dateCreated).format('MMM YYYY') }}</span>
+                </div>
+                {% if portfolio.lastUpdated != portfolio.dateCreated %}
+                <div class="stat-item-small">
+                    <i class="fas fa-edit"></i>
+                    <span>Updated {{ moment(portfolio.lastUpdated).fromNow() }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-content">
+                <i class="fas fa-folder-open"></i>
+                <h3>No Portfolio Items</h3>
+                {% if status_filter and status_filter != 'all' %}
+                <p>You don't have any {{ status_filter }} portfolio items yet.</p>
+                <div class="empty-actions">
+                    <a href="{{ url_for('editor.portfolio') }}" class="btn btn-secondary">View All Items</a>
+                    <a href="{{ url_for('editor.new_portfolio') }}" class="btn btn-primary">Add New Item</a>
+                </div>
+                {% else %}
+                <p>Start building your portfolio by adding your best video editing work. This helps clients understand your style and capabilities.</p>
+                <div class="empty-actions">
+                    <a href="{{ url_for('editor.new_portfolio') }}" class="btn btn-primary">Add Your First Portfolio Item</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Portfolio Tips (shown when portfolio is empty or has few items) -->
+    {% if portfolios|length < 3 %}
+    <div class="portfolio-tips">
+        <h3>Portfolio Tips</h3>
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Show Variety</h4>
+                    <p>Include different types of projects - corporate videos, social media content, music videos, etc.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Quality Over Quantity</h4>
+                    <p>It's better to have 3-5 excellent pieces than 10 mediocre ones. Choose your absolute best work.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Use Relevant Tags</h4>
+                    <p>Add skill tags that accurately describe the techniques used in each project.</p>
+                </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Keep It Current</h4>
+                    <p>Regularly update your portfolio with recent work to show your evolving skills.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Video Preview Modal -->
+<div id="videoModal" class="modal">
+    <div class="modal-content video-modal-content">
+        <div class="modal-header">
+            <h3 id="videoModalTitle">Portfolio Preview</h3>
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="video-container">
+                <div class="video-placeholder-large">
+                    <i class="fas fa-video"></i>
+                    <h4>Video Preview</h4>
+                    <p id="videoModalUrl">Video URL will be displayed here</p>
+                    <p class="video-note">In a real implementation, this would show an embedded video player</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Delete Portfolio Item</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <p>Are you sure you want to delete "<span id="deleteItemTitle"></span>"?</p>
+                    <p class="warning-text">This action cannot be undone. The portfolio item will be permanently removed.</p>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Delete Portfolio Item
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Portfolio Page Styles */
+.portfolio-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Portfolio Header */
+.portfolio-header {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.header-main h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.header-main p {
+    color: var(--soft-gray);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.portfolio-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+    min-width: 80px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    margin-top: 0.25rem;
+}
+
+.header-actions {
+    flex-shrink: 0;
+}
+
+/* Alert */
+.alert {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    color: #1e40af;
+}
+
+.alert i {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.alert-content h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1e40af;
+}
+
+.alert-content p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    margin-bottom: 2rem;
+}
+
+.tabs-nav {
+    display: flex;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.tab-link {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: var(--soft-gray);
+    background: transparent;
+    border: none;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.tab-link:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.tab-link.active {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tab-link.active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Portfolio Grid */
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.portfolio-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Portfolio Media */
+.portfolio-media {
+    position: relative;
+    height: 200px;
+    background: var(--light-gray);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary-black);
+    transition: all 0.3s ease;
+}
+
+.video-thumbnail:hover .video-overlay {
+    background: var(--white);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+.video-placeholder i {
+    font-size: 2rem;
+}
+
+.media-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--soft-gray);
+}
+
+.media-placeholder i {
+    font-size: 2rem;
+}
+
+.status-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.status-approved {
+    background: rgba(220, 252, 231, 0.9);
+    color: #15803d;
+    border: 1px solid rgba(187, 247, 208, 0.8);
+}
+
+.status-pending {
+    background: rgba(254, 243, 205, 0.9);
+    color: #92400e;
+    border: 1px solid rgba(253, 230, 138, 0.8);
+}
+
+.status-rejected {
+    background: rgba(254, 226, 226, 0.9);
+    color: #dc2626;
+    border: 1px solid rgba(252, 165, 165, 0.8);
+}
+
+/* Portfolio Content */
+.portfolio-content {
+    padding: 1.5rem;
+}
+
+.portfolio-header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.portfolio-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+}
+
+.portfolio-title a {
+    color: var(--primary-black);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.portfolio-title a:hover {
+    color: var(--accent-blue);
+}
+
+.portfolio-date {
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.portfolio-description {
+    margin-bottom: 1rem;
+}
+
+.portfolio-description p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.portfolio-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.skill-tag {
+    background: var(--primary-black);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.skill-tag.more {
+    background: var(--soft-gray);
+}
+
+/* Rejection Reason */
+.rejection-reason {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rejection-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.rejection-reason p {
+    color: #dc2626;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Portfolio Actions */
+.portfolio-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-gray);
+    background: var(--light-gray);
+}
+
+.portfolio-actions .btn {
+    flex: 1;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    border: none;
+    background: none;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+    background: var(--border-gray);
+    color: var(--primary-black);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    min-width: 150px;
+    z-index: 100;
+    display: none;
+}
+
+.dropdown-menu.active {
+    display: block;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--primary-black);
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: var(--light-gray);
+}
+
+.dropdown-item i {
+    width: 14px;
+    text-align: center;
+    color: var(--soft-gray);
+}
+
+/* Portfolio Stats */
+.portfolio-stats-card {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-gray);
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-item-small {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--soft-gray);
+}
+
+.stat-item-small i {
+    width: 12px;
+    text-align: center;
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-content i {
+    font-size: 4rem;
+    color: var(--border-gray);
+    margin-bottom: 2rem;
+}
+
+.empty-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 1rem;
+}
+
+.empty-content p {
+    color: var(--soft-gray);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Portfolio Tips */
+.portfolio-tips {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-top: 3rem;
+}
+
+.portfolio-tips h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.tip-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: var(--radius-sm);
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.tip-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-black);
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: var(--soft-gray);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.video-modal-content {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-black);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--soft-gray);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.video-container {
+    width: 100%;
+}
+
+.video-placeholder-large {
+    width: 100%;
+    height: 300px;
+    background: var(--light-gray);
+    border: 2px dashed var(--border-gray);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--soft-gray);
+}
+
+.video-placeholder-large i {
+    font-size: 3rem;
+}
+
+.video-placeholder-large h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.video-placeholder-large p {
+    margin: 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.video-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.warning-message {
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #fef3cd;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.warning-message i {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.warning-message div {
+    flex: 1;
+}
+
+.warning-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background: var(--primary-black);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-black);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--primary-black);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--soft-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.btn-outline:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--soft-gray);
+    border: none;
+}
+
+.btn-ghost:hover {
+    background: var(--light-gray);
+    color: var(--primary-black);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .portfolio-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    .tips-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .portfolio-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .portfolio-stats {
+        flex-direction: row;
+        justify-content: space-around;
+        width: 100%;
+    }
+
+    .tabs-nav {
+        flex-direction: column;
+    }
+
+    .tab-link {
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .tab-link:last-child {
+        border-bottom: none;
+    }
+
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolio-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .portfolio-actions {
+        flex-wrap: wrap;
+    }
+
+    .portfolio-actions .btn {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-header,
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .portfolio-media {
+        height: 150px;
+    }
+
+    .portfolio-content {
+        padding: 1rem;
+    }
+
+    .portfolio-actions {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .stat-item {
+        padding: 0.75rem;
+        min-width: 60px;
+    }
+
+    .stat-number {
+        font-size: 1.25rem;
+    }
+
+    .video-placeholder-large {
+        height: 200px;
+    }
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.portfolio-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.portfolio-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.portfolio-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.portfolio-card:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+/* Hover Effects */
+.portfolio-card:hover .portfolio-title a {
+    color: var(--accent-blue);
+}
+
+.portfolio-card:hover .skill-tag {
+    background: var(--accent-blue);
+}
+
+.tip-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.tip-card:hover .tip-icon {
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+// Portfolio page functionality
+let currentDeleteId = null;
+// Add this constant at the top of your script section (before any functions)
+const EDITOR_BASE_URL = "{{ url_for('editor.applications') }}".replace('/applications', '');
+
+// Delete modal functions
+function showDeleteModal(portfolioId, title) {
+    currentDeleteId = portfolioId;
+    document.getElementById('deleteItemTitle').textContent = title;
+    document.getElementById('deleteForm').action = `${EDITOR_BASE_URL}/portfolio/${portfolioId}/delete`;
+    document.getElementById('deleteModal').classList.add('active');
+}
+// Video modal functions
+function openVideoModal(videoUrl, title) {
+    document.getElementById('videoModalTitle').textContent = title;
+    document.getElementById('videoModalUrl').textContent = videoUrl;
+    document.getElementById('videoModal').classList.add('active');
+}
+
+function closeVideoModal() {
+    document.getElementById('videoModal').classList.remove('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    currentDeleteId = null;
+}
+
+// Dropdown functionality
+function toggleDropdown(button) {
+    const dropdown = button.nextElementSibling;
+    const isActive = dropdown.classList.contains('active');
+
+    // Close all dropdowns
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('active');
+    });
+
+    // Toggle current dropdown
+    if (!isActive) {
+        dropdown.classList.add('active');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+
+// Copy video link functionality
+function copyVideoLink(videoUrl) {
+    navigator.clipboard.writeText(videoUrl).then(() => {
+        showSuccessMessage('Video link copied to clipboard!');
+    }).catch(() => {
+        showErrorMessage('Failed to copy link. Please try again.');
+    });
+}
+
+// Handle delete form submission
+document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    // Submit deletion
+    fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Remove portfolio card from DOM
+            const portfolioCard = document.querySelector(`[data-portfolio-id="${currentDeleteId}"]`);
+            if (portfolioCard) {
+                portfolioCard.style.transform = 'scale(0.8)';
+                portfolioCard.style.opacity = '0';
+                setTimeout(() => {
+                    portfolioCard.remove();
+                    updatePortfolioCounts();
+                    checkEmptyState();
+                }, 300);
+            }
+
+            closeDeleteModal();
+            showSuccessMessage('Portfolio item deleted successfully');
+        } else {
+            throw new Error('Failed to delete portfolio item');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Failed to delete portfolio item. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+    });
+});
+
+// Update portfolio counts in stats and tabs
+function updatePortfolioCounts() {
+    const portfolioCards = document.querySelectorAll('.portfolio-card');
+    const totalCount = portfolioCards.length;
+
+    let approvedCount = 0;
+    let pendingCount = 0;
+    let rejectedCount = 0;
+
+    portfolioCards.forEach(card => {
+        const statusBadge = card.querySelector('.status-badge');
+        if (statusBadge.classList.contains('status-approved')) approvedCount++;
+        else if (statusBadge.classList.contains('status-pending')) pendingCount++;
+        else if (statusBadge.classList.contains('status-rejected')) rejectedCount++;
+    });
+
+    // Update header stats
+    const statItems = document.querySelectorAll('.portfolio-stats .stat-item');
+    if (statItems.length >= 3) {
+        statItems[0].querySelector('.stat-number').textContent = totalCount;
+        statItems[1].querySelector('.stat-number').textContent = approvedCount;
+        statItems[2].querySelector('.stat-number').textContent = pendingCount;
+    }
+
+    // Update tab counts
+    const tabLinks = document.querySelectorAll('.tab-link');
+    if (tabLinks.length >= 4) {
+        tabLinks[0].querySelector('.tab-count').textContent = totalCount;
+        tabLinks[1].querySelector('.tab-count').textContent = approvedCount;
+        tabLinks[2].querySelector('.tab-count').textContent = pendingCount;
+        tabLinks[3].querySelector('.tab-count').textContent = rejectedCount;
+    }
+}
+
+// Check if portfolio is empty and show appropriate state
+function checkEmptyState() {
+    const portfolioCards = document.querySelectorAll('.portfolio-card');
+    const portfolioGrid = document.querySelector('.portfolio-grid');
+
+    if (portfolioCards.length === 0) {
+        // Create empty state
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = `
+            <div class="empty-content">
+                <i class="fas fa-folder-open"></i>
+                <h3>No Portfolio Items</h3>
+                <p>Start building your portfolio by adding your best video editing work. This helps clients understand your style and capabilities.</p>
+                <div class="empty-actions">
+                    <a href="{{ url_for('editor.new_portfolio') }}" class="btn btn-primary">Add Your First Portfolio Item</a>
+                </div>
+            </div>
+        `;
+        portfolioGrid.appendChild(emptyState);
+    }
+}
+
+// Filter portfolio items by status (client-side)
+function filterPortfolioItems(status) {
+    const portfolioCards = document.querySelectorAll('.portfolio-card');
+
+    portfolioCards.forEach(card => {
+        const statusBadge = card.querySelector('.status-badge');
+        let shouldShow = true;
+
+        if (status !== 'all') {
+            shouldShow = statusBadge.classList.contains(`status-${status}`);
+        }
+
+        card.style.display = shouldShow ? 'block' : 'none';
+    });
+}
+
+// Search functionality
+function searchPortfolioItems(query) {
+    const portfolioCards = document.querySelectorAll('.portfolio-card');
+    const searchTerm = query.toLowerCase();
+
+    portfolioCards.forEach(card => {
+        const title = card.querySelector('.portfolio-title a').textContent.toLowerCase();
+        const description = card.querySelector('.portfolio-description p')?.textContent.toLowerCase() || '';
+        const tags = Array.from(card.querySelectorAll('.skill-tag')).map(tag => tag.textContent.toLowerCase()).join(' ');
+
+        const matches = title.includes(searchTerm) ||
+                       description.includes(searchTerm) ||
+                       tags.includes(searchTerm);
+
+        card.style.display = matches ? 'block' : 'none';
+    });
+}
+
+// Add search functionality
+function addSearchBox() {
+    const headerActions = document.querySelector('.header-actions');
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'search-container';
+    searchContainer.innerHTML = `
+        <div class="search-input-group">
+            <i class="fas fa-search"></i>
+            <input type="text" class="search-input" placeholder="Search portfolio..." id="portfolioSearch">
+        </div>
+    `;
+
+    headerActions.insertBefore(searchContainer, headerActions.firstChild);
+
+    // Add search functionality
+    const searchInput = document.getElementById('portfolioSearch');
+    searchInput.addEventListener('input', debounce(function() {
+        searchPortfolioItems(this.value);
+    }, 300));
+}
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Show success/error messages
+function showSuccessMessage(message) {
+    showMessage(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showMessage(message, 'error');
+}
+
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-body">${message}</div>`;
+
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            closeVideoModal();
+            closeDeleteModal();
+        }
+
+        // Ctrl/Cmd + F to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            const searchInput = document.getElementById('portfolioSearch');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+
+        // N to add new portfolio item
+        if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            window.location.href = '{{ url_for("editor.new_portfolio") }}';
+        }
+    });
+}
+
+// Enhanced portfolio card interactions
+function enhancePortfolioCards() {
+    const portfolioCards = document.querySelectorAll('.portfolio-card');
+
+    portfolioCards.forEach(card => {
+        // Add click to view functionality
+        const mediaArea = card.querySelector('.portfolio-media');
+        if (mediaArea) {
+            mediaArea.addEventListener('click', function(e) {
+                if (!e.target.closest('.status-badge')) {
+                    const detailLink = card.querySelector('.portfolio-title a');
+                    if (detailLink) {
+                        window.location.href = detailLink.href;
+                    }
+                }
+            });
+        }
+
+        // Add loading states to action buttons
+        const actionButtons = card.querySelectorAll('.btn');
+        actionButtons.forEach(button => {
+            if (button.href && !button.onclick) {
+                button.addEventListener('click', function() {
+                    this.classList.add('loading');
+                    this.style.pointerEvents = 'none';
+
+                    setTimeout(() => {
+                        this.classList.remove('loading');
+                        this.style.pointerEvents = 'auto';
+                    }, 2000);
+                });
+            }
+        });
+    });
+}
+
+// Initialize modal functionality
+function initializeModals() {
+    const modals = document.querySelectorAll('.modal');
+
+    modals.forEach(modal => {
+        // Close modal on background click
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (this.id === 'videoModal') closeVideoModal();
+                if (this.id === 'deleteModal') closeDeleteModal();
+            }
+        });
+    });
+}
+
+// Add masonry layout for portfolio grid
+function initializeMasonryLayout() {
+    const portfolioGrid = document.querySelector('.portfolio-grid');
+
+    // Simple masonry-like effect by adjusting card heights
+    const portfolioCards = portfolioGrid.querySelectorAll('.portfolio-card');
+
+    portfolioCards.forEach((card, index) => {
+        // Add slight delay for staggered animation
+        card.style.animationDelay = `${index * 0.1}s`;
+
+        // Adjust card appearance based on content
+        const description = card.querySelector('.portfolio-description');
+        const tags = card.querySelector('.portfolio-tags');
+        const rejection = card.querySelector('.rejection-reason');
+
+        if (!description && !tags && !rejection) {
+            card.classList.add('compact-card');
+        }
+    });
+}
+
+// Check URL parameters for success messages
+function checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.get('added') === 'true') {
+        showSuccessMessage('Portfolio item added successfully!');
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    if (urlParams.get('updated') === 'true') {
+        showSuccessMessage('Portfolio item updated successfully!');
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+}
+
+// Add CSS for search and additional styles
+const additionalStyles = `
+<style>
+.search-container {
+    margin-right: 1rem;
+}
+
+.search-input-group {
+    position: relative;
+    width: 250px;
+}
+
+.search-input-group i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--soft-gray);
+    z-index: 2;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.toast {
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.toast-success {
+    background: var(--success-green);
+    color: white;
+}
+
+.toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.compact-card .portfolio-content {
+    padding-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+
+    .search-input-group {
+        width: 100%;
+    }
+
+    .toast-container {
+        right: 1rem;
+        left: 1rem;
+    }
+
+    .toast {
+        max-width: none;
+    }
+}
+</style>
+`;
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add additional styles
+    document.head.insertAdjacentHTML('beforeend', additionalStyles);
+
+    // Initialize all functionality
+    addSearchBox();
+    enhancePortfolioCards();
+    initializeModals();
+    initializeKeyboardShortcuts();
+    initializeMasonryLayout();
+    checkUrlParams();
+
+    // Initialize tooltips for status badges
+    document.querySelectorAll('.status-badge').forEach(badge => {
+        const status = badge.textContent.trim();
+        let tooltip = '';
+
+        if (status === 'Approved') {
+            tooltip = 'This portfolio item is visible to clients';
+        } else if (status === 'Pending') {
+            tooltip = 'This portfolio item is under review';
+        } else if (status === 'Rejected') {
+            tooltip = 'This portfolio item needs improvements';
+        }
+
+        if (tooltip) {
+            badge.title = tooltip;
+        }
+    });
+
+    // Add intersection observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe portfolio cards for animation
+    document.querySelectorAll('.portfolio-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock editor_content %}

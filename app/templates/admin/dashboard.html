@@ -1,0 +1,589 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Dashboard{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Admin Dashboard</h1>
+    <p class="admin-page-subtitle">Monitor platform activity and manage system operations</p>
+</div>
+
+<!-- Statistics Cards -->
+<div class="admin-stats-grid">
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon users">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.statistics.total_users }}</div>
+        <div class="admin-stat-label">Total Users</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon portfolios">
+                <i class="fas fa-folder-open"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.statistics.pending_portfolios }}</div>
+        <div class="admin-stat-label">Pending Portfolios</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon jobs">
+                <i class="fas fa-briefcase"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.statistics.active_jobs }}</div>
+        <div class="admin-stat-label">Active Jobs</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon reports">
+                <i class="fas fa-flag"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ data.statistics.pending_reports }}</div>
+        <div class="admin-stat-label">Pending Reports</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Quick Actions</h3>
+        <button class="btn btn-primary" onclick="refreshAdminStats()">
+            <i class="fas fa-sync-alt"></i> Refresh Stats
+        </button>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('admin.portfolios') }}" class="btn btn-secondary" style="text-align: center; padding: 1.5rem;">
+                <i class="fas fa-check-circle" style="display: block; font-size: 2rem; margin-bottom: 0.5rem; color: var(--success-green);"></i>
+                Review Portfolios
+            </a>
+            
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-secondary" style="text-align: center; padding: 1.5rem;">
+                <i class="fas fa-exclamation-triangle" style="display: block; font-size: 2rem; margin-bottom: 0.5rem; color: #f59e0b;"></i>
+                Handle Reports
+            </a>
+            
+            <a href="{{ url_for('admin.users') }}" class="btn btn-secondary" style="text-align: center; padding: 1.5rem;">
+                <i class="fas fa-user-shield" style="display: block; font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-blue);"></i>
+                Manage Users
+            </a>
+            
+            <a href="{{ url_for('admin.search') }}" class="btn btn-secondary" style="text-align: center; padding: 1.5rem;">
+                <i class="fas fa-search" style="display: block; font-size: 2rem; margin-bottom: 0.5rem; color: var(--soft-gray);"></i>
+                Search Platform
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Content Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- Recent Activity -->
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h3 class="admin-section-title">Recent Activity</h3>
+        </div>
+        <div class="admin-section-content">
+            {% if data.recent_jobs or data.recent_ratings %}
+                {% for job in data.recent_jobs %}
+                <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border-gray);">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            New job posted: {{ job.title }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 0.25rem;">
+                            by {{ job.creator.user.fullName }} - Budget: {{ job.getBudgetRange() }}
+                        </div>
+                        <div style="color: var(--soft-gray); font-size: 0.75rem;">
+                            {{ moment(job.dateCreated).fromNow() }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% for rating in data.recent_ratings %}
+                <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border-gray);">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--success-green); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; flex-shrink: 0;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--primary-black); margin-bottom: 0.25rem;">
+                            New rating submitted
+                        </div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem; margin-bottom: 0.25rem;">
+                            {{ rating.rater.fullName }} rated {{ rating.ratee.fullName }} - {{ rating.ratingValue }}/5 stars
+                        </div>
+                        <div style="color: var(--soft-gray); font-size: 0.75rem;">
+                            {{ moment(rating.dateCreated).fromNow() }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-clock"></i>
+                    <h3>No Recent Activity</h3>
+                    <p>Recent platform activity will appear here</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Items -->
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h3 class="admin-section-title">Pending Items</h3>
+        </div>
+        <div class="admin-section-content">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Pending Portfolios -->
+                <div style="background: var(--light-gray); padding: 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Portfolio Reviews</div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            {{ data.pending_portfolios|length }} portfolios awaiting review
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.portfolios') }}" class="btn admin-btn-sm admin-btn-warning">Review</a>
+                </div>
+                
+                <!-- Pending Reports -->
+                <div style="background: var(--light-gray); padding: 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">User Reports</div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            {{ data.pending_reports|length }} reports need attention
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.reports') }}" class="btn admin-btn-sm admin-btn-danger">Handle</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Portfolios Table -->
+{% if data.pending_portfolios %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Recent Portfolio Submissions</h3>
+        <a href="{{ url_for('admin.portfolios') }}" class="btn btn-primary">View All</a>
+    </div>
+    <div class="admin-section-content">
+        <table class="admin-data-table">
+            <thead>
+                <tr>
+                    <th>Editor</th>
+                    <th>Portfolio Title</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for portfolio in data.pending_portfolios[:5] %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.75rem;">
+                                {{ portfolio.editor.user.fullName[:2].upper() }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">{{ portfolio.editor.user.fullName }}</div>
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ portfolio.editor.user.emailAddress }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--primary-black);">{{ portfolio.title }}</div>
+                        <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                            {% if portfolio.skillTags %}
+                                {{ portfolio.getSkillTagsList()[:3]|join(', ') }}
+                                {% if portfolio.getSkillTagsList()|length > 3 %}...{% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td><span class="admin-status-badge {{ portfolio.verificationStatus }}">{{ portfolio.verificationStatus.title() }}</span></td>
+                    <td>{{ moment(portfolio.dateCreated).format('MMM DD, YYYY') }}</td>
+                    <td>
+                        <div class="admin-action-buttons">
+                            <button class="btn admin-btn-sm admin-btn-success" onclick="approvePortfolio({{ portfolio.portfolioId }})">
+                                Approve
+                            </button>
+                            <button class="btn admin-btn-sm admin-btn-danger" onclick="rejectPortfolio({{ portfolio.portfolioId }})">
+                                Reject
+                            </button>
+                            <a href="{{ url_for('admin.portfolio_detail', portfolio_id=portfolio.portfolioId) }}" class="btn admin-btn-sm btn-secondary">
+                                View
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pending Reports Table -->
+{% if data.pending_reports %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Recent User Reports</h3>
+        <a href="{{ url_for('admin.reports') }}" class="btn btn-primary">View All</a>
+    </div>
+    <div class="admin-section-content">
+        <table class="admin-data-table">
+            <thead>
+                <tr>
+                    <th>Report ID</th>
+                    <th>Reporter</th>
+                    <th>Reported User</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in data.pending_reports[:5] %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-black);">#{{ report.reportId }}</td>
+                    <td>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ report.reporter.fullName }}</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ report.reporter.userType.title() }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if report.reportedUser %}
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ report.reportedUser.fullName }}</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ report.reportedUser.userType.title() }}</div>
+                        </div>
+                        {% else %}
+                        <span style="color: var(--soft-gray);">Content Report</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="admin-status-badge rejected">{{ report.getReportType().title() }}</span></td>
+                    <td>{{ moment(report.dateCreated).format('MMM DD, YYYY') }}</td>
+                    <td>
+                        <div class="admin-action-buttons">
+                            <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" class="btn admin-btn-sm btn-secondary">
+                                Review
+                            </a>
+                            <a href="{{ url_for('admin.resolve_report', report_id=report.reportId) }}" class="btn admin-btn-sm admin-btn-success">
+                                Resolve
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Platform Statistics Summary -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Platform Overview</h3>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ data.statistics.total_creators or 0 }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Content Creators</div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ data.statistics.total_editors or 0 }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Video Editors</div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ data.statistics.total_jobs or 0 }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Total Jobs</div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ data.statistics.completed_jobs or 0 }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Completed Jobs</div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ data.statistics.approved_portfolios or 0 }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Approved Portfolios</div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5rem; background: var(--light-gray); border-radius: var(--radius-md);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ "%.1f"|format(data.statistics.average_rating or 0) }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Average Rating</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Job Status Overview -->
+{% if data.recent_jobs %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Recent Job Activity</h3>
+        <a href="{{ url_for('admin.search') }}?type=jobs" class="btn btn-secondary">View All Jobs</a>
+    </div>
+    <div class="admin-section-content">
+        <table class="admin-data-table">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Creator</th>
+                    <th>Status</th>
+                    <th>Budget</th>
+                    <th>Posted</th>
+                    <th>Applications</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in data.recent_jobs %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--primary-black);">{{ job.title }}</div>
+                        <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                            {{ job.description[:50] }}{% if job.description|length > 50 %}...{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ job.creator.user.fullName }}</div>
+                            <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ job.creator.user.emailAddress }}</div>
+                        </div>
+                    </td>
+                    <td><span class="admin-status-badge {{ job.status }}">{{ job.status.replace('_', ' ').title() }}</span></td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--primary-black);">{{ job.getBudgetRange() }}</div>
+                    </td>
+                    <td>{{ moment(job.dateCreated).format('MMM DD, YYYY') }}</td>
+                    <td>
+                        <div style="text-align: center; font-weight: 600; color: var(--accent-blue);">
+                            {{ job.applications|length }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- System Health Indicators -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">System Health</h3>
+        <span style="font-size: 0.875rem; color: var(--soft-gray);">Last updated: {{ moment().format('MMM DD, YYYY HH:mm') }}</span>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <!-- Active Users Indicator -->
+            <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600;">Active Users</span>
+                    <span style="color: var(--success-green); font-size: 1.25rem;">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                </div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    {{ data.statistics.active_users or 0 }} users active
+                </div>
+            </div>
+            
+            <!-- Portfolio Approval Rate -->
+            <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600;">Portfolio Approval</span>
+                    <span style="color: {% if data.statistics.pending_portfolios > 10 %}#f59e0b{% else %}var(--success-green){% endif %}; font-size: 1.25rem;">
+                        <i class="fas fa-{% if data.statistics.pending_portfolios > 10 %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                    </span>
+                </div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    {{ data.statistics.pending_portfolios }} pending review
+                </div>
+            </div>
+            
+            <!-- Report Resolution -->
+            <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600;">Report Resolution</span>
+                    <span style="color: {% if data.statistics.pending_reports > 5 %}#ef4444{% else %}var(--success-green){% endif %}; font-size: 1.25rem;">
+                        <i class="fas fa-{% if data.statistics.pending_reports > 5 %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                    </span>
+                </div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    {{ data.statistics.pending_reports }} reports pending
+                </div>
+            </div>
+            
+            <!-- Platform Activity -->
+            <div style="padding: 1rem; border: 1px solid var(--border-gray); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600;">Platform Activity</span>
+                    <span style="color: var(--accent-blue); font-size: 1.25rem;">
+                        <i class="fas fa-chart-line"></i>
+                    </span>
+                </div>
+                <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                    {{ data.recent_activity_count or 0 }} recent activities
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Summary -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+    <!-- User Type Distribution -->
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h3 class="admin-section-title">User Distribution</h3>
+        </div>
+        <div class="admin-section-content">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">Content Creators</span>
+                    <span style="color: var(--accent-blue); font-weight: 600;">{{ data.statistics.total_creators or 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">Video Editors</span>
+                    <span style="color: var(--success-green); font-weight: 600;">{{ data.statistics.total_editors or 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">Administrators</span>
+                    <span style="color: var(--soft-gray); font-weight: 600;">{{ data.statistics.total_admins or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Job Status Overview -->
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h3 class="admin-section-title">Job Status Overview</h3>
+        </div>
+        <div class="admin-section-content">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">Posted Jobs</span>
+                    <span style="color: #f59e0b; font-weight: 600;">{{ data.statistics.posted_jobs or 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">In Progress</span>
+                    <span style="color: var(--accent-blue); font-weight: 600;">{{ data.statistics.in_progress_jobs or 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--light-gray); border-radius: var(--radius-sm);">
+                    <span style="font-weight: 600;">Completed</span>
+                    <span style="color: var(--success-green); font-weight: 600;">{{ data.statistics.completed_jobs or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Required Section -->
+{% if data.pending_portfolios or data.pending_reports %}
+<div class="admin-section" style="margin-top: 2rem; border-left: 4px solid #f59e0b;">
+    <div class="admin-section-header" style="background: rgba(245, 158, 11, 0.1);">
+        <h3 class="admin-section-title" style="color: #f59e0b;">
+            <i class="fas fa-exclamation-triangle"></i> Action Required
+        </h3>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% if data.pending_portfolios %}
+            <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: var(--radius-md); border: 1px solid rgba(245, 158, 11, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #d97706;">{{ data.pending_portfolios|length }} Portfolio(s) Awaiting Review</div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            {% for portfolio in data.pending_portfolios[:3] %}
+                                "{{ portfolio.title }}" by {{ portfolio.editor.user.fullName }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if data.pending_portfolios|length > 3 %}and {{ data.pending_portfolios|length - 3 }} more{% endif %}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.portfolios') }}" class="btn admin-btn-sm admin-btn-warning">Review Now</a>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if data.pending_reports %}
+            <div style="padding: 1rem; background: rgba(239, 68, 68, 0.05); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #dc2626;">{{ data.pending_reports|length }} Report(s) Need Resolution</div>
+                        <div style="color: var(--soft-gray); font-size: 0.875rem;">
+                            User reports requiring immediate admin attention
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.reports') }}" class="btn admin-btn-sm admin-btn-danger">Handle Reports</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Add any dashboard-specific JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh stats every 5 minutes
+    setInterval(function() {
+        fetch('{{ url_for("admin.ajax_system_stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Stats auto-refreshed:', data);
+                // Could update specific elements instead of full reload
+            })
+            .catch(error => console.error('Auto-refresh failed:', error));
+    }, 300000); // 5 minutes
+    
+    // Add fade-in animations to stat cards
+    const statCards = document.querySelectorAll('.admin-stat-card');
+    statCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 50);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock admin_content %}

@@ -1,0 +1,581 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}User Reports{% endblock admin_title %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h1 class="admin-page-title">User Reports</h1>
+    <p class="admin-page-subtitle">Review and resolve user reports and complaints</p>
+</div>
+
+<!-- Filter Controls -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">Filter Reports</h3>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span style="color: var(--soft-gray); font-size: 0.875rem;">
+                Showing {{ reports|length }} report(s)
+            </span>
+        </div>
+    </div>
+    <div class="admin-section-content">
+        <form method="GET" action="{{ url_for('admin.reports') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Status</label>
+                <select name="status" class="btn btn-secondary" style="width: 100%;" onchange="this.form.submit()">
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="reviewed" {% if status_filter == 'reviewed' %}selected{% endif %}>Under Review</option>
+                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Priority</label>
+                <select name="priority" class="btn btn-secondary" style="width: 100%;" onchange="this.form.submit()">
+                    <option value="all" {% if request.args.get('priority') == 'all' %}selected{% endif %}>All Priorities</option>
+                    <option value="high" {% if request.args.get('priority') == 'high' %}selected{% endif %}>High Priority</option>
+                    <option value="medium" {% if request.args.get('priority') == 'medium' %}selected{% endif %}>Medium Priority</option>
+                    <option value="low" {% if request.args.get('priority') == 'low' %}selected{% endif %}>Low Priority</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--primary-black);">Search</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Search reports, users..." 
+                           style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <a href="{{ url_for('admin.reports') }}" class="btn btn-secondary" style="width: 100%;">
+                    <i class="fas fa-undo"></i> Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="admin-stats-grid" style="margin-bottom: 2rem;">
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon reports">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set pending_count = 0 %}
+            {% for report in reports %}
+                {% if report.reportStatus == 'pending' %}
+                    {% set pending_count = pending_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ pending_count }}
+        </div>
+        <div class="admin-stat-label">Pending Reports</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon jobs">
+                <i class="fas fa-eye"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set reviewed_count = 0 %}
+            {% for report in reports %}
+                {% if report.reportStatus == 'reviewed' %}
+                    {% set reviewed_count = reviewed_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ reviewed_count }}
+        </div>
+        <div class="admin-stat-label">Under Review</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon users">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">
+            {% set resolved_count = 0 %}
+            {% for report in reports %}
+                {% if report.reportStatus == 'resolved' %}
+                    {% set resolved_count = resolved_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            {{ resolved_count }}
+        </div>
+        <div class="admin-stat-label">Resolved</div>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-icon portfolios">
+                <i class="fas fa-flag"></i>
+            </div>
+        </div>
+        <div class="admin-stat-number">{{ reports|length }}</div>
+        <div class="admin-stat-label">Total Reports</div>
+    </div>
+</div>
+
+<!-- Reports List -->
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3 class="admin-section-title">
+            {% if status_filter == 'pending' %}
+                Pending Reports
+            {% elif status_filter == 'reviewed' %}
+                Reports Under Review
+            {% elif status_filter == 'resolved' %}
+                Resolved Reports
+            {% else %}
+                All Reports
+            {% endif %}
+        </h3>
+        <div style="display: flex; gap: 1rem;">
+            {% if status_filter == 'pending' and reports|length > 0 %}
+            <button class="btn admin-btn-warning" onclick="markAllReviewed()" title="Mark all visible reports as under review">
+                <i class="fas fa-eye"></i> Mark All Reviewed
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="admin-section-content">
+        {% if reports %}
+        <div style="overflow-x: auto;">
+            <table id="reportsTable" class="admin-data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Report ID</th>
+                        <th>Reporter</th>
+                        <th>Reported User/Content</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--primary-black);">
+                            <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" 
+                               style="text-decoration: none; color: inherit;">
+                                #{{ report.reportId }}
+                            </a>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                {% if report.reporter.profilePicture %}
+                                <img src="{{ report.reporter.profilePicture }}" alt="{{ report.reporter.fullName }}" 
+                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.75rem;">
+                                    {{ report.reporter.fullName[:2].upper() }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reporter.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ report.reporter.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ report.reporter.userType.title() }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if report.reportedUser %}
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                {% if report.reportedUser.profilePicture %}
+                                <img src="{{ report.reportedUser.profilePicture }}" alt="{{ report.reportedUser.fullName }}" 
+                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--soft-gray); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.75rem;">
+                                    {{ report.reportedUser.fullName[:2].upper() }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary-black);">
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reportedUser.userId) }}" 
+                                           style="text-decoration: none; color: inherit;">
+                                            {{ report.reportedUser.fullName }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--soft-gray);">{{ report.reportedUser.userType.title() }}</div>
+                                </div>
+                            </div>
+                            {% elif report.reportedPortfolio %}
+                            <div>
+                                <div style="font-weight: 600; color: var(--primary-black);">
+                                    <a href="{{ url_for('admin.portfolio_detail', portfolio_id=report.reportedPortfolio.portfolioId) }}" 
+                                       style="text-decoration: none; color: inherit;">
+                                        {{ report.reportedPortfolio.title }}
+                                    </a>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                                    Portfolio by {{ report.reportedPortfolio.editor.user.fullName }}
+                                </div>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--soft-gray); font-style: italic;">Content Report</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set report_type = report.getReportType() %}
+                            <span class="admin-status-badge rejected">
+                                {% if report_type == 'user' %}
+                                    <i class="fas fa-user"></i> User Report
+                                {% elif report_type == 'portfolio' %}
+                                    <i class="fas fa-folder"></i> Portfolio Report
+                                {% elif report_type == 'content' %}
+                                    <i class="fas fa-file"></i> Content Report
+                                {% else %}
+                                    <i class="fas fa-flag"></i> {{ report_type.title() }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% set priority = 'medium' %}
+                            {% if report.reportStatus == 'pending' %}
+                                {% set days_old = (moment().diff(report.dateCreated, 'days')) %}
+                                {% if days_old > 7 %}
+                                    {% set priority = 'high' %}
+                                {% elif days_old > 3 %}
+                                    {% set priority = 'medium' %}
+                                {% else %}
+                                    {% set priority = 'low' %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            <span class="admin-status-badge {% if priority == 'high' %}rejected{% elif priority == 'medium' %}pending{% else %}approved{% endif %}">
+                                {% if priority == 'high' %}
+                                    <i class="fas fa-exclamation-triangle"></i> High
+                                {% elif priority == 'medium' %}
+                                    <i class="fas fa-minus-circle"></i> Medium
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i> Low
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="admin-status-badge {{ report.reportStatus }}">
+                                {% if report.reportStatus == 'pending' %}
+                                    <i class="fas fa-clock"></i> Pending
+                                {% elif report.reportStatus == 'reviewed' %}
+                                    <i class="fas fa-eye"></i> Reviewed
+                                {% elif report.reportStatus == 'resolved' %}
+                                    <i class="fas fa-check"></i> Resolved
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--primary-black);">
+                                {{ moment(report.dateCreated).format('MMM DD, YYYY') }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray);">
+                                {{ moment(report.dateCreated).fromNow() }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="admin-action-buttons">
+                                <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" 
+                                   class="btn admin-btn-sm btn-secondary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if report.reportStatus == 'pending' %}
+                                <button class="btn admin-btn-sm admin-btn-warning" 
+                                        onclick="markReviewed({{ report.reportId }})" title="Mark as Reviewed">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                {% endif %}
+                                
+                                {% if report.reportStatus in ['pending', 'reviewed'] %}
+                                <a href="{{ url_for('admin.resolve_report', report_id=report.reportId) }}" 
+                                   class="btn admin-btn-sm admin-btn-success" title="Resolve Report">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                                {% endif %}
+                                
+                                <div class="dropdown" style="position: relative; display: inline-block;">
+                                    <button class="btn admin-btn-sm btn-secondary" onclick="toggleReportDropdown({{ report.reportId }})">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div id="report-dropdown-{{ report.reportId }}" class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-gray); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 1000; min-width: 150px;">
+                                        <a href="{{ url_for('admin.report_detail', report_id=report.reportId) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-file-alt"></i> Full Details
+                                        </a>
+                                        
+                                        {% if report.reportedUser %}
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reportedUser.userId) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-user"></i> View Reported User
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if report.reportedPortfolio %}
+                                        <a href="{{ url_for('admin.portfolio_detail', portfolio_id=report.reportedPortfolio.portfolioId) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-folder"></i> View Portfolio
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <a href="{{ url_for('admin.user_detail', user_id=report.reporter.userId) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-user-check"></i> View Reporter
+                                        </a>
+                                        
+                                        <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--border-gray);">
+                                        
+                                        <a href="{{ url_for('admin.reports') }}?search={{ report.reporter.emailAddress }}" 
+                                           style="display: block; padding: 0.5rem 1rem; text-decoration: none; color: var(--primary-black); font-size: 0.875rem;">
+                                            <i class="fas fa-search"></i> Other Reports
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-flag"></i>
+            <h3>No Reports Found</h3>
+            <p>
+                {% if status_filter == 'pending' %}
+                    No reports are currently pending review.
+                {% elif status_filter == 'reviewed' %}
+                    No reports are currently under review.
+                {% elif status_filter == 'resolved' %}
+                    No reports have been resolved yet.
+                {% else %}
+                    No reports match your current filters.
+                {% endif %}
+            </p>
+            {% if status_filter != 'pending' %}
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-primary">View All Reports</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Priority Information Panel -->
+<div class="admin-section" style="border-left: 4px solid var(--accent-blue);">
+    <div class="admin-section-header" style="background: rgba(59, 130, 246, 0.1);">
+        <h3 class="admin-section-title" style="color: var(--accent-blue);">
+            <i class="fas fa-info-circle"></i> Report Priority Guidelines
+        </h3>
+    </div>
+    <div class="admin-section-content">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+                    <span style="font-weight: 600; color: #dc2626;">High Priority</span>
+                </div>
+                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                    Reports older than 7 days or involving serious violations
+                </div>
+            </div>
+            
+            <div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(245, 158, 11, 0.2);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-minus-circle" style="color: #d97706;"></i>
+                    <span style="font-weight: 600; color: #d97706;">Medium Priority</span>
+                </div>
+                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                    Reports 3-7 days old requiring standard review
+                </div>
+            </div>
+            
+            <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.2);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-info-circle" style="color: var(--success-green);"></i>
+                    <span style="font-weight: 600; color: var(--success-green);">Low Priority</span>
+                </div>
+                <div style="font-size: 0.875rem; color: var(--soft-gray);">
+                    Recent reports (less than 3 days) for routine review
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+
+<style>
+/* Custom DataTables Styling */
+.dataTables_wrapper {
+    font-family: 'Inter', sans-serif;
+}
+
+.dataTables_filter input {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.dataTables_length select {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem;
+    margin: 0 0.5rem;
+}
+
+.dataTables_info {
+    color: var(--soft-gray);
+    font-size: 0.875rem;
+}
+
+.dataTables_paginate .paginate_button {
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--primary-black);
+    text-decoration: none;
+}
+
+.dataTables_paginate .paginate_button:hover {
+    background: var(--light-gray);
+    border-color: var(--soft-gray);
+}
+
+.dataTables_paginate .paginate_button.current {
+    background: var(--primary-black);
+    color: var(--white);
+    border-color: var(--primary-black);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+.dropdown-menu a:hover {
+    background: var(--light-gray);
+}
+</style>
+
+<!-- DataTables JavaScript -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#reportsTable').DataTable({
+        responsive: true,
+        pageLength: 25,
+        order: [[6, 'desc']], // Order by date descending
+        columnDefs: [
+            { orderable: false, targets: [7] }, // Disable sorting for actions column
+            { searchable: false, targets: [7] }
+        ],
+        language: {
+            search: "Search reports:",
+            lengthMenu: "Show _MENU_ reports per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ reports",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+});
+
+// Report action functions
+function markReviewed(reportId) {
+    if (confirm('Mark this report as reviewed?')) {
+        // This would typically update the report status via AJAX
+        alert(`Report ${reportId} marked as reviewed. This would be implemented via AJAX.`);
+        // Could use your existing ajax endpoints or create a new one
+    }
+}
+
+function markAllReviewed() {
+    if (confirm('Mark all visible pending reports as reviewed?')) {
+        alert('Bulk review functionality would be implemented here');
+        // This would need backend implementation
+    }
+}
+
+// Dropdown functionality
+function toggleReportDropdown(reportId) {
+    const dropdown = document.getElementById(`report-dropdown-${reportId}`);
+    const isVisible = dropdown.style.display === 'block';
+    
+    // Hide all dropdowns first
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.style.display = 'none';
+    });
+    
+    // Toggle current dropdown
+    dropdown.style.display = isVisible ? 'none' : 'block';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+
+// Auto-refresh for pending reports (optional)
+{% if status_filter == 'pending' %}
+// Refresh page every 10 minutes to show new reports
+setTimeout(() => {
+    window.location.reload();
+}, 600000);
+{% endif %}
+
+// Priority color coding based on age
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('#reportsTable tbody tr');
+    rows.forEach(row => {
+        const statusCell = row.cells[5]; // Status column
+        const dateCell = row.cells[6]; // Date column
+        
+        if (statusCell.textContent.includes('Pending')) {
+            const dateText = dateCell.textContent;
+            if (dateText.includes('days ago')) {
+                const days = parseInt(dateText.match(/\d+/)[0]);
+                if (days > 7) {
+                    row.style.borderLeft = '3px solid #ef4444'; // High priority
+                } else if (days > 3) {
+                    row.style.borderLeft = '3px solid #f59e0b'; // Medium priority
+                } else {
+                    row.style.borderLeft = '3px solid var(--success-green)'; // Low priority
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock admin_content %}

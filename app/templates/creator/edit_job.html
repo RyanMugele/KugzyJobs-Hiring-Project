@@ -1,0 +1,749 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Job - KugzyJobs{% endblock title %}
+
+{% block page_content %}
+<div class="edit-container">
+    <div class="edit-wrapper">
+        <!-- Header Section -->
+        <div class="edit-header">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('creator.dashboard') }}">Dashboard</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.jobs') }}">My Jobs</a>
+                    <span>/</span>
+                    <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}">{{ job.title }}</a>
+                    <span>/</span>
+                    <span>Edit Job</span>
+                </div>
+                
+                <div class="header-main">
+                    <div class="edit-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Edit Job Posting</h1>
+                        <p>Update your job details to attract the right editors</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Form -->
+        <div class="job-form-section">
+            <div class="form-content">
+                <form method="POST" class="job-form">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Job Title -->
+                    <div class="form-group">
+                        {{ form.title.label(class="form-label required") }}
+                        {{ form.title(class="form-control", placeholder="Enter a clear, descriptive job title") }}
+                        {% if form.title.errors %}
+                        <div class="field-errors">
+                            {% for error in form.title.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="field-help">
+                            <i class="fas fa-info-circle"></i>
+                            Be specific about the type of video editing you need
+                        </div>
+                    </div>
+
+                    <!-- Job Description -->
+                    <div class="form-group">
+                        {{ form.description.label(class="form-label required") }}
+                        {{ form.description(class="form-textarea", placeholder="Describe your project in detail...\n\n• What type of video is this?\n• What editing style do you want?\n• Any special requirements?\n• Timeline and deadlines") }}
+                        {% if form.description.errors %}
+                        <div class="field-errors">
+                            {% for error in form.description.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="textarea-footer">
+                            <div class="field-help">
+                                <i class="fas fa-info-circle"></i>
+                                Provide detailed project requirements and expectations
+                            </div>
+                            <div class="character-count">
+                                <span id="desc-count">0</span> characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Budget Range -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ form.budgetMin.label(class="form-label") }}
+                            <div class="input-wrapper">
+                                <div class="input-prefix">$</div>
+                                {{ form.budgetMin(class="form-control budget-input", placeholder="0.00") }}
+                            </div>
+                            {% if form.budgetMin.errors %}
+                            <div class="field-errors">
+                                {% for error in form.budgetMin.errors %}
+                                <span class="error-message">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.budgetMax.label(class="form-label") }}
+                            <div class="input-wrapper">
+                                <div class="input-prefix">$</div>
+                                {{ form.budgetMax(class="form-control budget-input", placeholder="0.00") }}
+                            </div>
+                            {% if form.budgetMax.errors %}
+                            <div class="field-errors">
+                                {% for error in form.budgetMax.errors %}
+                                <span class="error-message">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="budget-help">
+                        <i class="fas fa-dollar-sign"></i>
+                        Setting a budget range helps attract editors within your price range
+                    </div>
+
+                    <!-- Deadline -->
+                    <div class="form-group">
+                        {{ form.deadline.label(class="form-label") }}
+                        {{ form.deadline(class="form-control") }}
+                        {% if form.deadline.errors %}
+                        <div class="field-errors">
+                            {% for error in form.deadline.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="field-help">
+                            <i class="fas fa-calendar"></i>
+                            When do you need the project completed?
+                        </div>
+                    </div>
+
+                    <!-- Required Skills -->
+                    <div class="form-group">
+                        {{ form.requiredSkills.label(class="form-label") }}
+                        {{ form.requiredSkills(class="form-textarea skills-input", placeholder="List the skills and expertise you're looking for...\n\nExamples:\n• Video Editing\n• Color Grading\n• Motion Graphics\n• Audio Editing\n• Adobe Premiere Pro\n• After Effects") }}
+                        {% if form.requiredSkills.errors %}
+                        <div class="field-errors">
+                            {% for error in form.requiredSkills.errors %}
+                            <span class="error-message">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="field-help">
+                            <i class="fas fa-tools"></i>
+                            List specific skills, software, or experience requirements
+                        </div>
+                    </div>
+
+                    <!-- Current Status Notice -->
+                    <div class="status-notice">
+                        <div class="notice-content">
+                            <div class="notice-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="notice-text">
+                                <h4>Job Status: {{ job.status.replace('_', ' ').title() }}</h4>
+                                {% if job.status == 'posted' %}
+                                <p>This job is currently accepting applications. You can edit all details.</p>
+                                {% elif job.status == 'in_progress' %}
+                                <p>This job is in progress. Editing is no longer available.</p>
+                                {% elif job.status == 'completed' %}
+                                <p>This job has been completed. Editing is no longer available.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </a>
+                        
+                        {% if job.status == 'posted' %}
+                        {{ form.submit(class="btn btn-primary", id="update-job") }}
+                        {% else %}
+                        <button type="button" class="btn btn-primary" disabled>
+                            <i class="fas fa-lock"></i>
+                            Cannot Edit
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="tips-section">
+            <div class="tips-content">
+                <h3><i class="fas fa-lightbulb"></i> Job Posting Tips</h3>
+                
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Be Specific</h4>
+                            <p>Clear, detailed descriptions attract the right editors</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Set Fair Budget</h4>
+                            <p>Competitive budgets get more quality applications</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Realistic Timeline</h4>
+                            <p>Give editors enough time to do quality work</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>List Requirements</h4>
+                            <p>Specify needed skills and software experience</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .edit-container {
+        min-height: 100vh;
+        background: var(--light-gray);
+        padding: 2rem 0;
+    }
+
+    .edit-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .edit-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .breadcrumb span {
+        color: var(--soft-gray);
+    }
+
+    .header-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .edit-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .header-text p {
+        color: var(--soft-gray);
+        font-size: 1.125rem;
+        margin: 0;
+    }
+
+    .job-form-section, .tips-section {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-gray);
+        margin-bottom: 2rem;
+    }
+
+    .form-content, .tips-content {
+        padding: 2.5rem;
+    }
+
+    .job-form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-black);
+        font-size: 0.95rem;
+    }
+
+    .form-label.required::after {
+        content: ' *';
+        color: #ef4444;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-prefix {
+        position: absolute;
+        left: 1rem;
+        color: var(--soft-gray);
+        z-index: 2;
+        pointer-events: none;
+        font-weight: 600;
+    }
+
+    .form-control, .form-textarea {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        background: var(--white);
+        transition: border-color 0.2s ease;
+    }
+
+    .budget-input {
+        padding-left: 2rem;
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+        line-height: 1.6;
+    }
+
+    .skills-input {
+        min-height: 100px;
+    }
+
+    .form-control:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .textarea-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    .field-help, .budget-help {
+        color: var(--soft-gray);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .character-count {
+        font-size: 0.85rem;
+        color: var(--soft-gray);
+    }
+
+    .field-errors {
+        margin-top: 0.5rem;
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-notice {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .notice-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .notice-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--accent-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .notice-text h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .notice-text p {
+        color: var(--soft-gray);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--primary-black);
+        color: var(--white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: var(--secondary-black);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-black);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-gray);
+    }
+
+    .tips-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .tip-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-md);
+    }
+
+    .tip-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--accent-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .tip-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-black);
+        margin-bottom: 0.5rem;
+    }
+
+    .tip-content p {
+        color: var(--soft-gray);
+        font-size: 0.9rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .edit-wrapper {
+            padding: 0 1rem;
+        }
+
+        .header-content, .form-content, .tips-content {
+            padding: 2rem;
+        }
+
+        .header-main {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .textarea-footer {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .tips-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .notice-content {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .edit-container {
+            padding: 1rem 0;
+        }
+
+        .header-content, .form-content, .tips-content {
+            padding: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .edit-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.job-form');
+        const submitBtn = document.getElementById('update-job');
+        const descTextarea = document.querySelector('textarea[name="description"]');
+        const descCount = document.getElementById('desc-count');
+        const budgetInputs = document.querySelectorAll('.budget-input');
+
+        // Character counter for description
+        if (descTextarea && descCount) {
+            descTextarea.addEventListener('input', function() {
+                const count = this.value.length;
+                descCount.textContent = count;
+                
+                if (count > 1800) {
+                    descCount.style.color = '#ef4444';
+                } else if (count > 1500) {
+                    descCount.style.color = '#f59e0b';
+                } else {
+                    descCount.style.color = 'var(--soft-gray)';
+                }
+            });
+            
+            // Initial count
+            descCount.textContent = descTextarea.value.length;
+        }
+
+        // Budget input formatting
+        budgetInputs.forEach(input => {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d.]/g, '');
+                
+                // Ensure only one decimal point
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                // Limit to 2 decimal places
+                if (parts[1] && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+                
+                e.target.value = value;
+            });
+
+            input.addEventListener('blur', function(e) {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                    e.target.value = value.toFixed(2);
+                }
+            });
+        });
+
+        // Form validation
+        function validateBudget() {
+            const minBudget = parseFloat(document.querySelector('input[name="budgetMin"]').value) || 0;
+            const maxBudget = parseFloat(document.querySelector('input[name="budgetMax"]').value) || 0;
+            
+            if (minBudget > 0 && maxBudget > 0 && minBudget > maxBudget) {
+                return false;
+            }
+            return true;
+        }
+
+        // Form submission
+        if (form && submitBtn) {
+            form.addEventListener('submit', function(e) {
+                if (!validateBudget()) {
+                    e.preventDefault();
+                    alert('Maximum budget must be greater than minimum budget.');
+                    return false;
+                }
+
+                // Show loading state
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating Job...';
+                submitBtn.disabled = true;
+
+                // Prevent multiple submissions
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                });
+            });
+        }
+
+        // Auto-resize textareas
+        const textareas = document.querySelectorAll('.form-textarea');
+        textareas.forEach(textarea => {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.max(120, this.scrollHeight) + 'px';
+            });
+        });
+
+        // Enhanced form interactions
+        const formControls = document.querySelectorAll('.form-control, .form-textarea');
+        formControls.forEach(control => {
+            control.addEventListener('focus', function() {
+                this.style.transform = 'translateY(-1px)';
+            });
+
+            control.addEventListener('blur', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock page_content %}

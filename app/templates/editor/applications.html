@@ -1,0 +1,308 @@
+{% extends "editor/base.html" %}
+
+{% block editor_content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+                <h1 style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    My Applications
+                </h1>
+                <p style="color: var(--soft-gray); font-size: 1.125rem;">
+                    Track your job applications and their status
+                </p>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <a href="{{ url_for('editor.jobs') }}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Browse Jobs
+                </a>
+            </div>
+        </div>
+
+        <!-- Application Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--primary-black); margin-bottom: 0.5rem;">
+                    {{ applications|length }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Total Applications</div>
+            </div>
+            <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-bottom: 0.5rem;">
+                    {{ applications|selectattr('status', 'equalto', 'pending')|list|length }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Pending</div>
+            </div>
+            <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--success-green); margin-bottom: 0.5rem;">
+                    {{ applications|selectattr('status', 'equalto', 'accepted')|list|length }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Accepted</div>
+            </div>
+            <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: #ef4444; margin-bottom: 0.5rem;">
+                    {{ applications|selectattr('status', 'equalto', 'declined')|list|length }}
+                </div>
+                <div style="color: var(--soft-gray); font-weight: 600;">Declined</div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-gray);">
+            <a href="{{ url_for('editor.applications') }}" 
+               class="filter-tab {% if status_filter == 'all' %}active{% endif %}"
+               style="padding: 0.75rem 1.5rem; text-decoration: none; color: {% if status_filter == 'all' %}var(--primary-black){% else %}var(--soft-gray){% endif %}; font-weight: 600; border-bottom: 2px solid {% if status_filter == 'all' %}var(--primary-black){% else %}transparent{% endif %}; transition: all 0.2s ease;">
+                All Applications
+            </a>
+            <a href="{{ url_for('editor.applications', status='pending') }}" 
+               class="filter-tab {% if status_filter == 'pending' %}active{% endif %}"
+               style="padding: 0.75rem 1.5rem; text-decoration: none; color: {% if status_filter == 'pending' %}var(--primary-black){% else %}var(--soft-gray){% endif %}; font-weight: 600; border-bottom: 2px solid {% if status_filter == 'pending' %}var(--primary-black){% else %}transparent{% endif %}; transition: all 0.2s ease;">
+                Pending
+            </a>
+            <a href="{{ url_for('editor.applications', status='accepted') }}" 
+               class="filter-tab {% if status_filter == 'accepted' %}active{% endif %}"
+               style="padding: 0.75rem 1.5rem; text-decoration: none; color: {% if status_filter == 'accepted' %}var(--primary-black){% else %}var(--soft-gray){% endif %}; font-weight: 600; border-bottom: 2px solid {% if status_filter == 'accepted' %}var(--primary-black){% else %}transparent{% endif %}; transition: all 0.2s ease;">
+                Accepted
+            </a>
+            <a href="{{ url_for('editor.applications', status='declined') }}" 
+               class="filter-tab {% if status_filter == 'declined' %}active{% endif %}"
+               style="padding: 0.75rem 1.5rem; text-decoration: none; color: {% if status_filter == 'declined' %}var(--primary-black){% else %}var(--soft-gray){% endif %}; font-weight: 600; border-bottom: 2px solid {% if status_filter == 'declined' %}var(--primary-black){% else %}transparent{% endif %}; transition: all 0.2s ease;">
+                Declined
+            </a>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    {% if applications %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% for application in applications %}
+        <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 2rem; transition: all 0.2s ease;">
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: flex-start;">
+                <!-- Application Details -->
+                <div>
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-black); margin: 0;">
+                            <a href="{{ url_for('editor.application_detail', application_id=application.jobApplicationId) }}" 
+                               style="text-decoration: none; color: inherit;">
+                                {{ application.job.title }}
+                            </a>
+                        </h3>
+                        <span style="background: {% if application.status == 'pending' %}rgba(245, 158, 11, 0.1); color: #f59e0b{% elif application.status == 'accepted' %}rgba(16, 185, 129, 0.1); color: var(--success-green){% elif application.status == 'declined' %}rgba(239, 68, 68, 0.1); color: #ef4444{% else %}rgba(107, 114, 128, 0.1); color: var(--soft-gray){% endif %}; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                            {{ application.status }}
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Creator</div>
+                            <div style="font-weight: 600; color: var(--primary-black);">
+                                {{ application.job.creator.user.fullName if application.job.creator and application.job.creator.user else 'Unknown' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Your Proposed Rate</div>
+                            <div style="font-weight: 600; color: var(--primary-black);">${{ application.proposedRate }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Job Budget</div>
+                            <div style="font-weight: 600; color: var(--primary-black);">
+                                {% if application.job.budgetMin and application.job.budgetMax %}
+                                    ${{ application.job.budgetMin }} - ${{ application.job.budgetMax }}
+                                {% elif application.job.budgetMin %}
+                                    From ${{ application.job.budgetMin }}
+                                {% elif application.job.budgetMax %}
+                                    Up to ${{ application.job.budgetMax }}
+                                {% else %}
+                                    Negotiable
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Applied</div>
+                            <div style="font-weight: 600; color: var(--primary-black);">{{ application.dateCreated.strftime('%b %d, %Y') }}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Your Proposal</div>
+                        <p style="color: var(--soft-gray); margin: 0; line-height: 1.5; font-size: 0.875rem;">
+                            {{ application.customProposal[:200] }}{% if application.customProposal|length > 200 %}...{% endif %}
+                        </p>
+                    </div>
+
+                    {% if application.proposedTimeline %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Proposed Timeline</div>
+                        <div style="color: var(--primary-black); font-weight: 500;">{{ application.proposedTimeline }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; min-width: 180px;">
+                    <a href="{{ url_for('editor.application_detail', application_id=application.jobApplicationId) }}" 
+                       class="btn btn-primary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+
+                    {% if application.status == 'pending' %}
+                    <a href="{{ url_for('editor.edit_application', application_id=application.jobApplicationId) }}" 
+                       class="btn btn-secondary" style="width: 100%; text-align: center;">
+                        <i class="fas fa-edit"></i> Edit Application
+                    </a>
+                    <form method="POST" action="{{ url_for('editor.withdraw_application', application_id=application.jobApplicationId) }}" 
+                          style="display: inline;" 
+                          onsubmit="return confirm('Are you sure you want to withdraw this application?')">
+                        <button type="submit" class="btn" style="width: 100%; background: #ef4444; color: var(--white); border: none;">
+                            <i class="fas fa-times"></i> Withdraw
+                        </button>
+                    </form>
+                    {% elif application.status == 'accepted' %}
+                    <a href="{{ url_for('editor.project_detail', job_id=application.jobId) }}" 
+                       class="btn btn-success" style="width: 100%; text-align: center;">
+                        <i class="fas fa-arrow-right"></i> Go to Project
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('editor.job_detail', job_id=application.jobId) }}" 
+                       class="btn btn-outline" style="width: 100%; text-align: center; border: 1px solid var(--border-gray); background: transparent; color: var(--primary-black);">
+                        <i class="fas fa-external-link-alt"></i> View Job
+                    </a>
+                </div>
+            </div>
+
+            <!-- Additional Info for Accepted Applications -->
+            {% if application.status == 'accepted' %}
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-gray);">
+                <div style="background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); padding: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: var(--success-green);"></i>
+                        <strong style="color: var(--success-green);">Application Accepted!</strong>
+                    </div>
+                    <p style="color: #065f46; margin: 0; font-size: 0.875rem;">
+                        Congratulations! Your application was accepted. You can now work on this project and communicate with the creator.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Additional Info for Declined Applications -->
+            {% if application.status == 'declined' %}
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-gray);">
+                <div style="background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); padding: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-times-circle" style="color: #ef4444;"></i>
+                        <strong style="color: #ef4444;">Application Declined</strong>
+                    </div>
+                    <p style="color: #7f1d1d; margin: 0; font-size: 0.875rem;">
+                        This application was not selected. Don't worry - keep applying to other jobs that match your skills!
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination or Load More (if needed) -->
+    {% if applications|length >= 10 %}
+    <div style="text-align: center; margin-top: 2rem;">
+        <button class="btn btn-secondary" onclick="loadMoreApplications()">
+            <i class="fas fa-chevron-down"></i> Load More Applications
+        </button>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div style="background: var(--white); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 4rem 2rem; text-align: center;">
+        <i class="fas fa-file-alt" style="font-size: 4rem; color: var(--soft-gray); margin-bottom: 1.5rem; opacity: 0.5;"></i>
+        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-black); margin-bottom: 1rem;">
+            {% if status_filter == 'all' %}
+                No Applications Yet
+            {% elif status_filter == 'pending' %}
+                No Pending Applications
+            {% elif status_filter == 'accepted' %}
+                No Accepted Applications
+            {% elif status_filter == 'declined' %}
+                No Declined Applications
+            {% endif %}
+        </h3>
+        <p style="color: var(--soft-gray); margin-bottom: 2rem; font-size: 1.125rem;">
+            {% if status_filter == 'all' %}
+                Start applying to jobs to see your applications here.
+            {% else %}
+                You don't have any {{ status_filter }} applications at the moment.
+            {% endif %}
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{{ url_for('editor.jobs') }}" class="btn btn-primary">
+                <i class="fas fa-search"></i> Browse Available Jobs
+            </a>
+            {% if status_filter != 'all' %}
+            <a href="{{ url_for('editor.applications') }}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> View All Applications
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.filter-tab:hover {
+    color: var(--primary-black) !important;
+    border-bottom-color: var(--soft-gray) !important;
+}
+
+.btn-outline:hover {
+    background: var(--light-gray) !important;
+}
+
+@media (max-width: 768px) {
+    .editor-main {
+        padding: 1rem !important;
+    }
+    
+    /* Stack application cards vertically on mobile */
+    .applications-grid > div {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    /* Stack stats cards on mobile */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Stack filter tabs on mobile */
+    .filter-tabs {
+        flex-wrap: wrap !important;
+        gap: 0.25rem !important;
+    }
+    
+    .filter-tab {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.875rem !important;
+    }
+}
+</style>
+
+<script>
+function loadMoreApplications() {
+    // Placeholder for load more functionality
+    alert('Load more functionality would be implemented here');
+}
+
+// Auto-refresh application status every 30 seconds
+setInterval(function() {
+    // Only refresh if there are pending applications
+    const pendingCount = {{ applications|selectattr('status', 'equalto', 'pending')|list|length }};
+    if (pendingCount > 0) {
+        // Could implement AJAX refresh here
+        console.log('Checking for application updates...');
+    }
+}, 30000);
+</script>
+{% endblock editor_content %}
