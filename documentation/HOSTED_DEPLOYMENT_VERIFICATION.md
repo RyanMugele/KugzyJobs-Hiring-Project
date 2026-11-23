@@ -22,4 +22,4 @@ Verified on 23 November 2026.
 
 [Latest passing Linux CI](https://github.com/RyanMugele/KugzyJobs-Hiring-Project/actions/runs/45126206252).
 
-Private administrator creation, authenticated hosted workflows, restart persistence and an off-service backup remain pending. Local persistence and workflow tests passed previously; they are not presented as hosted results. No shared demonstration accounts or existing local database were copied to the public deployment. Payments and outgoing email remain disabled.
+Private administrator creation and successful hosted sign-in were confirmed by the owner and the administrator dashboard was observed. Complete hosted workflows, restart persistence and an off-service backup remain pending. Local persistence and workflow tests passed previously; they are not presented as hosted results. No shared demonstration accounts or existing local database were copied to the public deployment. Payments and outgoing email remain disabled.

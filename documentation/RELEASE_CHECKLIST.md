@@ -10,10 +10,11 @@ Updated 23 November 2026. Render automatic deployment is off.
 - [x] Render build/startup and database readiness passed.
 - [x] Public HTTPS homepage/login and unauthenticated role protection checked.
 - [x] Persistent disk mount and size confirmed.
-- [ ] Create private admin credentials and verify authenticated hosted workflows.
+- [x] Owner created private admin credentials; successful hosted administrator dashboard observed.
+- [ ] Verify the complete hosted creator/editor workflow.
 - [ ] Restart confirms persistent data.
 - [ ] Make private off-service backup.
 - [x] Record deployed commit, live URL and date in README.
-- [ ] Add final hosted deployment facts to the report.
+- [x] Add hosted deployment facts and Linux CI results to Chapter Five.
 
 See [hosted verification](HOSTED_DEPLOYMENT_VERIFICATION.md) for exact results and limitations.
