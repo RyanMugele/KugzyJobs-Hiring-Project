@@ -56,12 +56,18 @@ def dashboard():
     recent_jobs = Job.getRecentJobs(limit=5)
     recent_ratings = Rating.getRecentRatings(limit=5)
 
-    # Additional statistics
+
+# Additional statistics
     stats.update(
         {
             "pending_portfolios": len(pending_portfolios),
             "pending_reports": len(pending_reports),
             "recent_activity_count": len(recent_jobs) + len(recent_ratings),
+
+            # Jobs currently available or being worked on
+            "active_jobs": Job.query.filter(
+                Job.status.in_(["posted", "in_progress"])
+            ).count(),
         }
     )
 
@@ -221,7 +227,7 @@ def reset_user_password(user_id):
                 # In a real system, you'd email this token to the user
                 flask.flash(
                     f"Password reset initiated for {user.fullName}. "
-                    f"Reset token: {reset_token[:8]}... (Full token would be emailed)",
+                    f"One-use reset link: {flask.url_for("authentication.password_reset", token=reset_token, _external=True)}",
                     "success",
                 )
                 return flask.redirect(
@@ -242,30 +248,52 @@ def reset_user_password(user_id):
 # ------------------------------------------------------------------------------
 #                           PORTFOLIO VERIFICATION (FR-024 to FR-027)
 # ------------------------------------------------------------------------------
+
 @admin.route("/portfolios")
 @login_required
 @admin_required
 def portfolios():
     """View portfolio submissions for verification."""
-    status_filter = flask.request.args.get("status", "pending")
 
-    if status_filter == "approved":
-        portfolios_list = Portfolio.query.filter_by(
-            verificationStatus="approved"
-        ).all()
-    elif status_filter == "rejected":
-        portfolios_list = Portfolio.query.filter_by(
-            verificationStatus="rejected"
-        ).all()
-    else:  # pending
-        portfolios_list = Portfolio.getPendingPortfolios()
+    status_filter = flask.request.args.get(
+        "status", "pending"
+    ).strip().lower()
 
-    portfolios_list.sort(key=lambda x: x.dateCreated, reverse=True)
+    # Only allow supported status filters
+    if status_filter not in ("pending", "approved", "rejected"):
+        status_filter = "pending"
+
+    # Retrieve portfolios matching the selected filter
+    portfolios_list = Portfolio.query.filter_by(
+        verificationStatus=status_filter
+    ).order_by(
+        Portfolio.dateCreated.desc()
+    ).all()
+
+    # Calculate statistics from ALL portfolios,
+    # regardless of the selected filter
+    pending_count = Portfolio.query.filter_by(
+        verificationStatus="pending"
+    ).count()
+
+    approved_count = Portfolio.query.filter_by(
+        verificationStatus="approved"
+    ).count()
+
+    rejected_count = Portfolio.query.filter_by(
+        verificationStatus="rejected"
+    ).count()
+
+    total_count = Portfolio.query.count()
 
     return flask.render_template(
         "admin/portfolios.html",
         portfolios=portfolios_list,
         status_filter=status_filter,
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count,
+        total_count=total_count,
     )
 
 
@@ -540,20 +568,20 @@ def ajax_quick_action():
 @admin.errorhandler(404)
 def not_found_error(error):
     """Handle 404 errors within admin blueprint."""
-    return flask.render_template("admin/errors/404.html"), 404
+    return flask.render_template("admin/404.html"), 404
 
 
 @admin.errorhandler(403)
 def forbidden_error(error):
     """Handle 403 errors within admin blueprint."""
-    return flask.render_template("admin/errors/403.html"), 403
+    return flask.render_template("admin/403.html"), 403
 
 
 @admin.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors within admin blueprint."""
     db.session.rollback()
-    return flask.render_template("admin/errors/500.html"), 500
+    return flask.render_template("admin/500.html"), 500
 
 
 # ------------------------------------------------------------------------------

@@ -1,4 +1,6 @@
+import os
 import flask
+from flask_wtf.csrf import CSRFProtect
 import flask_login
 import flask_moment
 import flask_migrate
@@ -28,25 +30,11 @@ def load_user(user_id):
     :return: User object or None
     """
     from .models.user import User
-    from .models.creator import Creator
-    from .models.editor import Editor
-    from .models.admin import Admin
-    
-    user_type = flask.session.get("user_type")
-    
-    if user_type == "creator":
-        creator = Creator.query.get(int(user_id))
-        return creator.user if creator else None
-    elif user_type == "editor":
-        editor = Editor.query.get(int(user_id))
-        return editor.user if editor else None
-    elif user_type == "admin":
-        admin = Admin.query.get(int(user_id))
-        return admin.user if admin else None
-    else:
-        # Fallback to base User model
-        user = User.query.get(int(user_id))
-        return user
+    try:
+        user = db.session.get(User, int(user_id))
+    except (ValueError, TypeError):
+        return None
+    return user if user and user.isActive else None
 
 
 # Initialize extensions
@@ -65,7 +53,17 @@ def create_app(config_name="default"):
     app = flask.Flask(__name__)
     app.config.from_object(config[config_name])
     
+    config[config_name].init_app(app)
+    if not app.config.get("SECRET_KEY"):
+        raise RuntimeError("Set SECRET_KEY before starting production.")
+
+    # Enable only behind the documented Render HTTPS proxy.
+    if os.environ.get("TRUST_PROXY_HEADERS") == "1":
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1, x_host=0, x_port=0)
+
     # Initialize extensions
+    CSRFProtect(app)
     db.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
@@ -97,4 +95,28 @@ def create_app(config_name="default"):
     from .admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix="/admin")
     
+    @app.get("/healthz")
+    def healthz():
+        from sqlalchemy import text
+        try:
+            db.session.execute(text("SELECT 1"))
+            return {"status": "ok"}, 200
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Database readiness check failed")
+            return {"status": "unavailable"}, 503
+
+    @app.before_request
+    def reject_suspended_sessions():
+        if flask_login.current_user.is_authenticated and not flask_login.current_user.isActive:
+            flask_login.logout_user()
+            flask.abort(403)
+
+    @app.after_request
+    def security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
     return app

@@ -1,0 +1,23 @@
+name: Tests
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  workflows-and-nlp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+      - run: python -m pip install -r requirements-production.txt -r requirements-dev.txt
+      - run: python -m pytest
+      - run: python test_nlp_accuracy.py
+      - run: python evaluate_nlp.py

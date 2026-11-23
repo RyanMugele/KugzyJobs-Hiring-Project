@@ -17,9 +17,9 @@
                 {% endif %}
             </span>
         </div>
-        
+
         <h1>{{ job.title }}</h1>
-        
+
         <div class="job-meta">
             <span class="meta-item">
                 <i class="fas fa-calendar"></i>
@@ -39,24 +39,24 @@
             {% endif %}
         </div>
     </div>
-    
+
     <div class="header-actions">
         <a href="{{ url_for('creator.jobs') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Jobs
         </a>
-        
+
         {% if job.status == 'posted' %}
         <a href="{{ url_for('creator.edit_job', job_id=job.jobId) }}" class="btn btn-outline">
             <i class="fas fa-edit"></i> Edit Job
         </a>
         {% endif %}
-        
+
         {% if job.status == 'in_progress' %}
         <a href="{{ url_for('creator.complete_job', job_id=job.jobId) }}" class="btn btn-success">
             <i class="fas fa-check"></i> Mark Complete
         </a>
         {% endif %}
-        
+
         {% if job.status == 'completed' and not job.payment %}
         <a href="{{ url_for('creator.initiate_payment', job_id=job.jobId) }}" class="btn btn-primary">
             <i class="fas fa-credit-card"></i> Initiate Payment
@@ -112,7 +112,7 @@
     </div>
 </div>
 
-                
+
                 {% if job.getRequiredSkillsList() %}
                 <div class="skills-section">
                     <h3>Required Skills</h3>
@@ -123,7 +123,7 @@
                     </div>
                 </div>
                 {% endif %}
-                
+
                 {% if job.deliverableUrl %}
                 <div class="deliverable-section">
                     <h3>Deliverable</h3>
@@ -175,7 +175,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="application-status">
                             <span class="status-badge status-{{ application.status }}">
                                 {{ application.status.title() }}
@@ -184,10 +184,11 @@
                                 {{ moment(application.dateCreated).fromNow() }}
                             </span>
                         </div>
-                        
+
                         {% if application.status == 'pending' and job.status == 'posted' %}
                         <div class="application-actions">
                             <form method="POST" action="{{ url_for('creator.select_editor', job_id=job.jobId) }}" style="display: inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="editorId" value="{{ application.editor.editorId }}" />
                                 <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Select this editor for your job?')">
                                     Select Editor
@@ -197,7 +198,7 @@
                         {% endif %}
                     </div>
                     {% endfor %}
-                    
+
                     {% if applications|length > 3 %}
                     <div class="view-more">
                         <a href="{{ url_for('creator.job_applications', job_id=job.jobId) }}" class="btn btn-outline btn-sm">
@@ -265,7 +266,7 @@
                             <p>{{ moment(job.dateCreated).format('MMM DD, YYYY') }}</p>
                         </div>
                     </div>
-                    
+
                     <div class="timeline-item {% if job.status in ['in_progress', 'completed'] %}completed{% endif %}">
                         <div class="timeline-dot"></div>
                         <div class="timeline-content">
@@ -277,7 +278,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="timeline-item {% if job.status == 'completed' %}completed{% endif %}">
                         <div class="timeline-dot"></div>
                         <div class="timeline-content">
@@ -326,7 +327,7 @@
                             </span>
                             {% endif %}
                         </div>
-                        
+
                         {% if job.selectedEditor.specializations %}
                         <div class="editor-skills">
                             {% for skill in job.selectedEditor.specializations.split(',')[:3] %}
@@ -336,7 +337,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="editor-actions">
                     <a href="{{ url_for('creator.send_message') }}?receiver_id={{ job.selectedEditor.user.userId }}&job_id={{ job.jobId }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-envelope"></i> Send Message
@@ -365,14 +366,14 @@
                             {{ payment.status.title() }}
                         </span>
                     </div>
-                    
+
                     {% if payment.paymentMethod %}
                     <div class="payment-method">
                         <i class="fas fa-credit-card"></i>
                         {{ payment.paymentMethod }}
                     </div>
                     {% endif %}
-                    
+
                     {% if payment.invoiceNumber %}
                     <div class="payment-invoice">
                         <i class="fas fa-file-invoice"></i>
@@ -380,18 +381,18 @@
                     </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="payment-actions">
                     {% if payment.status == 'agreed' %}
                     <a href="{{ url_for('creator.process_payment', payment_id=payment.paymentId) }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-credit-card"></i> Pay Now
                     </a>
                     {% endif %}
-                    
+
                     <a href="{{ url_for('creator.payment_status', payment_id=payment.paymentId) }}" class="btn btn-outline btn-sm">
                         <i class="fas fa-info-circle"></i> View Details
                     </a>
-                    
+
                     {% if payment.invoiceNumber %}
                     <a href="{{ url_for('creator.payment_invoice', payment_id=payment.paymentId) }}" class="btn btn-outline btn-sm">
                         <i class="fas fa-download"></i> Download Invoice
@@ -415,26 +416,26 @@
                         <span>Edit Job Details</span>
                     </a>
                     {% endif %}
-                    
+
                     <a href="{{ url_for('creator.send_message') }}?job_id={{ job.jobId }}" class="action-item">
                         <i class="fas fa-envelope"></i>
                         <span>Send Message</span>
                     </a>
-                    
+
                     {% if applications|length > 0 %}
                     <a href="{{ url_for('creator.job_applications', job_id=job.jobId) }}" class="action-item">
                         <i class="fas fa-users"></i>
                         <span>View All Applications</span>
                     </a>
                     {% endif %}
-                    
+
                     {% if job.selectedEditor %}
                     <a href="{{ url_for('creator.editor_profile', editor_id=job.selectedEditor.editorId) }}" class="action-item">
                         <i class="fas fa-user"></i>
                         <span>View Editor Profile</span>
                     </a>
                     {% endif %}
-                    
+
                     <a href="{{ url_for('creator.submit_report') }}?job_id={{ job.jobId }}" class="action-item text-danger">
                         <i class="fas fa-flag"></i>
                         <span>Report Issue</span>
@@ -1251,32 +1252,13 @@
         outline-offset: 2px;
     }
 
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-        .info-card,
-        .sidebar-card {
-            background: #1f2937;
-            border-color: #374151;
-        }
-
-        .application-item,
-        .message-item {
-            background: #1f2937;
-            border-color: #374151;
-        }
-
-        .job-description,
-        .header-content h1 {
-            color: #f9fafb;
-        }
-    }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Auto-refresh job status every 30 seconds
         let refreshInterval;
-        
+
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 if (!document.hidden) {
@@ -1311,15 +1293,15 @@
         document.querySelectorAll('form[action*="select-editor"] button').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                
+
                 const editorName = this.closest('.application-item')
                     .querySelector('.applicant-details h4 a').textContent;
-                
+
                 if (confirm(`Are you sure you want to select ${editorName} for this job? This action cannot be undone.`)) {
                     // Add loading state
                     this.disabled = true;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Selecting...';
-                    
+
                     // Submit the form
                     this.closest('form').submit();
                 } else {
@@ -1375,7 +1357,7 @@
                         this.style.background = 'var(--success-green)';
                         this.style.color = 'var(--white)';
                         this.style.borderColor = 'var(--success-green)';
-                        
+
                         setTimeout(() => {
                             this.innerHTML = '<i class="fas fa-link"></i> Copy Link';
                             this.style.background = '';
@@ -1397,11 +1379,11 @@
         document.querySelectorAll('.message-preview').forEach(preview => {
             const fullText = preview.textContent;
             const isLong = fullText.length > 100;
-            
+
             if (isLong) {
                 preview.style.cursor = 'pointer';
                 preview.title = 'Click to expand';
-                
+
                 preview.addEventListener('click', function() {
                     if (this.textContent.includes('...')) {
                         this.textContent = fullText;
@@ -1428,11 +1410,11 @@
                     animation: ripple 0.6s linear;
                     pointer-events: none;
                 `;
-                
+
                 this.style.position = 'relative';
                 this.style.overflow = 'hidden';
                 this.appendChild(ripple);
-                
+
                 setTimeout(() => {
                     ripple.remove();
                 }, 600);
@@ -1448,7 +1430,7 @@
                     backButton.click();
                 }
             }
-            
+
             // E for edit (if available)
             if (e.key === 'e' && !e.ctrlKey && !e.metaKey) {
                 const editButton = document.querySelector('a[href*="edit_job"]');
@@ -1456,7 +1438,7 @@
                     editButton.click();
                 }
             }
-            
+
             // M for messages
             if (e.key === 'm' && !e.ctrlKey && !e.metaKey) {
                 const messageButton = document.querySelector('a[href*="send_message"]');
@@ -1501,13 +1483,13 @@
     // Toast notification function
     function showToast(message, type = 'info') {
         const toastContainer = document.querySelector('.toast-container') || createToastContainer();
-        
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `<div class="toast-body">${message}</div>`;
-        
+
         toastContainer.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(-20px)';
@@ -1544,7 +1526,7 @@
                 opacity: 0;
             }
         }
-        
+
         .btn-ripple {
             width: 20px;
             height: 20px;

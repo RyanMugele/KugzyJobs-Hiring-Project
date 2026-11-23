@@ -20,7 +20,7 @@ from ..models.password_reset_token import PasswordResetToken
 
 def redirect_after_login(dashboard_route, name):
     next_page = flask.request.args.get("next")
-    if not next_page or not next_page.startswith("/"):
+    if not next_page or not next_page.startswith("/") or next_page.startswith("//") or "\\" in next_page:
         next_page = flask.url_for(dashboard_route)
 
     flask.flash(f"Hello {name}. Welcome back!")
@@ -53,7 +53,7 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        email = form.emailAddress.data.lower()
+        email = form.emailAddress.data.strip().lower()
         password = form.password.data
         remember_me = form.remember_me.data
 
@@ -100,7 +100,7 @@ def creator_registration():
             # Create user account
             user_details = {
                 "fullName": form.fullName.data,
-                "emailAddress": form.emailAddress.data.lower(),
+                "emailAddress": form.emailAddress.data.strip().lower(),
                 "password": form.password.data,
                 "userType": "creator",
             }
@@ -125,7 +125,7 @@ def creator_registration():
             )
             return flask.redirect(flask.url_for("authentication.login"))
 
-        except IOError:
+        except Exception:
             db.session.rollback()
             flask.flash("Registration failed. Please try again.", "danger")
 
@@ -146,7 +146,7 @@ def editor_registration():
             # Create user account
             user_details = {
                 "fullName": form.fullName.data,
-                "emailAddress": form.emailAddress.data.lower(),
+                "emailAddress": form.emailAddress.data.strip().lower(),
                 "password": form.password.data,
                 "userType": "editor",
             }
@@ -195,6 +195,8 @@ def admin_registration():
     """
     Handle administrator registration (requires admin code).
     """
+    if not flask.current_app.config.get("ADMIN_REGISTRATION_CODE"):
+        flask.abort(404)
     form = AdminRegistrationForm()
 
     if form.validate_on_submit():
@@ -202,7 +204,7 @@ def admin_registration():
             # Create user account
             user_details = {
                 "fullName": form.fullName.data,
-                "emailAddress": form.emailAddress.data.lower(),
+                "emailAddress": form.emailAddress.data.strip().lower(),
                 "password": form.password.data,
                 "userType": "admin",
             }
@@ -260,25 +262,21 @@ def password_reset_request():
     form = PasswordResetRequestForm()
 
     if form.validate_on_submit():
-        email_address = form.emailAddress.data.lower()
+        email_address = form.emailAddress.data.strip().lower()
 
         # Find user by email address
         user = User.query.filter_by(emailAddress=email_address).first()
 
-        if user:
-            # Generate password reset token
-            # reset_token = PasswordResetToken.generateToken(
-            # user.userId, expiryHours=24
-            # )
-
-            # user.sendPasswordResetEmail(reset_token.token)
-
-            flask.flash(
-                "Password reset instructions have been sent to your email.",
-                "info",
-            )
+        if not flask.current_app.config.get("EMAIL_ENABLED"):
+            flask.flash("Password recovery requires configured email delivery. Contact the administrator.", "warning")
         else:
-            flask.flash("No account found with that email address.", "warning")
+            if user:
+                reset_token = PasswordResetToken.generateToken(user.userId, expiryHours=1)
+                from utilities.email_utils import send_email
+                send_email([user.emailAddress], "Password reset", "email/password_reset_request",
+                           user_name=user.fullName,
+                           reset_link=flask.url_for("authentication.password_reset", token=reset_token.token, _external=True))
+            flask.flash("If an account exists, password reset instructions have been sent.", "info")
 
         return flask.redirect(
             flask.url_for("authentication.password_reset_request")
@@ -304,7 +302,7 @@ def password_reset(token):
     # Validate token
     reset_token = PasswordResetToken.validateToken(token)
     if not reset_token:
-        flask.flash("The password reset link is invalid or hxpired.", "danger")
+        flask.flash("The password reset link is invalid or expired.", "danger")
         return flask.redirect(
             flask.url_for("authentication.password_reset_request")
         )
@@ -317,7 +315,9 @@ def password_reset(token):
             user = User.query.get(reset_token.userId)
             if user:
                 # Update password using the BaseUser method
-                user.updatePassword(form.password.data)
+                user.password = form.password.data
+                reset_token.isUsed = True
+                db.session.commit()
 
                 # Mark token as used
                 reset_token.markAsUsed()

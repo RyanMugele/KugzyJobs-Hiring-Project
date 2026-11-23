@@ -475,6 +475,7 @@
       </div>
 
       <form id="withdrawForm" method="POST" action="{{ url_for('editor.withdraw_application', application_id=data.application.jobApplicationId) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
           <label for="withdrawalReason">Reason for withdrawal (optional)</label>
           <textarea id="withdrawalReason" name="withdrawalReason" rows="3" class="form-input" placeholder="Let the creator know why you're withdrawing..."></textarea>
@@ -1530,7 +1531,8 @@
       method: 'POST',
       body: formData,
       headers: {
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-CSRFToken': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest'
       }
     })
       .then(response => {
@@ -1644,7 +1646,8 @@
     fetch('{{ url_for("editor.ajax_check_application") }}', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         applicationId: applicationId

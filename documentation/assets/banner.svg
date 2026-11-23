@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+<title id="title">KugzyJobs — Find your next creative match</title><desc id="desc">Video editor hiring, reviewed portfolios and explainable matching.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#071626"/><stop offset="1" stop-color="#123c64"/></linearGradient><linearGradient id="accent"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs>
+<rect width="1280" height="360" rx="20" fill="url(#bg)"/>
+<circle cx="1190" cy="40" r="250" fill="#38bdf8" opacity=".05"/><circle cx="1200" cy="350" r="200" fill="#818cf8" opacity=".08"/>
+<rect x="64" y="57" width="46" height="6" rx="3" fill="url(#accent)"/>
+<text x="64" y="102" fill="#7dd3fc" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">A CREATIVE CAREER STARTS WITH A CONNECTION</text>
+<text x="60" y="188" fill="#f8fafc" font-family="Arial,sans-serif" font-size="76" font-weight="700">KugzyJobs</text>
+<text x="64" y="235" fill="#cbd5e1" font-family="Arial,sans-serif" font-size="25">Find your next creative match.</text>
+<text x="64" y="302" fill="#94a3b8" font-family="Arial,sans-serif" font-size="17">VIDEO EDITOR HIRING  /  REVIEWED PORTFOLIOS  /  EXPLAINABLE MATCHING</text>
+<g transform="translate(1000 104)"><rect width="154" height="126" rx="20" fill="#071626" stroke="#38bdf8" stroke-width="2"/><path d="M61 39 L105 63 L61 88 Z" fill="url(#accent)"/><path d="M-28 146 H183" stroke="#38bdf8" stroke-width="3" opacity=".7"/></g></svg>

@@ -17,7 +17,7 @@
                     <span>/</span>
                     <span>Applications</span>
                 </div>
-                
+
                 <div class="header-main">
                     <div class="job-icon">
                         <i class="fas fa-users"></i>
@@ -68,7 +68,7 @@
                         </div>
                         {% endif %}
                     </div>
-                    
+
                     {% if accepted_application %}
                     <div class="selected-editor">
                         <div class="selection-header">
@@ -87,7 +87,7 @@
                     </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="overview-actions">
                     <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i>
@@ -126,16 +126,14 @@
                     </button>
                     {% endif %}
                 </div>
-                
+
                 <div class="filter-actions">
                     <div class="sort-options">
                         <label>Sort by:</label>
                         <select id="sort-applications">
-                            <option value="date-desc">Newest First</option>
-                            <option value="date-asc">Oldest First</option>
+                            <option value="match-desc" selected>Best Match</option>
                             <option value="rate-desc">Highest Rate</option>
                             <option value="rate-asc">Lowest Rate</option>
-                            <option value="rating-desc">Best Rated</option>
                         </select>
                     </div>
                 </div>
@@ -148,12 +146,13 @@
             {% if applications %}
             <div class="applications-grid" id="applications-grid">
                 {% for application in applications %}
-                <div class="application-card" 
-                     data-status="{{ application.status }}" 
+                <div class="application-card"
+                     data-status="{{ application.status }}"
                      data-rate="{{ application.proposedRate or 0 }}"
                      data-rating="{{ application.editor.user.averageRating or 0 }}"
+                     data-match="{{ application_match_scores.get(application.jobApplicationId, 0) }}"
                      data-date="{{ application.dateCreated.isoformat() }}">
-                    
+
                     <div class="application-header">
                         <div class="editor-avatar">
                             {% if application.editor.user.profilePicture %}
@@ -164,9 +163,15 @@
                                 </div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="editor-details">
                             <h3>{{ application.editor.user.fullName }}</h3>
+
+                            <div class="match-score">
+                                <strong>Compatibility Score:</strong>
+                                {{ application_match_scores.get(application.jobApplicationId, 0) }}%
+                            </div>
+
                             <div class="editor-meta">
                                 {% if application.editor.experienceLevel %}
                                 <span class="experience">{{ application.editor.experienceLevel.title() }}</span>
@@ -187,7 +192,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="application-status">
                             <span class="status-badge status-{{ application.status }}">
                                 {{ application.status.title() }}
@@ -197,7 +202,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="application-body">
                         <div class="proposal-details">
                             <div class="proposal-row">
@@ -211,7 +216,7 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                
+
                                 <div class="proposal-item">
                                     <span class="label">Timeline:</span>
                                     <span class="value">
@@ -224,14 +229,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         {% if application.customProposal %}
                         <div class="custom-proposal">
                             <h4>Cover Letter</h4>
                             <p>{{ application.customProposal }}</p>
                         </div>
                         {% endif %}
-                        
+
                         <div class="editor-portfolio">
                             <h4>Portfolio Highlights</h4>
                             {% set portfolios = application.editor.getVerifiedPortfolios()[:2] %}
@@ -264,16 +269,16 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="application-actions">
                         {% if application.status == 'pending' and job.status == 'posted' %}
-                        <button class="btn btn-outline btn-sm view-profile-btn" 
+                        <button class="btn btn-outline btn-sm view-profile-btn"
                                 data-editor-id="{{ application.editor.editorId }}">
                             <i class="fas fa-user"></i>
                             View Profile
                         </button>
-                        
-                        <button class="btn btn-primary btn-sm select-btn" 
+
+                        <button class="btn btn-primary btn-sm select-btn"
                                 data-application-id="{{ application.applicationId }}"
                                 data-editor-id="{{ application.editor.editorId }}"
                                 data-editor-name="{{ application.editor.user.fullName }}">
@@ -285,8 +290,8 @@
                             <i class="fas fa-check-circle"></i>
                             <span>Selected Editor</span>
                         </div>
-                        
-                        <a href="{{ url_for('creator.send_message') }}?receiver_id={{ application.editor.user.userId }}&job_id={{ job.jobId }}" 
+
+                        <a href="{{ url_for('creator.send_message') }}?receiver_id={{ application.editor.user.userId }}&job_id={{ job.jobId }}"
                            class="btn btn-outline btn-sm">
                             <i class="fas fa-envelope"></i>
                             Message
@@ -309,7 +314,7 @@
                 </div>
                 <h3>No Applications Yet</h3>
                 <p>Your job posting hasn't received any applications yet. Here are some tips to attract more applicants:</p>
-                
+
                 <div class="tips-list">
                     <div class="tip-item">
                         <i class="fas fa-lightbulb"></i>
@@ -328,7 +333,7 @@
                         <span>Include relevant skills and requirements</span>
                     </div>
                 </div>
-                
+
                 <div class="empty-actions">
                     <a href="{{ url_for('creator.edit_job', job_id=job.jobId) }}" class="btn btn-primary">
                         <i class="fas fa-edit"></i>
@@ -365,16 +370,17 @@
                     <li>Cannot be undone</li>
                 </ul>
             </div>
-            
+
             <form method="POST" action="{{ url_for('creator.select_editor', job_id=job.jobId) }}" id="selection-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="editorId" id="selected-editor-id">
-                
+
                 <div class="form-group">
                     <label class="form-label">Selection Notes (Optional)</label>
-                    <textarea name="selectionNotes" class="form-textarea" 
+                    <textarea name="selectionNotes" class="form-textarea"
                               placeholder="Add any notes about your selection or project kickoff instructions..."></textarea>
                 </div>
-                
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-selection">
                         Cancel
@@ -1536,6 +1542,9 @@
 
             cards.sort((a, b) => {
                 switch(sortBy) {
+                    case 'match-desc':
+                        return parseFloat(b.dataset.match || 0) -
+                        parseFloat(a.dataset.match || 0);
                     case 'date-desc':
                         return new Date(b.dataset.date) - new Date(a.dataset.date);
                     case 'date-asc':
@@ -1687,7 +1696,8 @@
                 // Check for new applications
                 fetch(window.location.href, {
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-CSRFToken': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.text())

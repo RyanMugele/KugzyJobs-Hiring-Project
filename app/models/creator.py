@@ -120,20 +120,24 @@ class Creator(db.Model):
         return job
 
     def selectEditorForJob(self, jobId: int, editorId: int):
-        """
-        Selects an editor for a specific job and updates job status.
+            """
+            Selects an editor for a job and updates
+            the corresponding application statuses.
+            """
+            job = next((j for j in self.jobs if j.jobId == jobId), None)
 
-        :param jobId: int - ID of the job
-        :param editorId: int - ID of the selected editor
-        :return: bool - True if selection was successful, False otherwise
-        """
-        job = next((j for j in self.jobs if j.jobId == jobId), None)
-        if job and job.status == "posted":
-            job.selectedEditorId = editorId
-            job.status = "in_progress"
-            db.session.commit()
-            return True
-        return False
+            if not job or job.status != "posted":
+                return False
+
+            application_exists = any(
+                application.editorId == editorId
+                for application in job.applications
+        )
+
+            if not application_exists:
+                return False
+
+            return job.selectEditor(editorId)
 
     def markJobCompleted(self, jobId: int, deliverableUrl: str = None):
         """
@@ -147,8 +151,8 @@ class Creator(db.Model):
         if job and job.status == "in_progress":
             job.status = "completed"
             job.completedDate = db.func.current_timestamp()
-            if deliverableUrl:
-                job.deliverableUrl = deliverableUrl
+            if deliverableUrl and not job.deliverableUrl:
+               job.deliverableUrl = deliverableUrl
             db.session.commit()
             return True
         return False

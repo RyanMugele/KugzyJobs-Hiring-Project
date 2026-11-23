@@ -29,6 +29,7 @@
             <!-- Registration Form -->
             <div class="auth-form-container">
                 <form method="POST" action="" class="auth-form" novalidate>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     
                     <!-- Full Name Field -->

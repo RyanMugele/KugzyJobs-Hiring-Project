@@ -34,6 +34,7 @@
         <div class="job-form-section">
             <div class="form-content">
                 <form method="POST" class="job-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
 
                     <!-- Job Title -->

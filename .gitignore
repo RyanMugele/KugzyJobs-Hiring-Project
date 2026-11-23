@@ -218,3 +218,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# KugzyJobs private runtime data
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.db
+*.sqlite*
+.DS_Store
+instance/
+app/static/img/editors/
+app/static/img/creators/
+
+*.log
+.coverage
+htmlcov/
+backups/

@@ -127,7 +127,7 @@
                     <div style="margin-bottom: 1rem;">
                         <div style="font-size: 0.75rem; color: var(--soft-gray); margin-bottom: 0.25rem;">Your Proposal</div>
                         <p style="color: var(--soft-gray); margin: 0; line-height: 1.5; font-size: 0.875rem;">
-                            {{ application.customProposal[:200] }}{% if application.customProposal|length > 200 %}...{% endif %}
+                            {{ (application.customProposal or "")[:200] }}{% if (application.customProposal or "")|length > 200 %}...{% endif %}
                         </p>
                     </div>
 
@@ -154,6 +154,7 @@
                     <form method="POST" action="{{ url_for('editor.withdraw_application', application_id=application.jobApplicationId) }}" 
                           style="display: inline;" 
                           onsubmit="return confirm('Are you sure you want to withdraw this application?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn" style="width: 100%; background: #ef4444; color: var(--white); border: none;">
                             <i class="fas fa-times"></i> Withdraw
                         </button>

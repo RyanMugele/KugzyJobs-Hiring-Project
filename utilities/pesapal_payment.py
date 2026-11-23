@@ -91,7 +91,7 @@ def get_merchant_order_url(details, access_token, subscription_details=None):
     }
     post_data = {
         "language": details.get("language", "EN"),
-        "currency": details.get("currency", "KES"),
+        "currency": details.get("currency", "USD"),
         "amount": details.get("amount", 1.0),
         "id": details.get("id", datetime.now().strftime("%Y%m%d%H%M%S")),
         "description": details.get("description", ""),
@@ -155,13 +155,15 @@ def make_request(url, headers, post_data=None):
 
     :return: dict - Decoded JSON response
     """
+    if not flask.current_app.config.get("PAYMENTS_ENABLED"):
+        return {"error": "Payments are disabled for the local demonstration."}
     try:
         if post_data:
             response = requests.post(
-                url, headers=headers, data=json.dumps(post_data)
+                url, headers=headers, data=json.dumps(post_data), timeout=20
             )
         else:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=20)
 
         response.raise_for_status()
         return response.json()

@@ -186,6 +186,7 @@
                 </div>
 
                 <form method="POST" class="process-form" id="payment-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-actions">
                         <a href="{{ url_for('creator.payments') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i>

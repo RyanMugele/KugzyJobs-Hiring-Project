@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from werkzeug.utils import secure_filename
 
@@ -23,7 +24,7 @@ def save_image(image_file, folder=None):
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        filename = secure_filename(image_file.filename)
+        filename = uuid.uuid4().hex + "_" + secure_filename(image_file.filename)
         image_path = os.path.join(folder, filename)
         image_file.save(image_path)
 
@@ -48,7 +49,7 @@ def save_file(file, folder=None):
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        filename = secure_filename(file.filename)
+        filename = uuid.uuid4().hex + "_" + secure_filename(file.filename)
         file_path = os.path.join(folder, filename)
         file.save(file_path)
 

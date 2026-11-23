@@ -1,0 +1,25 @@
+
+NLP TEST 07 - EXTRACTION ACCURACY
+=================================================================
+
+Case 3 - STYLES
+Description: Need a documentary editor for long-form YouTube videos with subtitles.
+Expected: ['documentary']
+Actual:   []
+
+Case 15 - STYLES
+Description: Looking for a documentary editor with color correction experience.
+Expected: ['documentary']
+Actual:   []
+
+=================================================================
+CATEGORY METRICS
+-----------------------------------------------------------------
+Skills     Precision: 100.00% | Recall: 100.00% | F1: 100.00%
+Styles     Precision: 100.00% | Recall: 85.71% | F1: 92.31%
+Niches     Precision: 100.00% | Recall: 100.00% | F1: 100.00%
+-----------------------------------------------------------------
+Overall precision: 100.00%
+Overall recall:    96.30%
+Overall F1-score:  98.11%
+Exact case matches: 18/20 (90.00%)

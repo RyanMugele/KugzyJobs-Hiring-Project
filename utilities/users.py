@@ -71,7 +71,7 @@ class BaseUser(flask_login.UserMixin, db.Model):
 
         user = cls(**details)
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()
         return user
 
     def update(self, details: dict) -> "BaseUser":
@@ -146,7 +146,7 @@ class BaseUser(flask_login.UserMixin, db.Model):
         :return: tuple - Contains the return status and return message.
         """
 
-        if self.verifyPassword(details.get("password", "")):
+        if self.isActive and self.verifyPassword(details.get("password", "")):
             flask_login.login_user(self, details.get("remember_me", False))
 
             # Mark them as online

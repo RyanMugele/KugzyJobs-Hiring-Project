@@ -1025,6 +1025,7 @@ function checkApplicationStatus(jobId) {
     return fetch('{{ url_for("editor.ajax_check_application") }}', {
         method: 'POST',
         headers: {
+            'X-CSRFToken': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ jobId: jobId })

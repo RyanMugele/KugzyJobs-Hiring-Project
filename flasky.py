@@ -17,5 +17,13 @@ def make_shell_context():
     return dict(db=db)
 
 
+@app.cli.command("init-db")
+def init_db():
+    """Create missing tables without dropping existing data."""
+    import app.models
+    db.create_all()
+    print("Database tables are ready.")
+
+
 if __name__ == "__main__":
     app.run()

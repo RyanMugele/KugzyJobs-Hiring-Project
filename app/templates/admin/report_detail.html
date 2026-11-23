@@ -483,6 +483,7 @@
                     {% if data.report.reportedPortfolio %}
                     <form method="POST" action="{{ url_for('admin.remove_portfolio_content', portfolio_id=data.report.reportedPortfolio.portfolioId) }}" 
                           style="width: 100%;" onsubmit="return confirm('Are you sure you want to remove this portfolio content?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="reason" value="Content reported as inappropriate">
                         <button type="submit" class="btn admin-btn-danger" style="width: 100%;">
                             <i class="fas fa-trash"></i> Remove Portfolio
@@ -551,7 +552,8 @@ function quickResolve(resolution) {
         fetch('{{ url_for("admin.ajax_quick_action") }}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 action: 'resolve_report',
@@ -581,7 +583,8 @@ function markAsReviewed() {
         fetch('{{ url_for("admin.ajax_quick_action") }}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 action: 'review_report',

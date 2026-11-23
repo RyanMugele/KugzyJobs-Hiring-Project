@@ -1,0 +1,5 @@
+Database tables are ready.
+HTTPS production login, CSRF and secure session cookies: PASS
+Gunicorn start 1: health, homepage, login and persistent account PASS
+Gunicorn start 2: health, homepage, login and persistent account PASS
+Platform: local macOS/Python 3.14. Linux/Render verification pending.

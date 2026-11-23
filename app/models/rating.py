@@ -201,6 +201,12 @@ class Rating(db.Model):
         if not job or job.status != "completed":
             return None
 
+        if not job.creator or not job.selectedEditor:
+            return None
+        participants = {job.creator.userId, job.selectedEditor.userId}
+        if raterId == rateeId or {raterId, rateeId} != participants:
+            return None
+
         # Create the rating
         rating = cls(
             jobId=jobId,

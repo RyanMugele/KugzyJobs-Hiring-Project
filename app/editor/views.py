@@ -5,6 +5,7 @@ from flask_login import login_required
 
 from decimal import Decimal
 from datetime import datetime
+from datetime import date
 
 from . import editor
 from .forms import JobSearchForm
@@ -169,6 +170,10 @@ def new_portfolio():
     """Submit new portfolio item (FR-020, FR-021, FR-022)."""
     form = PortfolioSubmissionForm()
 
+    if flask.request.method == "POST":
+        print("PORTFOLIO FORM VALID:", form.validate())
+        print("PORTFOLIO FORM ERRORS:", form.errors)
+
     if form.validate_on_submit():
         try:
             editor_data = current_user.getSpecificUserData()
@@ -259,9 +264,8 @@ def edit_portfolio(portfolio_id):
             if form.videoUrl.data != portfolio.videoUrl:
                 portfolio.uploadVideoFile(form.videoUrl.data)
 
-            # Resubmit for verification if it was rejected
-            if portfolio.verificationStatus == "rejected":
-                portfolio.submitForVerification()
+            # Edited evidence must be reviewed again.
+            portfolio.submitForVerification()
 
             flask.flash("Portfolio item updated successfully!", "success")
             return flask.redirect(
@@ -295,6 +299,8 @@ def delete_portfolio(portfolio_id):
 
     try:
         db.session.delete(portfolio)
+        db.session.flush()
+        editor_data.isVerified = any(p.portfolioId != portfolio_id and p.verificationStatus == "approved" for p in editor_data.portfolios)
         db.session.commit()
         flask.flash("Portfolio item deleted successfully.", "success")
     except Exception:
@@ -631,7 +637,11 @@ def projects():
         "total_completed": len(completed_jobs),
     }
 
-    return flask.render_template("editor/projects.html", data=projects_data)
+    return flask.render_template(
+    "editor/projects.html",
+    data=projects_data,
+    today=date.today()
+)
 
 
 @editor.route("/projects/<int:job_id>")

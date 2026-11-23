@@ -19,6 +19,7 @@
             </a>
             {% else %}
             <form method="POST" action="{{ url_for('admin.reactivate_user', user_id=data.user.userId) }}" style="display: inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn admin-btn-success" onclick="return confirm('Are you sure you want to reactivate this user?')">
                     <i class="fas fa-check"></i> Reactivate User
                 </button>

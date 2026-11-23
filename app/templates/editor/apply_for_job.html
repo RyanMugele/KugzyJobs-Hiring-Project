@@ -66,6 +66,7 @@
     <!-- Application Form -->
     <div class="application-form-container">
         <form method="POST" class="application-form" id="applicationForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {{ form.hidden_tag() }}
             
             <!-- Proposed Rate -->

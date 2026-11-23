@@ -32,6 +32,7 @@
         <div class="rating-form-section">
             <div class="form-content">
                 <form method="POST" class="rating-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     {{ form.jobId() }}
                     {{ form.rateeId() }}

@@ -36,6 +36,7 @@
                 </div>
                 <div class="card-content">
                     <form method="POST" class="report-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ form.hidden_tag() }}
                         {{ form.reportedUserId() }}
                         {{ form.reportedPortfolioId() }}

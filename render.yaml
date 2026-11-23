@@ -1,0 +1,28 @@
+# Creating this Blueprint starts a paid service. Review pricing before applying.
+services:
+  - type: web
+    name: kugzyjobs
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: pip install -r requirements-production.txt
+    startCommand: sh start-production.sh
+    healthCheckPath: /healthz
+    autoDeployTrigger: "off"
+    disk:
+      name: kugzyjobs-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: FLASK_CONFIG
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PRODUCTION_DATABASE_URL
+        value: sqlite:////var/data/kugzyjobs.db
+      - key: KUGZY_DATA_DIR
+        value: /var/data
+      - key: TRUST_PROXY_HEADERS
+        value: "1"

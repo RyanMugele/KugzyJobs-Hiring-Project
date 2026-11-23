@@ -98,7 +98,7 @@ class User(BaseUser):
 
         :return: str - The user type
         """
-        return self.__tablename__
+        return self.userType
 
     def get_id(self) -> int:
         """
@@ -106,24 +106,29 @@ class User(BaseUser):
 
         :return: int - User ID of the user
         """
-        return self.userId
+        return str(self.userId)
+
 
     def updateAverageRating(self):
         """
-        Recalculates and updates the user's average rating based on all received ratings.
-        This method should be called whenever a new rating is added.
-
-        :return: None
+        Recalculate the user's total ratings and average rating
+        based on all reviews received.
         """
+        ratings = list(self.receivedRatings)
+
+        # Count the actual number of received ratings
+        self.totalRatings = len(ratings)
+
         if self.totalRatings > 0:
-            total_score = sum(
-                rating.ratingValue for rating in self.receivedRatings
-            )
-            self.averageRating = round(total_score / self.totalRatings, 2)
+            total_score = sum(rating.ratingValue for rating in ratings)
+            self.averageRating = round(
+                total_score / self.totalRatings, 2
+        )
         else:
-            self.averageRating = 0.00
+            self.averageRating = 0.0
 
         db.session.commit()
+
 
     def uploadProfilePicture(self, filePath: str):
         """

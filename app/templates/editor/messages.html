@@ -1266,6 +1266,7 @@ function showQuickReplyForm(messageCard, replyUrl) {
             </button>
         </div>
         <form action="${replyUrl}" method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <textarea name="messageContent" placeholder="Type your reply..." rows="3" required></textarea>
             <div class="quick-reply-actions">
                 <button type="button" class="btn btn-sm btn-outline" onclick="this.closest('.quick-reply-form').remove()">Cancel</button>

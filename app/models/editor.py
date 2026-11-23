@@ -144,6 +144,10 @@ class Editor(db.Model):
         """
         from .job_application import JobApplication
 
+        from .job import Job
+        job = db.session.get(Job, jobId)
+        if not job or job.status != "posted" or JobApplication.checkExistingApplication(jobId, self.editorId):
+            raise ValueError("Job unavailable or duplicate application")
         application = JobApplication(
             jobId=jobId,
             editorId=self.editorId,

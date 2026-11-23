@@ -116,7 +116,7 @@
                         <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-sm btn-outline">
                             <i class="fas fa-eye"></i> View Details
                         </a>
-                        
+
                         {% if job.status == 'posted' %}
                         <a href="{{ url_for('creator.edit_job', job_id=job.jobId) }}" class="btn btn-sm btn-secondary">
                             <i class="fas fa-edit"></i> Edit
@@ -125,7 +125,7 @@
 
                         {% if job.applications|length > 0 %}
                         <a href="{{ url_for('creator.job_applications', job_id=job.jobId) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-users"></i> 
+                            <i class="fas fa-users"></i>
                             {% if job.status == 'posted' %}
                             Review Applications
                             {% else %}
@@ -186,7 +186,7 @@
                         <span>Working with {{ job.selectedEditor.user.fullName if job.selectedEditor else 'Editor' }}</span>
                         {% if job.deadline %}
                         <span class="time-remaining">
-                            {% set days_remaining = (job.deadline - moment().date()).days %}
+                            {% set days_remaining = (job.deadline - today).days %}
                             {% if days_remaining > 0 %}
                             {{ days_remaining }} day{{ 's' if days_remaining != 1 else '' }} remaining
                             {% elif days_remaining == 0 %}
@@ -927,14 +927,14 @@
             toggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 // Close other dropdowns
                 document.querySelectorAll('.dropdown.active').forEach(dropdown => {
                     if (dropdown !== this.parentElement) {
                         dropdown.classList.remove('active');
                     }
                 });
-                
+
                 // Toggle current dropdown
                 this.parentElement.classList.toggle('active');
             });
@@ -976,7 +976,7 @@
 
         // Auto-refresh job status every 30 seconds
         let refreshInterval;
-        
+
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 if (!document.hidden) {
@@ -1040,8 +1040,8 @@
                     const description = card.querySelector('.job-description p').textContent.toLowerCase();
                     const skills = Array.from(card.querySelectorAll('.skill-tag')).map(tag => tag.textContent.toLowerCase()).join(' ');
 
-                    const matches = title.includes(searchTerm) || 
-                                   description.includes(searchTerm) || 
+                    const matches = title.includes(searchTerm) ||
+                                   description.includes(searchTerm) ||
                                    skills.includes(searchTerm);
 
                     card.style.display = matches ? 'block' : 'none';
@@ -1050,7 +1050,7 @@
                 // Update empty state
                 const visibleCards = document.querySelectorAll('.job-card[style*="block"], .job-card:not([style*="none"])');
                 const emptyState = document.querySelector('.empty-state');
-                
+
                 if (visibleCards.length === 0 && searchTerm) {
                     if (!document.querySelector('.search-empty-state')) {
                         const searchEmptyState = document.createElement('div');
@@ -1092,7 +1092,7 @@
                 e.preventDefault();
                 window.location.href = "{{ url_for('creator.new_job') }}";
             }
-            
+
             // Escape to clear search
             if (e.key === 'Escape') {
                 const searchInput = document.querySelector('.search-input');
@@ -1115,7 +1115,7 @@
                 link.addEventListener('click', function() {
                     this.classList.add('loading');
                     this.style.pointerEvents = 'none';
-                    
+
                     // Remove loading state after a short delay if still on page
                     setTimeout(() => {
                         this.classList.remove('loading');
@@ -1146,13 +1146,13 @@
     // Utility functions
     function showToast(message, type = 'info') {
         const toastContainer = document.querySelector('.toast-container') || createToastContainer();
-        
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `<div class="toast-body">${message}</div>`;
-        
+
         toastContainer.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(-20px)';
@@ -1193,18 +1193,18 @@
             0%, 100% { opacity: 0.7; }
             50% { opacity: 1; }
         }
-        
+
         .search-input:focus {
             outline: none;
             border-color: var(--accent-blue);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
+
         .job-card .loading {
             position: relative;
             opacity: 0.6;
         }
-        
+
         .job-card .loading::after {
             content: '';
             position: absolute;
@@ -1218,13 +1218,13 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
+
         /* Enhanced hover effects */
         .tab-link {
             position: relative;
             overflow: hidden;
         }
-        
+
         .tab-link::before {
             content: '';
             position: absolute;
@@ -1235,23 +1235,23 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.5s;
         }
-        
+
         .tab-link:hover::before {
             left: 100%;
         }
-        
+
         /* Improved accessibility */
         .job-card:focus-within {
             outline: 2px solid var(--accent-blue);
             outline-offset: 2px;
         }
-        
+
         .dropdown-toggle:focus,
         .btn:focus {
             outline: 2px solid var(--accent-blue);
             outline-offset: 2px;
         }
-        
+
         /* Print styles */
         @media print {
             .header-actions,
@@ -1260,34 +1260,34 @@
             .dropdown {
                 display: none;
             }
-            
+
             .job-card {
                 break-inside: avoid;
                 box-shadow: none;
                 border: 1px solid #ccc;
             }
-            
+
             .jobs-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         /* Dark mode support (if implemented) */
         @media (prefers-color-scheme: dark) {
             .job-card {
                 background: #1f2937;
                 border-color: #374151;
             }
-            
+
             .job-title a {
                 color: #f9fafb;
             }
-            
+
             .job-description p {
                 color: #d1d5db;
             }
         }
-        
+
         /* Reduced motion support */
         @media (prefers-reduced-motion: reduce) {
             .job-card,
@@ -1296,18 +1296,18 @@
             .dropdown-menu {
                 transition: none;
             }
-            
+
             .progress-bar {
                 animation: none;
             }
         }
-        
+
         /* High contrast mode support */
         @media (prefers-contrast: high) {
             .job-card {
                 border-width: 2px;
             }
-            
+
             .status-indicator {
                 border: 1px solid currentColor;
             }

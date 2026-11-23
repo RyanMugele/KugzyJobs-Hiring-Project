@@ -25,6 +25,7 @@
             <!-- Login Form -->
             <div class="auth-form-container">
                 <form method="POST" action="" class="auth-form" novalidate>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     
                     <!-- Email Field -->
@@ -140,20 +141,7 @@
                 <h2>Join Our Creative Community</h2>
                 <p>Connect with talented video editors and content creators. Collaborate on amazing projects and bring your creative vision to life.</p>
                 
-                <div class="panel-stats">
-                    <div class="stat">
-                        <span class="stat-number">2,500+</span>
-                        <span class="stat-label">Active Users</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">15K+</span>
-                        <span class="stat-label">Projects Done</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">99.2%</span>
-                        <span class="stat-label">Success Rate</span>
-                    </div>
-                </div>
+                <p>Academic prototype — use fictional demo accounts to explore the workflow.</p>
             </div>
         </div>
     </div>

@@ -40,7 +40,7 @@ def user_type_validator(user_type):
     def decorator(function):
         @wraps(function)
         def decorated_function(*args, **kwargs):
-            if flask.session["user_type"] != user_type:
+            if not current_user.is_authenticated or current_user.userType != user_type:
                 flask.abort(403)
             return function(*args, **kwargs)
 
@@ -56,6 +56,6 @@ def account_approval_required(view_func):
             return view_func(*args, **kwargs)
 
         # Redirect to the email confirmation page
-        return flask.redirect(flask.url_for("authentication.deactivated"))
+        return flask.redirect(flask.url_for("authentication.reactivate"))
 
     return wrapped_view

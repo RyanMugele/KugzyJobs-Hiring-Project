@@ -23,7 +23,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="header-actions">
             <a href="{{ url_for('editor.jobs') }}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i>
@@ -91,7 +91,7 @@
                                 <div class="stat-label">Applications</div>
                             </div>
                         </div>
-                        
+
                         <div class="stat-item">
                             <div class="stat-icon">
                                 <i class="fas fa-clock"></i>
@@ -114,7 +114,7 @@
         </div>
         <div class="card-content">
             <div class="description-text">
-                {{ data.job.description|nl2br }}
+                {{ data.job.description | e | replace('\n', '<br>' | safe) | safe }}
             </div>
         </div>
     </div>
@@ -166,7 +166,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <div class="client-actions">
                 <a href="{{ url_for('editor.send_message', receiver_id=data.job.creator.user.userId, job_id=data.job.jobId) }}" class="btn btn-outline">
                     <i class="fas fa-envelope"></i>
@@ -188,7 +188,7 @@
                     <i class="fas fa-{% if data.existing_application.status == 'pending' %}clock{% elif data.existing_application.status == 'accepted' %}check{% else %}times{% endif %}"></i>
                     <span>{{ data.existing_application.status.title() }}</span>
                 </div>
-                
+
                 <div class="application-details">
                     <div class="detail-row">
                         <span class="label">Submitted:</span>
@@ -206,7 +206,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <div class="application-actions">
                 <a href="{{ url_for('editor.application_detail', application_id=data.existing_application.jobApplicationId) }}" class="btn btn-primary">
                     <i class="fas fa-eye"></i>
@@ -235,20 +235,20 @@
                     <div class="job-budget">$25 - $40 per hour</div>
                     <div class="job-posted">Posted 2 days ago</div>
                 </div>
-                
+
                 <div class="similar-job-item">
                     <div class="job-title">YouTube Video Editor Needed</div>
                     <div class="job-budget">$30 - $50 per hour</div>
                     <div class="job-posted">Posted 1 week ago</div>
                 </div>
-                
+
                 <div class="similar-job-item">
                     <div class="job-title">Promotional Video Editing</div>
                     <div class="job-budget">$35 - $45 per hour</div>
                     <div class="job-posted">Posted 3 days ago</div>
                 </div>
             </div>
-            
+
             <div class="similar-jobs-footer">
                 <a href="{{ url_for('editor.jobs') }}" class="btn btn-outline">
                     <i class="fas fa-search"></i>
@@ -692,7 +692,7 @@
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -704,43 +704,43 @@
         align-items: flex-start;
         gap: 1rem;
     }
-    
+
     .job-meta {
         flex-direction: column;
         gap: 0.75rem;
     }
-    
+
     .header-actions {
         width: 100%;
         flex-direction: column;
         gap: 0.75rem;
     }
-    
+
     .header-actions .btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .card-content {
         padding: 1rem;
     }
-    
+
     .client-profile {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
     }
-    
+
     .application-actions {
         flex-direction: column;
         gap: 0.75rem;
     }
-    
+
     .application-actions .btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .detail-row {
         flex-direction: column;
         align-items: flex-start;
@@ -752,17 +752,17 @@
     .header-content h1 {
         font-size: 1.5rem;
     }
-    
+
     .stat-item {
         flex-direction: column;
         text-align: center;
         gap: 0.75rem;
     }
-    
+
     .skills-list {
         justify-content: center;
     }
-    
+
     .skill-tag {
         padding: 0.375rem 0.75rem;
         font-size: 0.8rem;
@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.href && !this.href.includes('#')) {
                 this.style.opacity = '0.7';
                 this.style.pointerEvents = 'none';
-                
+
                 setTimeout(() => {
                     this.style.opacity = '1';
                     this.style.pointerEvents = 'auto';
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Add click functionality to similar job items
     const similarJobItems = document.querySelectorAll('.similar-job-item');
     similarJobItems.forEach(item => {
@@ -797,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Navigate to similar job');
         });
     });
-    
+
     // Add animations to cards
     const cards = document.querySelectorAll('[class*="-card"]');
     cards.forEach((card, index) => {

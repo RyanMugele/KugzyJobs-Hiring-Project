@@ -1,11 +1,23 @@
 import os
+import secrets
+from dotenv import load_dotenv
+
+load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
     # Flask security configuration options
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "#xpccEAN4nE_)FjZ9R-i"
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    ADMIN_REGISTRATION_CODE = os.environ.get("ADMIN_REGISTRATION_CODE")
+    PAYMENTS_ENABLED = False
+    EMAIL_ENABLED = False
+    MAX_CONTENT_LENGTH = 25 * 1024 * 1024
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
 
     # SQLAlchemy configuration options
     SSL_REDIRECT = False
@@ -42,13 +54,13 @@ class Config:
     MAIL_TIMEOUT = None
 
     # Mail Credentials Settings
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "Outback Kenya Lodge <info@jisortublow.co.ke>")
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "info@jisortublow.co.ke")
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "phOhsj3-")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "KugzyJobs <noreply@example.com>")
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
     # Pesapal Payment Settings (Development)
-    PESAPAL_CONSUMER_KEY = os.environ.get("PESAPAL_CONSUMER_KEY", "qkio1BGGYAXTu2JOfm7XSXNruoZsrqEW")
-    PESAPAL_CONSUMER_SECRET = os.environ.get("PESAPAL_CONSUMER_SECRET", "osGQ364R49cXKeOYSpaOnT++rHs=")
+    PESAPAL_CONSUMER_KEY = os.environ.get("PESAPAL_CONSUMER_KEY")
+    PESAPAL_CONSUMER_SECRET = os.environ.get("PESAPAL_CONSUMER_SECRET")
     PESAPAL_BASE_URL = os.environ.get("PESAPAL_BASE_URL", "https://cybqa.pesapal.com/pesapalv3")
 
     # Fetch Callbacks Settings
@@ -62,7 +74,8 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    DEBUG = True
+    DEBUG = False
+    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DEVELOPMENT_DATABASE_URL"
@@ -74,30 +87,48 @@ class TestingConfig(Config):
     DEBUG = True
 
     SQLALCHEMY_DATABASE_URI = (
-        os.environ.get("TEST_DATABASE_URL") or "sqlite:///:memory"
+        os.environ.get("TEST_DATABASE_URL") or "sqlite:///:memory:"
     )
-    SECRET_KEY = "chdbvbjnhmkldfhgcavbxntkuymluv"
+    SECRET_KEY = os.environ.get("TEST_SECRET_KEY", "testing-only-not-for-production")
 
 
 class ProductionConfig(Config):
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
     DEBUG = False
     TESTING = False
 
-    DB_NAME = os.environ.get("DB_NAME") or "freelance"
-    DB_USERNAME = os.environ.get("DB_USERNAME") or "root"
-    DB_HOST = os.environ.get("DB_HOST") or "localhost"
-    DB_PASSWORD = os.environ.get("DB_PASSWORD") or "MySQLXXX-123a8910"
-
-    SQLALCHEMY_DATABASE_URI = (
-        os.environ.get("PRODUCTION_DATABASE_URL")
-        or f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}"
-        + f"/{DB_NAME}"
-    )
-
+    SQLALCHEMY_DATABASE_URI = os.environ.get("PRODUCTION_DATABASE_URL")
+    DATA_DIR = os.environ.get("KUGZY_DATA_DIR")
 
     @classmethod
     def init_app(cls, app):
-        pass
+        from pathlib import Path
+        if (not app.config.get("SECRET_KEY") or len(app.config["SECRET_KEY"]) < 32
+                or app.config["SECRET_KEY"].startswith(("replace-with-", "testing-only"))):
+            raise RuntimeError("Production requires a private SECRET_KEY of at least 32 characters.")
+        if not cls.SQLALCHEMY_DATABASE_URI:
+            raise RuntimeError("Set PRODUCTION_DATABASE_URL to the persistent database.")
+        if not cls.DATA_DIR or not Path(cls.DATA_DIR).is_absolute():
+            raise RuntimeError("Set KUGZY_DATA_DIR to an absolute persistent directory.")
+        root = Path(cls.DATA_DIR)
+        root.mkdir(parents=True, exist_ok=True)
+        # Keep legacy static image URLs while storing role image directories on disk.
+        for role in ("editors", "creators"):
+            target = root / "uploads" / role
+            target.mkdir(parents=True, exist_ok=True)
+            public = Path(app.static_folder) / "img" / role
+            if public.is_symlink():
+                if public.resolve() != target.resolve():
+                    raise RuntimeError("Profile image directory points to another data location.")
+            elif public.exists():
+                if any(public.iterdir()):
+                    raise RuntimeError("Move existing profile images to persistent storage first.")
+                public.rmdir()
+                public.symlink_to(target, target_is_directory=True)
+            else:
+                public.symlink_to(target, target_is_directory=True)
+            app.config[role.upper()+"_UPLOAD_PATH"] = str(target)
 
 
 config = {

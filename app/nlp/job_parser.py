@@ -1,75 +1,170 @@
+
+import re
+
 import spacy
 from spacy.matcher import PhraseMatcher
 
-# Load the English NLP model
-nlp = spacy.load("en_core_web_sm")
 
-# Domain-specific vocabulary for video editing
+# Lightweight tokenizer for phrase matching.
+nlp = spacy.blank("en")
+
+
+# Canonical labels and their recognized alternatives.
 VOCABULARY = {
-    "skills": [
-        "Adobe Premiere Pro",
-        "Premiere Pro",
-        "After Effects",
-        "DaVinci Resolve",
-        "Final Cut Pro",
-        "CapCut",
-        "Color Grading",
-        "Motion Graphics",
-        "Sound Design",
-    ],
-    "styles": [
-        "Fast-paced",
-        "Cinematic",
-        "Documentary",
-        "Montage",
-        "Short-form",
-        "Storytelling",
-        "Minimalist",
-    ],
-    "niches": [
-        "Gaming",
-        "Travel",
-        "Lifestyle",
-        "Sports",
-        "Education",
-        "Technology",
-        "Beauty",
-        "Fitness",
-    ],
+    "skills": {
+        "Adobe Premiere Pro": [
+            "Adobe Premiere Pro", "Premiere Pro",
+            "Adobe Premiere", "Premiere specialist",
+            "Premiere editing",
+        ],
+        "After Effects": [
+            "After Effects", "Adobe After Effects",
+        ],
+        "DaVinci Resolve": [
+            "DaVinci Resolve", "Davinci",
+        ],
+        "Final Cut Pro": [
+            "Final Cut Pro", "FCP",
+        ],
+        "CapCut": ["CapCut"],
+        "Color Grading": [
+            "Color Grading",
+            "Colour Grading",
+            "Color Correction",
+            "Colour Correction",
+            "Colorist",
+            "Colourist",
+        ],
+        "Motion Graphics": [
+            "Motion Graphics", "Animated Graphics",
+        ],
+        "Sound Design": [
+            "Sound Design", "Audio Editing",
+        ],
+        "Subtitling": [
+            "Subtitles", "Subtitling", "Captions",
+            "Closed Captions",
+        ],
+        "Transitions": [
+            "Transitions",
+            "Smooth Transitions",
+            "Video Transitions",
+            "Transition Effects",
+            "Seamless Transitions",
+        ],
+    },
+    "styles": {
+        "fast-paced": [
+            "Fast-paced", "Fast paced", "Fast cuts",
+            "Quick cuts", "Rapid cuts",
+        ],
+        "cinematic": [
+            "Cinematic", "Film-like",
+        ],
+        "documentary": ["Documentary"],
+        "montage": ["Montage", "Highlight Montage"],
+        "short-form": [
+            "Short-form", "Short form", "Shortform",
+            "TikTok videos", "TikToks",
+            "Instagram Reels", "YouTube Shorts",
+        ],
+        "storytelling": [
+            "Storytelling", "Narrative Editing",
+        ],
+        "minimalist": [
+            "Minimalist", "Minimal Editing",
+        ],
+    },
+    "niches": {
+        "gaming": [
+            "Gaming", "Gaming Streams",
+            "Gaming Highlights",
+        ],
+        "travel": ["Travel", "Travel Vlogs"],
+        "lifestyle": ["Lifestyle"],
+        "sports": ["Sports", "Sporting"],
+        "education": [
+            "Education", "Educational",
+            "Tutorial Videos",
+        ],
+        "technology": [
+            "Technology", "Tech Reviews",
+        ],
+        "beauty": [
+            "Beauty", "Makeup Tutorials",
+        ],
+        "fitness": [
+            "Fitness", "Workout Videos",
+        ],
+        "documentary": [
+            "Documentary Editor",
+            "Documentary Content",
+        ],
+        "wedding": [
+            "Wedding",
+            "Wedding Video",
+            "Wedding Videography",
+            "Wedding Film",
+            "Wedding Highlights",
+            "Wedding Editor",
+        ],
+        "corporate": [
+            "Corporate",
+            "Corporate Video",
+            "Corporate Video Editor",
+            "Business Video",
+            "Company Video",
+            "Promotional Video",
+        ],
+    },
 }
 
-# Build a case-insensitive phrase matcher
-matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
 
-for category, phrases in VOCABULARY.items():
-    patterns = [nlp.make_doc(phrase) for phrase in phrases]
-    matcher.add(category, patterns)
+matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+MATCH_LABELS = {}
+
+for category, labels in VOCABULARY.items():
+    for canonical, alternatives in labels.items():
+        key = f"{category}::{canonical}"
+        patterns = [nlp.make_doc(term) for term in alternatives]
+        matcher.add(key, patterns)
+        MATCH_LABELS[key] = (category, canonical)
+
+
+def normalize_text(text):
+    """Normalize whitespace and common hyphen variants."""
+    text = re.sub(r"[\u2010-\u2015]", "-", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def parse_job_description(description):
-    """Extract video-editing skills, styles and niches."""
+    """
+    Extract canonical skills, editing styles, and content niches.
+
+    Returns:
+        dict: {'skills': [], 'styles': [], 'niches': []}
+    """
     if not isinstance(description, str):
         raise ValueError("Job description must be text.")
 
-    if not description.strip():
+    description = normalize_text(description)
+
+    if not description:
         raise ValueError("Job description cannot be empty.")
 
     doc = nlp(description)
-
     results = {
         "skills": [],
         "styles": [],
         "niches": [],
     }
 
-    
-    # Prioritizing longer phrases to avoid overlapping matches
     matches = sorted(
         matcher(doc),
         key=lambda match: (
             -(match[2] - match[1]),
-            match[1]
-        )
+            match[1],
+        ),
     )
 
     used_tokens = set()
@@ -78,28 +173,42 @@ def parse_job_description(description):
         if any(i in used_tokens for i in range(start, end)):
             continue
 
-        category = nlp.vocab.strings[match_id]
-        phrase = doc[start:end].text
-        
-        # Classify "documentary editor" as a documentary niche
-        if category == "styles" and phrase.casefold() == "documentary":
-           next_token = doc[end] if end < len(doc) else None
+        key = nlp.vocab.strings[match_id]
+        category, canonical = MATCH_LABELS[key]
 
-           if next_token is not None and next_token.lower_ in {
-               "editor", "editors"
-        }:
-                if "documentary" not in [
-                    value.casefold() for value in results["niches"]
-                ]:
-                    results["niches"].append("documentary")
-                continue
-
-        if phrase.casefold() not in [
-            value.casefold() for value in results[category]
-        ]:
-            results[category].append(phrase)
+        if canonical not in results[category]:
+            results[category].append(canonical)
 
         used_tokens.update(range(start, end))
 
+    # Maintain the original parser's special handling of
+    # "documentary editor" as a content niche.
+    if re.search(r"\bdocumentary\s+editors?\b", description, re.I):
+        if "documentary" not in results["niches"]:
+            results["niches"].append("documentary")
+        results["styles"] = [
+            value for value in results["styles"]
+            if value != "documentary"
+        ]
 
     return results
+
+def parse_portfolio_details(title="", description="", skill_tags=""):
+    """
+    Extract skills, editing styles, and content niches
+    from an editor's portfolio information.
+    """
+    portfolio_text = " ".join(
+        str(value)
+        for value in (title, description, skill_tags)
+        if value
+    ).strip()
+
+    if not portfolio_text:
+        return {
+            "skills": [],
+            "styles": [],
+            "niches": [],
+        }
+
+    return parse_job_description(portfolio_text)

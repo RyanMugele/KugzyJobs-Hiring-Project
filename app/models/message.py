@@ -171,6 +171,23 @@ class Message(db.Model):
         :param jobId: int - Optional job ID for job-related messages
         :return: Message - The created Message object
         """
+        from .user import User
+        from .job import Job
+        sender = db.session.get(User, senderId)
+        receiver = db.session.get(User, receiverId)
+        if not sender or not receiver or not sender.isActive or not receiver.isActive or senderId == receiverId:
+            raise ValueError("Invalid message participants")
+        if not messageContent or not messageContent.strip():
+            raise ValueError("Message cannot be empty")
+        if jobId:
+            job = db.session.get(Job, jobId)
+            if not job:
+                raise ValueError("Unknown job")
+            creator_id = job.creator.userId
+            editors = {a.editor.userId for a in job.applications}
+            if not ((senderId == creator_id and receiverId in editors) or
+                    (receiverId == creator_id and senderId in editors)):
+                raise ValueError("Message participants must belong to the job")
         message = cls(
             senderId=senderId,
             receiverId=receiverId,

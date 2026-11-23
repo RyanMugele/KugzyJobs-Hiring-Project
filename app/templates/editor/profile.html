@@ -20,11 +20,11 @@
                         <i class="fas fa-camera"></i>
                     </div>
                 </div>
-                
+
                 <div class="profile-info">
                     <h1>{{ current_user.fullName }}</h1>
                     <p class="user-type">Video Editor</p>
-                    
+
                     {% if current_user.averageRating %}
                     <div class="rating-display">
                         <div class="stars">
@@ -35,7 +35,7 @@
                         <span class="rating-text">{{ "%.1f"|format(current_user.averageRating) }} ({{ current_user.totalRatings }} review{{ "s" if current_user.totalRatings != 1 else "" }})</span>
                     </div>
                     {% endif %}
-                    
+
                     <div class="profile-status">
                         {% if editor.isVerified %}
                         <span class="status-badge verified">
@@ -51,7 +51,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="profile-actions">
                 <button class="btn btn-secondary" onclick="toggleEditMode()">
                     <i class="fas fa-edit"></i>
@@ -79,21 +79,22 @@
                         <span class="completion-text" id="completionText">0% Complete</span>
                     </div>
                 </div>
-                
+
                 <div class="card-content">
                     <form method="POST" action="{{ url_for('editor.profile') }}" id="profileForm" class="profile-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ form.hidden_tag() }}
-                        
+
                         <!-- Basic Information -->
                         <div class="form-section">
                             <h4>Basic Information</h4>
-                            
+
                             <div class="form-group">
                                 {{ form.fullName.label(class="form-label required") }}
                                 {{ form.fullName(class="form-input", readonly=True) }}
                                 <div class="field-help">Your full name as it will appear to clients</div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label class="form-label">Email Address</label>
                                 <input type="email" class="form-input" value="{{ current_user.emailAddress }}" readonly>
@@ -104,23 +105,23 @@
                         <!-- Professional Information -->
                         <div class="form-section">
                             <h4>Professional Information</h4>
-                            
+
                             <div class="form-group">
                                 {{ form.specializations.label(class="form-label") }}
                                 {{ form.specializations(class="form-input", readonly=True, rows="3") }}
                                 <div class="field-help">Describe your areas of expertise (e.g., Color Grading, Motion Graphics, Sound Editing)</div>
                             </div>
-                            
+
                             <div class="form-row">
                                 <div class="form-group">
                                     {{ form.experienceLevel.label(class="form-label") }}
                                     {{ form.experienceLevel(class="form-select", disabled=True) }}
                                 </div>
-                                
+
                                 <div class="form-group">
                                     {{ form.hourlyRate.label(class="form-label") }}
                                     <div class="input-group">
-                                        <span class="input-prefix">KES</span>
+                                        <span class="input-prefix">$</span>
                                         {{ form.hourlyRate(class="form-input", readonly=True, step="0.01", min="0") }}
                                         <span class="input-suffix">/hour</span>
                                     </div>
@@ -148,7 +149,7 @@
                 <div class="card-header">
                     <h3>Profile Statistics</h3>
                 </div>
-                
+
                 <div class="card-content">
                     <div class="stats-grid">
                         <div class="stat-item">
@@ -200,7 +201,7 @@
                     <h3>Recent Activity</h3>
                     <a href="{{ url_for('editor.applications') }}" class="view-all-link">View All</a>
                 </div>
-                
+
                 <div class="card-content">
                   {% set recent_applications = (editor.jobApplications|sort(attribute='dateCreated', reverse=True))[:5] %}
                     {% if recent_applications %}
@@ -228,7 +229,7 @@
                                 </div>
                             </div>
                             <div class="activity-amount">
-                                KES {{ "{:,.0f}"|format(application.proposedRate) }}
+                                $ {{ "{:,.0f}".format(application.proposedRate|float) }}
                             </div>
                         </div>
                         {% endfor %}
@@ -250,7 +251,7 @@
                 <div class="card-header">
                     <h3>Quick Actions</h3>
                 </div>
-                
+
                 <div class="card-content">
                     <div class="action-list">
                         <a href="{{ url_for('editor.jobs') }}" class="action-item">
@@ -301,7 +302,7 @@
                 <div class="card-header">
                     <h3>Verification Status</h3>
                 </div>
-                
+
                 <div class="card-content">
                     {% if editor.isVerified %}
                     <div class="verification-status verified">
@@ -323,7 +324,7 @@
                             <p>Complete your portfolio to get verified and access more opportunities.</p>
                         </div>
                     </div>
-                    
+
                     <div class="verification-checklist">
                         <h4>Verification Checklist</h4>
                         <div class="checklist-item {{ 'completed' if current_user.fullName else 'pending' }}">
@@ -343,7 +344,7 @@
                             <span>Set hourly rate</span>
                         </div>
                     </div>
-                    
+
                     <div class="verification-actions">
                         <a href="{{ url_for('editor.portfolio') }}" class="btn btn-primary btn-full">
                             <i class="fas fa-plus"></i>
@@ -359,7 +360,7 @@
                 <div class="card-header">
                     <h3>Profile Tips</h3>
                 </div>
-                
+
                 <div class="card-content">
                     <div class="tips-list">
                         <div class="tip-item">
@@ -1141,11 +1142,11 @@
     .profile-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .sidebar-content {
         order: -1;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -1157,47 +1158,47 @@
         align-items: flex-start;
         gap: 1.5rem;
     }
-    
+
     .profile-avatar-section {
         flex-direction: column;
         text-align: center;
         gap: 1.5rem;
         width: 100%;
     }
-    
+
     .profile-actions {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .profile-actions .btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
-    
+
     .card-content {
         padding: 1.5rem;
     }
-    
+
     .card-header {
         padding: 1.25rem 1.5rem;
     }
-    
+
     .completion-indicator {
         flex-direction: column;
         gap: 0.5rem;
         align-items: flex-end;
     }
-    
+
     .form-actions {
         flex-direction: column;
     }
@@ -1208,25 +1209,25 @@
         width: 80px;
         height: 80px;
     }
-    
+
     .profile-info h1 {
         font-size: 1.5rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .stat-item {
         padding: 0.75rem;
     }
-    
+
     .activity-item {
         flex-direction: column;
         text-align: center;
         gap: 0.75rem;
     }
-    
+
     .activity-meta {
         flex-direction: column;
         gap: 0.25rem;
@@ -1320,18 +1321,18 @@ function toggleEditMode() {
     const form = document.getElementById('profileForm');
     const editToggleText = document.getElementById('editToggleText');
     const formActions = document.getElementById('formActions');
-    
+
     if (isEditMode) {
         // Store original form data
         storeOriginalFormData();
-        
+
         // Enable form fields
         enableFormFields();
-        
+
         // Update UI
         editToggleText.textContent = 'Cancel Edit';
         formActions.style.display = 'flex';
-        
+
         // Focus on first editable field
         const firstInput = form.querySelector('.form-input:not([readonly])');
         if (firstInput) {
@@ -1348,13 +1349,13 @@ function cancelEdit() {
     isEditMode = false;
     const editToggleText = document.getElementById('editToggleText');
     const formActions = document.getElementById('formActions');
-    
+
     // Restore original form data
     restoreOriginalFormData();
-    
+
     // Disable form fields
     disableFormFields();
-    
+
     // Update UI
     editToggleText.textContent = 'Edit Profile';
     formActions.style.display = 'none';
@@ -1364,7 +1365,7 @@ function cancelEdit() {
 function storeOriginalFormData() {
     const form = document.getElementById('profileForm');
     const formData = new FormData(form);
-    
+
     originalFormData = {};
     for (let [key, value] of formData.entries()) {
         originalFormData[key] = value;
@@ -1374,7 +1375,7 @@ function storeOriginalFormData() {
 // Restore original form data
 function restoreOriginalFormData() {
     const form = document.getElementById('profileForm');
-    
+
     Object.entries(originalFormData).forEach(([key, value]) => {
         const field = form.querySelector(`[name="${key}"]`);
         if (field) {
@@ -1386,13 +1387,13 @@ function restoreOriginalFormData() {
 // Enable form fields for editing
 function enableFormFields() {
     const form = document.getElementById('profileForm');
-    
+
     // Enable text inputs and textareas
     form.querySelectorAll('.form-input:not([name="emailAddress"])').forEach(input => {
         input.removeAttribute('readonly');
         input.classList.add('edit-mode');
     });
-    
+
     // Enable select fields
     form.querySelectorAll('.form-select').forEach(select => {
         select.removeAttribute('disabled');
@@ -1403,13 +1404,13 @@ function enableFormFields() {
 // Disable form fields
 function disableFormFields() {
     const form = document.getElementById('profileForm');
-    
+
     // Disable text inputs and textareas
     form.querySelectorAll('.form-input:not([name="emailAddress"])').forEach(input => {
         input.setAttribute('readonly', true);
         input.classList.remove('edit-mode');
     });
-    
+
     // Disable select fields
     form.querySelectorAll('.form-select').forEach(select => {
         select.setAttribute('disabled', true);
@@ -1426,84 +1427,86 @@ function calculateProfileCompletion() {
         'experienceLevel',
         'hourlyRate'
     ];
-    
+
     let filledFields = 0;
     let totalFields = requiredFields.length;
-    
+
     requiredFields.forEach(fieldName => {
         const field = form.querySelector(`[name="${fieldName}"]`);
         if (field && field.value.trim()) {
             filledFields++;
         }
     });
-    
+
     // Add portfolio check
     const portfolioCount = {{ editor.portfolios|length }};
     if (portfolioCount > 0) {
         filledFields++;
     }
     totalFields++;
-    
+
     const percentage = Math.round((filledFields / totalFields) * 100);
-    
+
     // Update completion indicator
     const completionBar = document.getElementById('completionBar');
     const completionText = document.getElementById('completionText');
-    
+
     if (completionBar && completionText) {
         completionBar.style.width = `${percentage}%`;
         completionText.textContent = `${percentage}% Complete`;
-        
+
         // Add animation class
         completionBar.classList.add('animate');
     }
-    
+
     return percentage;
 }
 
 // Handle form submission
 document.getElementById('profileForm').addEventListener('submit', function(e) {
+    return; // Use normal form submission and server validation.
     e.preventDefault();
-    
+
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    
+
     // Add loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
-    
+
     // Validate form
     if (!validateForm()) {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
         return;
     }
-    
+
     // Submit form
     const formData = new FormData(this);
-    
+
     fetch(this.action, {
         method: 'POST',
         body: formData,
         headers: {
+            'X-CSRFToken': '{{ csrf_token() }}',
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
         if (response.ok) {
             showSuccessMessage('Profile updated successfully!');
-            
+
             // Exit edit mode
             isEditMode = false;
             disableFormFields();
             document.getElementById('editToggleText').textContent = 'Edit Profile';
             document.getElementById('formActions').style.display = 'none';
-            
+
             // Recalculate completion
             setTimeout(() => {
                 calculateProfileCompletion();
             }, 500);
-            
+
         } else {
             throw new Error('Failed to update profile');
         }
@@ -1522,37 +1525,37 @@ document.getElementById('profileForm').addEventListener('submit', function(e) {
 function validateForm() {
     const form = document.getElementById('profileForm');
     let isValid = true;
-    
+
     // Clear previous errors
     clearFormErrors();
-    
+
     // Validate full name
     const fullName = form.querySelector('[name="fullName"]');
     if (!fullName.value.trim()) {
         showFieldError(fullName, 'Full name is required');
         isValid = false;
     }
-    
+
     // Validate hourly rate
     const hourlyRate = form.querySelector('[name="hourlyRate"]');
     if (hourlyRate.value && (parseFloat(hourlyRate.value) < 0)) {
         showFieldError(hourlyRate, 'Hourly rate must be a positive number');
         isValid = false;
     }
-    
+
     return isValid;
 }
 
 // Show field error
 function showFieldError(field, message) {
     field.style.borderColor = '#ef4444';
-    
+
     // Remove existing error message
     const existingError = field.parentNode.querySelector('.field-error');
     if (existingError) {
         existingError.remove();
     }
-    
+
     // Add error message
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
@@ -1562,19 +1565,19 @@ function showFieldError(field, message) {
         font-size: 0.8rem;
         margin-top: 0.25rem;
     `;
-    
+
     field.parentNode.appendChild(errorDiv);
 }
 
 // Clear form errors
 function clearFormErrors() {
     const form = document.getElementById('profileForm');
-    
+
     // Reset border colors
     form.querySelectorAll('.form-input, .form-select').forEach(field => {
         field.style.borderColor = '';
     });
-    
+
     // Remove error messages
     form.querySelectorAll('.field-error').forEach(error => {
         error.remove();
@@ -1594,7 +1597,7 @@ function showMessage(message, type) {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `<div class="toast-body">${message}</div>`;
-    
+
     // Add to toast container or create one
     let toastContainer = document.querySelector('.toast-container');
     if (!toastContainer) {
@@ -1611,9 +1614,9 @@ function showMessage(message, type) {
         `;
         document.body.appendChild(toastContainer);
     }
-    
+
     toastContainer.appendChild(toast);
-    
+
     // Auto remove after 5 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -1634,13 +1637,13 @@ function initializeKeyboardShortcuts() {
             e.preventDefault();
             toggleEditMode();
         }
-        
+
         // Escape to cancel edit
         if (e.key === 'Escape' && isEditMode) {
             e.preventDefault();
             cancelEdit();
         }
-        
+
         // Ctrl/Cmd + S to save (when in edit mode)
         if ((e.ctrlKey || e.metaKey) && e.key === 's' && isEditMode) {
             e.preventDefault();
@@ -1652,7 +1655,7 @@ function initializeKeyboardShortcuts() {
 // Profile picture upload simulation
 function initializeProfilePictureUpload() {
     const profileAvatar = document.querySelector('.profile-avatar');
-    
+
     profileAvatar.addEventListener('click', function() {
         if (isEditMode) {
             // In a real implementation, this would trigger file upload
@@ -1665,20 +1668,20 @@ function initializeProfilePictureUpload() {
 function initializeAutoSave() {
     const form = document.getElementById('profileForm');
     let saveTimeout;
-    
+
     form.addEventListener('input', function() {
         if (!isEditMode) return;
-        
+
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             // Save draft to localStorage
             const formData = new FormData(form);
             const draftData = {};
-            
+
             for (let [key, value] of formData.entries()) {
                 draftData[key] = value;
             }
-            
+
             localStorage.setItem('profileDraft', JSON.stringify(draftData));
         }, 1000);
     });
@@ -1690,7 +1693,7 @@ function loadDraftData() {
     if (draftData && isEditMode) {
         const data = JSON.parse(draftData);
         const form = document.getElementById('profileForm');
-        
+
         Object.entries(data).forEach(([key, value]) => {
             const field = form.querySelector(`[name="${key}"]`);
             if (field && !field.value) {
@@ -1738,7 +1741,7 @@ const toastStyles = `
         right: 1rem;
         left: 1rem;
     }
-    
+
     .toast {
         max-width: none;
     }
@@ -1750,45 +1753,45 @@ const toastStyles = `
 document.addEventListener('DOMContentLoaded', function() {
     // Add toast styles
     document.head.insertAdjacentHTML('beforeend', toastStyles);
-    
+
     // Initialize all functionality
     calculateProfileCompletion();
     initializeKeyboardShortcuts();
     initializeProfilePictureUpload();
     initializeAutoSave();
-    
+
     // Load draft data if in edit mode
     if (isEditMode) {
         loadDraftData();
     }
-    
+
     // Add hover effects to stat items
     document.querySelectorAll('.stat-item').forEach(item => {
         item.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-4px) scale(1.02)';
         });
-        
+
         item.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0) scale(1)';
         });
     });
-    
+
     // Add click animations to action items
     document.querySelectorAll('.action-item').forEach(item => {
         item.addEventListener('click', function() {
             this.style.transform = 'translateX(8px)';
-            
+
             setTimeout(() => {
                 this.style.transform = '';
             }, 200);
         });
     });
-    
+
     // Clear draft data on successful save
     document.getElementById('profileForm').addEventListener('submit', function() {
         clearDraftData();
     });
-    
+
     // Show keyboard shortcuts help
     const helpText = document.createElement('div');
     helpText.className = 'keyboard-help';
@@ -1797,7 +1800,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Press <kbd>E</kbd> to edit, <kbd>Esc</kbd> to cancel, <kbd>Ctrl+S</kbd> to save
         </div>
     `;
-    
+
     // Show help on hover over edit button
     const editButton = document.querySelector('.profile-actions .btn-secondary');
     if (editButton) {
@@ -1805,13 +1808,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const help = document.querySelector('.keyboard-help div');
             if (help) help.style.opacity = '1';
         });
-        
+
         editButton.addEventListener('mouseleave', function() {
             const help = document.querySelector('.keyboard-help div');
             if (help) help.style.opacity = '0';
         });
     }
-    
+
     document.body.appendChild(helpText);
 });
 

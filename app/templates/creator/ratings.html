@@ -216,49 +216,63 @@
 
 <!-- Pending Ratings Section -->
 {% set pending_jobs = [] %}
+
 {% for job in current_user.creator.jobs if job.creator %}
-{% if job.status == 'completed' and job.selectedEditor %}
-{% set has_rating = false %}
-{% for rating in given_ratings %}
-{% if rating.job.jobId == job.jobId %}
-{% set has_rating = true %}
-{% endif %}
-{% endfor %}
-{% if not has_rating %}
-{% set _ = pending_jobs.append(job) %}
-{% endif %}
-{% endif %}
+    {% if job.status == 'completed' and job.selectedEditor %}
+
+        {% set ns = namespace(has_rating=false) %}
+
+        {% for rating in given_ratings %}
+            {% if rating.jobId == job.jobId %}
+                {% set ns.has_rating = true %}
+            {% endif %}
+        {% endfor %}
+
+        {% if not ns.has_rating %}
+            {% set _ = pending_jobs.append(job) %}
+        {% endif %}
+
+    {% endif %}
 {% endfor %}
 
 {% if pending_jobs %}
 <div class="pending-ratings-section">
-  <div class="section-header">
-    <h2>Pending Reviews</h2>
-    <p>Rate these completed projects to help other creators</p>
-  </div>
-
-  <div class="pending-ratings-grid">
-    {% for job in pending_jobs %}
-    <div class="pending-rating-card">
-      <div class="job-info">
-        <h4>{{ job.title }}</h4>
-        <p>Completed with {{ job.selectedEditor.user.fullName }}</p>
-        <span class="completion-date">{{ moment(job.completedDate).fromNow() if job.completedDate else 'Recently' }}</span>
-      </div>
-
-      <div class="pending-actions">
-        <a href="{{ url_for('creator.submit_rating') }}?job_id={{ job.jobId }}&editor_id={{ job.selectedEditor.editorId }}" class="btn btn-primary btn-sm">
-          <i class="fas fa-star"></i> Rate Editor
-        </a>
-        <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}" class="btn btn-outline btn-sm">
-          <i class="fas fa-eye"></i> View Project
-        </a>
-      </div>
+    <div class="section-header">
+        <h2>Pending Reviews</h2>
+        <p>Rate these completed projects to help other creators</p>
     </div>
-    {% endfor %}
-  </div>
+
+    <div class="pending-ratings-grid">
+        {% for job in pending_jobs %}
+        <div class="pending-rating-card">
+            <div class="job-info">
+                <h4>{{ job.title }}</h4>
+                <p>
+                    Completed with
+                    {{ job.selectedEditor.user.fullName }}
+                </p>
+                <span class="completion-date">
+                    {{ moment(job.completedDate).fromNow() if job.completedDate else 'Recently' }}
+                </span>
+            </div>
+
+            <div class="pending-actions">
+                <a href="{{ url_for('creator.submit_rating') }}?job_id={{ job.jobId }}&editor_id={{ job.selectedEditor.editorId }}"
+                   class="btn btn-primary btn-sm">
+                    <i class="fas fa-star"></i> Rate Editor
+                </a>
+
+                <a href="{{ url_for('creator.job_detail', job_id=job.jobId) }}"
+                   class="btn btn-outline btn-sm">
+                    <i class="fas fa-eye"></i> View Project
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endif %}
+
 
 <style>
 /* Ratings Header */

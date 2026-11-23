@@ -1,11 +1,14 @@
 import flask
 import json
 
+
 from flask_login import current_user
 from flask_login import login_required
-from app.nlp.job_parser import parse_job_description
+from app.nlp.job_parser import parse_job_description, parse_portfolio_details
+from app.nlp.editor_matcher import calculate_match_score
 
 from decimal import Decimal
+from datetime import date
 
 from . import creator
 from .forms import RatingForm
@@ -172,7 +175,10 @@ def jobs():
     jobs_list.sort(key=lambda x: x.dateCreated, reverse=True)
 
     return flask.render_template(
-        "creator/jobs.html", jobs=jobs_list, status_filter=status_filter
+        "creator/jobs.html",
+        jobs=jobs_list,
+        status_filter=status_filter,
+        today=date.today()
     )
 
 
@@ -183,7 +189,7 @@ def new_job():
     """Create a new job posting."""
     form = JobPostingForm()
 
-   
+
     if form.validate_on_submit():
         try:
             # Step 1: Get the creator's job description
@@ -349,12 +355,85 @@ def job_applications(job_id):
     pending_applications = job.getPendingApplications()
     accepted_application = job.getAcceptedApplication()
 
+    # Calculate compatibility scores for job applicants
+    application_match_scores = {}
+
+    for application in applications:
+        editor = application.editor
+
+        if editor is None:
+          continue
+
+
+        # Start with skills from the editor's profile
+        editor_skills = [
+            skill.strip()
+            for skill in (editor.specializations or "").split(",")
+            if skill.strip()
+        ]
+
+        editor_styles = []
+        editor_niches = []
+
+        # Only approved portfolios provide verified matching evidence
+        for portfolio in editor.portfolios:
+            if portfolio.verificationStatus != "approved":
+                continue
+
+            portfolio_data = parse_portfolio_details(
+                title=portfolio.title,
+                description=portfolio.description,
+                skill_tags=portfolio.skillTags,
+            )
+
+            editor_skills.extend(portfolio_data["skills"])
+            editor_styles.extend(portfolio_data["styles"])
+            editor_niches.extend(portfolio_data["niches"])
+
+        # Extracted requirements from the creator's job
+        job_data = {
+            "skills": job.extractedSkills,
+            "styles": job.extractedStyles,
+            "niches": job.extractedNiches,
+        }
+
+        # Combined editor capabilities
+        editor_data = {
+            "skills": editor_skills,
+            "styles": editor_styles,
+            "niches": editor_niches,
+        }
+
+
+        score = calculate_match_score(job_data, editor_data)
+
+        application_match_scores[application.jobApplicationId] = score
+
+        # NLP TEST 08: Rank all applicants by compatibility
+        applications = sorted(
+            applications,
+            key=lambda application: application_match_scores.get(
+                application.jobApplicationId, 0.0
+            ),
+            reverse=True
+        )
+
+        # Rank pending applicants separately
+        pending_applications = sorted(
+            pending_applications,
+            key=lambda application: application_match_scores.get(
+                application.jobApplicationId, 0.0
+            ),
+            reverse=True
+    )
+
     return flask.render_template(
         "creator/job_applications.html",
         job=job,
         applications=applications,
         pending_applications=pending_applications,
         accepted_application=accepted_application,
+        application_match_scores=application_match_scores,
     )
 
 
@@ -392,6 +471,11 @@ def select_editor(job_id):
 
     except Exception:
         db.session.rollback()
+        flask.current_app.logger.exception(
+            "Failed to select editor %s for job %s",
+            editor_id,
+            job_id
+        )
         flask.flash("An error occurred while selecting the editor.", "danger")
 
     return flask.redirect(flask.url_for("creator.job_detail", job_id=job_id))
@@ -599,7 +683,9 @@ def submit_rating():
     if job_id:
         form.jobId.data = job_id
     if editor_id:
-        form.rateeId.data = editor_id
+        editor = Editor.query.get(int(editor_id))
+        if editor:
+            form.rateeId.data = editor.userId
 
     if form.validate_on_submit():
         try:
@@ -722,6 +808,11 @@ def process_payment(payment_id):
         return flask.redirect(flask.url_for("creator.payments"))
 
     if flask.request.method == "POST":
+        if not flask.current_app.config.get("PAYMENTS_ENABLED"):
+            flask.flash("Payments are disabled for this demonstration. No money was charged.", "info")
+            return flask.redirect(flask.url_for("creator.payments"))
+        if payment.status != "agreed":
+            flask.abort(409)
         try:
             # Get Pesapal access token
             access_token = pesapal.get_access_token().get("token")
@@ -753,6 +844,7 @@ def process_payment(payment_id):
 
             # Create payment request
             payment_request = {
+                "currency": "USD",
                 "amount": float(payment.agreedAmount),
                 "description": f"Payment for job: {payment.job.title}",
                 "callback_url": flask.url_for(
@@ -811,6 +903,8 @@ def process_payment(payment_id):
 @creator.route("/payments/pesapal/callback")
 def pesapal_payment_callback():
     """Handle Pesapal payment callback and update payment status."""
+    if not flask.current_app.config.get("PAYMENTS_ENABLED"):
+        flask.abort(503)
     order_tracking_id = flask.request.args.get("OrderTrackingId")
 
     if not order_tracking_id:
@@ -912,6 +1006,8 @@ def payment_success(payment_id):
         flask.flash("Access denied.", "danger")
         return flask.redirect(flask.url_for("creator.payments"))
 
+    if not payment.isCompleted():
+        return flask.redirect(flask.url_for("creator.payment_status", payment_id=payment_id))
     return flask.render_template(
         "creator/payment_success.html", payment=payment
     )
@@ -1063,7 +1159,7 @@ def ajax_editor_contact():
 
         Message.sendMessage(
             senderId=current_user.userId,
-            receiverId=data.get("editorId"),
+            receiverId=Editor.query.get_or_404(int(data.get("editorId"))).userId,
             messageContent=data.get("message"),
             subject=data.get("subject", "Project Inquiry"),
         )

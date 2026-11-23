@@ -32,6 +32,7 @@
         <div class="message-form-section">
             <div class="form-content">
                 <form method="POST" class="message-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     {{ form.receiverId() }}
                     {{ form.jobId() }}

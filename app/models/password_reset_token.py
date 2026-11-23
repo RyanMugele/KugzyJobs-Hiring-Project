@@ -142,14 +142,8 @@ class PasswordResetToken(db.Model):
         # Invalidate any existing tokens for this user
         cls.invalidateUserTokens(userId)
 
-        # Generate secure token using Werkzeug pattern
-        token_data = f"{userId}-{uuid.uuid4()}-{datetime.utcnow().timestamp()}"
-        secure_token = generate_password_hash(token_data)
-
-        # Create clean token (remove hash prefix for URL usage)
-        clean_token = secure_token.replace("pbkdf2:sha256:", "").replace(
-            "$", "-"
-        )[:64]
+        import secrets
+        clean_token = secrets.token_urlsafe(32)
 
         expiry_time = datetime.utcnow() + timedelta(hours=expiryHours)
 

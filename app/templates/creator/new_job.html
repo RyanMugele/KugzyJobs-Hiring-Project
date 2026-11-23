@@ -19,6 +19,7 @@
 <!-- Job Posting Form -->
 <div class="form-container">
     <form method="POST" class="job-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ form.hidden_tag() }}
         
         <!-- Basic Information Section -->

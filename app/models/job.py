@@ -103,6 +103,12 @@ class Job(db.Model):
             self.title = title
         if description is not None:
             self.description = description
+            import json
+            from app.nlp.job_parser import parse_job_description
+            parsed = parse_job_description(description)
+            self.extractedSkills = json.dumps(parsed["skills"])
+            self.extractedStyles = json.dumps(parsed["styles"])
+            self.extractedNiches = json.dumps(parsed["niches"])
         if budgetMin is not None:
             self.budgetMin = budgetMin
         if budgetMax is not None:
@@ -122,7 +128,7 @@ class Job(db.Model):
         :param editorId: int - ID of the editor to select
         :return: bool - True if selection was successful, False otherwise
         """
-        if self.status == "posted":
+        if self.status == "posted" and any(a.editorId == editorId and a.status == "pending" for a in self.applications):
             self.selectedEditorId = editorId
             self.status = "in_progress"
 

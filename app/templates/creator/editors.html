@@ -1067,7 +1067,8 @@
         fetch('{{ url_for("creator.ajax_editor_contact") }}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 editorId: parseInt(editorId),

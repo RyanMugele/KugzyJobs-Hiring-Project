@@ -32,6 +32,8 @@ def send_email(to, subject, template, **kwargs):
     Returns:
         - Thread object representing the asynchronous email sending process
     """
+    if not current_app.config.get("EMAIL_ENABLED"):
+        return None
     app = current_app._get_current_object()
 
     rendered_html = render_template(template + ".html", **kwargs)

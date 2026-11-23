@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.2.0, pluggy-1.7.0 -- /Users/ryanmugele/Documents/Codex/2026-11-17/referenced-chatgpt-conversation-this-is-an/work/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/ryanmugele/Documents/Codex/2026-11-17/referenced-chatgpt-conversation-this-is-an/outputs/KugzyJobs-GitHub-Ready
+configfile: pytest.ini
+plugins: platformdirs-4.14.5, anyio-4.16.0
+collecting ... collected 11 items
+
+tests/test_selection_matcher.py::test_score_examples[requirements0-offered0-100] PASSED [  9%]
+tests/test_selection_matcher.py::test_score_examples[requirements1-offered1-75] PASSED [ 18%]
+tests/test_selection_matcher.py::test_score_examples[requirements2-offered2-50] PASSED [ 27%]
+tests/test_selection_matcher.py::test_score_examples[requirements3-offered3-0] PASSED [ 36%]
+tests/test_selection_matcher.py::test_score_examples[requirements4-offered4-50] PASSED [ 45%]
+tests/test_selection_matcher.py::test_score_examples[requirements5-offered5-0] PASSED [ 54%]
+tests/test_selection_matcher.py::test_score_examples[requirements6-offered6-100] PASSED [ 63%]
+tests/test_selection_matcher.py::test_ranked_applicants_and_creator_selects_lower_score PASSED [ 72%]
+tests/test_selection_matcher.py::test_pending_and_rejected_portfolios_do_not_raise_score PASSED [ 81%]
+tests/test_selection_matcher.py::test_other_creator_cannot_select PASSED [ 90%]
+tests/test_selection_matcher.py::test_nonapplicant_cannot_be_selected PASSED [100%]
+
+============================== 11 passed in 6.11s ==============================

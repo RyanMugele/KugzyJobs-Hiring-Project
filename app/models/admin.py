@@ -75,17 +75,7 @@ class Admin(db.Model):
             if notes:
                 portfolio.rejectionReason = notes
 
-            # Update editor verification status if this is their first approved portfolio
-            if approved and not portfolio.editor.isVerified:
-                approved_portfolios = [
-                    p
-                    for p in portfolio.editor.portfolios
-                    if p.verificationStatus == "approved"
-                ]
-                if (
-                    len(approved_portfolios) == 1
-                ):  # This is the first approved portfolio
-                    portfolio.editor.isVerified = True
+            portfolio.editor.isVerified = any(p.verificationStatus == "approved" for p in portfolio.editor.portfolios)
 
             db.session.commit()
             return True
@@ -163,6 +153,7 @@ class Admin(db.Model):
         if portfolio:
             portfolio.verificationStatus = "rejected"
             portfolio.rejectionReason = f"Content removed: {reason}"
+            portfolio.editor.isVerified = any(p.verificationStatus == "approved" for p in portfolio.editor.portfolios)
             db.session.commit()
             return True
         return False
@@ -176,7 +167,7 @@ class Admin(db.Model):
         """
         from .user import User
         from .password_reset_token import PasswordResetToken
-        from utilities.securities import generate_secure_token
+        from secrets import token_urlsafe as generate_secure_token
         from datetime import datetime
         from datetime import timedelta
 

@@ -89,6 +89,7 @@ class Portfolio(db.Model):
         """
         self.verificationStatus = "pending"
         self.rejectionReason = None
+        self.editor.isVerified = any(p.verificationStatus == "approved" for p in self.editor.portfolios)
         db.session.commit()
 
     def isVisible(self):

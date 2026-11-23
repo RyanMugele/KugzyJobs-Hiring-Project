@@ -206,7 +206,7 @@ class AdminRegistrationForm(BaseUserForm):
         from flask import current_app
 
         valid_code = current_app.config.get(
-            "ADMIN_REGISTRATION_CODE", "ADMIN2025"
+            "ADMIN_REGISTRATION_CODE"
         )
-        if field.data != valid_code:
+        if not valid_code or field.data != valid_code:
             raise ValidationError("Invalid admin registration code.")

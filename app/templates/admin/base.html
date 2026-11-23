@@ -427,6 +427,7 @@ function executeQuickAction(action, targetId) {
     fetch('{{ url_for("admin.ajax_quick_action") }}', {
         method: 'POST',
         headers: {
+            'X-CSRFToken': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
