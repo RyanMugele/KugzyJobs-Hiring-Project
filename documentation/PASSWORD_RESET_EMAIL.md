@@ -1,6 +1,6 @@
 # Password reset email
 
-Email delivery is opt-in. The owner chose an existing Gmail account for the sender. Real delivery is not verified until the private SMTP settings are supplied and a reset email is received.
+Email delivery is opt-in. The owner chose an existing Gmail account for the sender. Private SMTP settings were supplied by the owner on 23 November 2026. The updated service deployed successfully and the owner confirmed receipt of a test reset email. The owner completed the reset and confirmed new-password sign-in. A separate HTTPS check confirmed the original test password was rejected.
 
 Set these values privately in Render Environment:
 

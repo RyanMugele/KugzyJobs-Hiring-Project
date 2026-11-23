@@ -6,7 +6,7 @@ Prepared for review. Applying the Blueprint creates a **paid service**. Obtain o
 
 Render Starter, one instance and one Gunicorn worker, Python 3.14.0, and a 1 GB persistent disk at `/var/data`. Database: `/var/data/kugzyjobs.db`. Legacy role-image directories link to `/var/data/uploads/editors` and `/var/data/uploads/creators`. Current profile forms do not expose a complete upload workflow; persistence preparation does not add one.
 
-HTTPS is provided by Render. Production cookies are secure; `/healthz` checks database connectivity. Payments and outgoing email remain disabled. Automatic deployment is **off**.
+HTTPS is provided by Render. Production cookies are secure; `/healthz` checks database connectivity. Payments remain disabled. Password-reset email is opt-in through private SMTP settings; see [email setup](PASSWORD_RESET_EMAIL.md). Automatic deployment is **off**.
 
 On November 18, 2026, listed compute was USD 7/month and disk USD 0.25/GB/month: approximately **USD 7.25/month** before taxes or extras. Confirm the dashboard total before purchase. No paid workspace upgrade or custom domain is proposed.
 

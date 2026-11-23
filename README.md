@@ -16,7 +16,7 @@ Post a brief. Review portfolios. Compare matches. Select an editor. Collaborate 
 <a href="#about">About</a> · <a href="#screenshots">Screenshots</a> · <a href="#architecture">Architecture</a> · <a href="#matching">Matching</a> · <a href="#database">Database</a> · <a href="#getting-started">Getting started</a> · <a href="#quality">Quality</a> · <a href="#deployment">Deployment</a> · <a href="#documentation">Documentation</a>
 </p>
 
-> **Live:** [kugzyjobs.onrender.com](https://kugzyjobs.onrender.com) — deployed on Render and verified over HTTPS on 23 November 2026. All 49 tests passed in GitHub Actions on Linux. Payments and outgoing email remain disabled.
+> **Live:** [kugzyjobs.onrender.com](https://kugzyjobs.onrender.com) — deployed on Render and verified over HTTPS on 23 November 2026. All 56 tests passed in GitHub Actions on Linux. Password-reset email is configured and inbox delivery and new-password login were confirmed; payments remain disabled.
 
 <a id="about"></a>
 ## What is KugzyJobs?
@@ -273,7 +273,7 @@ python evaluate_nlp.py
 
 | Check | Recorded evidence |
 | --- | --- |
-| Full release suite | Latest run: 49 passed, including 11 focused matcher/selection cases; see [test log](documentation/deployment-tests.txt) |
+| Full release suite | Latest Linux run: 56 passed, including 11 matcher/selection cases and seven reset-email cases; see [hosted CI](documentation/HOSTED_CI_VERIFICATION.md) |
 | Production preparation | See [deployment verification](documentation/DEPLOYMENT_VERIFICATION.md) for the latest results |
 | GET route inventory | 91 routes sampled; no unhandled exceptions in the recorded audit |
 | NLP | 20-case extraction test and 15-description CSV evaluation |
@@ -293,11 +293,11 @@ The prepared service uses HTTPS, Gunicorn, secure cookies, a database readiness 
 
 ### Scope and limitations
 
-- Payments and outgoing email are disabled. Agreements and invoices are local records and do not transfer money.
+- Payments are disabled. Password-reset email uses privately configured SMTP; [setup and verification](documentation/PASSWORD_RESET_EMAIL.md). Agreements and invoices do not transfer money.
 - Portfolio and delivery media are external URLs; KugzyJobs does not host video files.
 - Manual verification does not prove authorship. Vocabulary matching has known language limitations.
 - Social sign-in buttons and some informational links remain placeholders.
-- Real email delivery, live gateway settlement, large-scale performance and the complete hosted account workflow still need separate verification.
+- Live gateway settlement, large-scale performance and backup restoration still need separate verification. The hosted workflow was checked with fictional records; email inbox delivery was confirmed separately.
 
 ## Repository layout
 
