@@ -1,6 +1,7 @@
 <p align="center"><img src="documentation/assets/banner.svg" alt="KugzyJobs — Find your next creative match" width="100%"></p>
 
 <p align="center">
+<a href="https://github.com/RyanMugele/KugzyJobs-Hiring-Project/actions/workflows/tests.yml"><img alt="GitHub Actions tests" src="https://github.com/RyanMugele/KugzyJobs-Hiring-Project/actions/workflows/tests.yml/badge.svg"></a>
 <img alt="Python 3.14" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&amp;logoColor=white">
 <img alt="Flask 3.1" src="https://img.shields.io/badge/Flask-3.1-111827?logo=flask&amp;logoColor=white">
 <img alt="spaCy phrase matching" src="https://img.shields.io/badge/spaCy-PhraseMatcher-09A3D5?logo=spacy&amp;logoColor=white">
@@ -15,7 +16,7 @@ Post a brief. Review portfolios. Compare matches. Select an editor. Collaborate 
 <a href="#about">About</a> · <a href="#screenshots">Screenshots</a> · <a href="#architecture">Architecture</a> · <a href="#matching">Matching</a> · <a href="#database">Database</a> · <a href="#getting-started">Getting started</a> · <a href="#quality">Quality</a> · <a href="#deployment">Deployment</a> · <a href="#documentation">Documentation</a>
 </p>
 
-> **Release status:** source update published; hosted CI and Render verification are in progress. A public deployment URL has not yet been verified. Payments and outgoing email remain disabled.
+> **Release status:** source update published and GitHub Actions passed on Linux on 23 November 2026. Render deployment is in progress; a public deployment URL has not yet been verified. Payments and outgoing email remain disabled.
 
 <a id="about"></a>
 ## What is KugzyJobs?
@@ -277,7 +278,7 @@ python evaluate_nlp.py
 | GET route inventory | 91 routes sampled; no unhandled exceptions in the recorded audit |
 | NLP | 20-case extraction test and 15-description CSV evaluation |
 | Browser walkthrough | Creator/editor login, job and application flow; screenshots above |
-| CI | [Workflow configured](.github/workflows/tests.yml); first hosted run pending publication |
+| CI | [Workflow configured](.github/workflows/tests.yml); hosted Linux run passed on 23 November 2026 |
 
 Tests use separate temporary databases. `pytest.ini` deliberately collects `tests/`; some historical root scripts expect a pre-existing development database. The recorded dependency audit applies to the original runtime lock at its audit date; it does not certify the new production dependency or public deployment.
 
