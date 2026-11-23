@@ -12,7 +12,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
     ADMIN_REGISTRATION_CODE = os.environ.get("ADMIN_REGISTRATION_CODE")
     PAYMENTS_ENABLED = False
-    EMAIL_ENABLED = False
+    EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "false").lower() == "true"
     MAX_CONTENT_LENGTH = 25 * 1024 * 1024
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -47,11 +47,12 @@ class Config:
 
     # Mail connection configuration options
     MAIL_BACKEND = "smtp"
-    MAIL_SERVER = "smtp.zoho.com"
-    MAIL_PORT = 465
-    MAIL_USE_TLS = False
-    MAIL_USE_SSL = True
-    MAIL_TIMEOUT = None
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", "465"))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "false").lower() == "true"
+    MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "true").lower() == "true"
+    MAIL_TIMEOUT = 15
+    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
     # Mail Credentials Settings
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "KugzyJobs <noreply@example.com>")
@@ -83,6 +84,7 @@ class DevelopmentConfig(Config):
 
 
 class TestingConfig(Config):
+    EMAIL_ENABLED = False
     TESTING = True
     DEBUG = True
 
@@ -111,6 +113,18 @@ class ProductionConfig(Config):
             raise RuntimeError("Set PRODUCTION_DATABASE_URL to the persistent database.")
         if not cls.DATA_DIR or not Path(cls.DATA_DIR).is_absolute():
             raise RuntimeError("Set KUGZY_DATA_DIR to an absolute persistent directory.")
+        if app.config.get("EMAIL_ENABLED"):
+            from urllib.parse import urlsplit
+            url = urlsplit(app.config.get("PUBLIC_BASE_URL", ""))
+            if url.scheme != "https" or not url.netloc or url.path or url.query or url.fragment or url.username:
+                raise RuntimeError("Email requires PUBLIC_BASE_URL to be the public HTTPS origin.")
+            if not all(app.config.get(key) for key in ("MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_SERVER")):
+                raise RuntimeError("Email requires private SMTP credentials and MAIL_SERVER.")
+            sender = app.config.get("MAIL_DEFAULT_SENDER", "")
+            if "@" not in sender or "@example.com" in sender:
+                raise RuntimeError("Email requires a real MAIL_DEFAULT_SENDER.")
+            if app.config.get("MAIL_USE_TLS") == app.config.get("MAIL_USE_SSL"):
+                raise RuntimeError("Enable exactly one SMTP encryption mode.")
         root = Path(cls.DATA_DIR)
         root.mkdir(parents=True, exist_ok=True)
         # Keep legacy static image URLs while storing role image directories on disk.

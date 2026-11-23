@@ -271,12 +271,24 @@ def password_reset_request():
             flask.flash("Password recovery requires configured email delivery. Contact the administrator.", "warning")
         else:
             if user:
-                reset_token = PasswordResetToken.generateToken(user.userId, expiryHours=1)
-                from utilities.email_utils import send_email
-                send_email([user.emailAddress], "Password reset", "email/password_reset_request",
-                           user_name=user.fullName,
-                           reset_link=flask.url_for("authentication.password_reset", token=reset_token.token, _external=True))
-            flask.flash("If an account exists, password reset instructions have been sent.", "info")
+                from datetime import datetime, timedelta
+                # Stored cooldown survives a server restart and limits reset mail abuse.
+                recent = PasswordResetToken.query.filter(
+                    PasswordResetToken.userId == user.userId,
+                    PasswordResetToken.dateCreated >= datetime.utcnow() - timedelta(seconds=60),
+                ).first()
+                if not recent:
+                    reset_token = PasswordResetToken.generateToken(user.userId, expiryHours=1)
+                    from utilities.email_utils import send_email
+                    reset_path = flask.url_for("authentication.password_reset", token=reset_token.token)
+                    base = flask.current_app.config.get("PUBLIC_BASE_URL")
+                    reset_link = base + reset_path if base else flask.url_for(
+                        "authentication.password_reset", token=reset_token.token, _external=True)
+                    if not send_email([user.emailAddress], "Reset your KugzyJobs password", "email/password_reset_request",
+                                      user_name=user.fullName, reset_link=reset_link):
+                        reset_token.invalidateToken()
+            # Same response for missing users, cooldown and provider failures.
+            flask.flash("If an account exists, you will receive password reset instructions. Check your inbox and spam folder. If no email arrives, try again later or contact the administrator.", "info")
 
         return flask.redirect(
             flask.url_for("authentication.password_reset_request")
@@ -319,8 +331,8 @@ def password_reset(token):
                 reset_token.isUsed = True
                 db.session.commit()
 
-                # Mark token as used
-                reset_token.markAsUsed()
+                # Invalidate any other outstanding reset links for this account.
+                PasswordResetToken.invalidateUserTokens(user.userId)
 
                 flask.flash(
                     "Your password has been updated successfully!", "success"
