@@ -19,7 +19,7 @@ Logs: [pytest](deployment-tests.txt), [production smoke](production-smoke.txt), 
 
 The Gunicorn test used an isolated database and fictional account under the private local work directory. It did not copy the user's running database or credentials. No real payment or email occurred.
 
-Pending: first GitHub Actions run on Linux, Render build/startup, public HTTPS workflow, hosted restart/persistence, performance and capacity checks. Docker-based Linux verification was unavailable because the local Docker daemon was not running. No GitHub push, hosting purchase or public deployment has occurred.
+Historical preparation status: these checks were local on 18 November. GitHub publication, Linux CI and Render deployment were subsequently completed on 23 November; see [hosted deployment verification](HOSTED_DEPLOYMENT_VERIFICATION.md). Hosted account workflows, restart/persistence and capacity checks are recorded separately there.
 
 Render configuration also passed validation against Render’s official JSON schema. README local links and banner XML passed structural checks.
 

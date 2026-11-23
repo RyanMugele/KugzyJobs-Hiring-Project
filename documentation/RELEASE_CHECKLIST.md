@@ -1,21 +1,19 @@
 # Release checklist
 
-Prepared: branded README, genuine screenshots, diagrams, production settings, persistent disk configuration, Gunicorn startup, readiness endpoint, hosting tests, CI configuration, and a read-only copy of the existing repository history. Render automatic deployment is off.
+Updated 23 November 2026. Render automatic deployment is off.
 
-Before publication:
-
-- [x] Owner approved publishing the prepared update to the existing GitHub repository on 23 November 2026.
-- [ ] Owner approves Render publication and approximately USD 7.25/month before taxes/extras after checking the dashboard total.
-- [ ] Connect Render/GitHub and enter billing details directly with the provider if needed.
-
-After publication:
-
-- [ ] First Linux CI run passes.
-- [ ] Render build/startup and database readiness pass.
-- [ ] HTTPS login, roles and complete demonstration workflow pass.
-- [ ] Create private admin credentials; no shared demo accounts.
+- [x] Owner approved publishing to the existing GitHub repository.
+- [x] Owner approved Render Starter plus 1 GB disk, approximately USD 7.25/month before taxes/extras.
+- [x] Owner completed billing directly with Render.
+- [x] Source and genuine NLP comparison/selection screenshots published.
+- [x] Linux CI: 49 tests, NLP evaluation and CSV evaluation passed.
+- [x] Render build/startup and database readiness passed.
+- [x] Public HTTPS homepage/login and unauthenticated role protection checked.
+- [x] Persistent disk mount and size confirmed.
+- [ ] Create private admin credentials and verify authenticated hosted workflows.
 - [ ] Restart confirms persistent data.
 - [ ] Make private off-service backup.
-- [ ] Record real commit SHA, live URL and date in README and report.
+- [x] Record deployed commit, live URL and date in README.
+- [ ] Add final hosted deployment facts to the report.
 
-The owner authorized GitHub publication and completion of deployment on 23 November 2026. Hosting purchase and live verification remain pending.
+See [hosted verification](HOSTED_DEPLOYMENT_VERIFICATION.md) for exact results and limitations.

@@ -16,7 +16,7 @@ Post a brief. Review portfolios. Compare matches. Select an editor. Collaborate 
 <a href="#about">About</a> · <a href="#screenshots">Screenshots</a> · <a href="#architecture">Architecture</a> · <a href="#matching">Matching</a> · <a href="#database">Database</a> · <a href="#getting-started">Getting started</a> · <a href="#quality">Quality</a> · <a href="#deployment">Deployment</a> · <a href="#documentation">Documentation</a>
 </p>
 
-> **Release status:** source update published and GitHub Actions passed on Linux on 23 November 2026. Render deployment is in progress; a public deployment URL has not yet been verified. Payments and outgoing email remain disabled.
+> **Live:** [kugzyjobs.onrender.com](https://kugzyjobs.onrender.com) — deployed on Render and verified over HTTPS on 23 November 2026. All 49 tests passed in GitHub Actions on Linux. Payments and outgoing email remain disabled.
 
 <a id="about"></a>
 ## What is KugzyJobs?
@@ -56,7 +56,7 @@ flowchart LR
     F --> ORM[SQLAlchemy models]
     ORM --> DB[(SQLite database)]
     F --> URL[External portfolio and delivery links]
-    subgraph Planned Render hosting
+    subgraph Render hosting
       F
       AUTH
       NLP
@@ -289,7 +289,7 @@ Tests use separate temporary databases. `pytest.ini` deliberately collects `test
 
 The prepared service uses HTTPS, Gunicorn, secure cookies, a database readiness endpoint and a paid persistent disk. Automatic deployment is off so a push does not immediately publish app changes. The proposed small-instance setup uses one worker and one service; load and concurrency capacity have not been established.
 
-**Live URL:** pending approved deployment. No domain or successful deployment is claimed yet.
+**Live URL:** https://kugzyjobs.onrender.com — Render Starter with a 1 GB persistent disk. See [hosted verification](documentation/HOSTED_DEPLOYMENT_VERIFICATION.md) for completed checks and remaining account/persistence checks.
 
 ### Scope and limitations
 
@@ -297,7 +297,7 @@ The prepared service uses HTTPS, Gunicorn, secure cookies, a database readiness 
 - Portfolio and delivery media are external URLs; KugzyJobs does not host video files.
 - Manual verification does not prove authorship. Vocabulary matching has known language limitations.
 - Social sign-in buttons and some informational links remain placeholders.
-- Real email delivery, live gateway settlement, large-scale performance and production Linux behavior still need separate verification.
+- Real email delivery, live gateway settlement, large-scale performance and the complete hosted account workflow still need separate verification.
 
 ## Repository layout
 
